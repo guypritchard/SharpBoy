@@ -3,11 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2043
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Emulator", "GB.Emulator\GB.Emulator.csproj", "{6685661C-B856-4DF8-9F66-96F8CF1171A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator", "GB.Emulator\GB.Emulator.csproj", "{6685661C-B856-4DF8-9F66-96F8CF1171A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Emulator.Core", "GB.Emulator.Core\GB.Emulator.Core.csproj", "{A41885EE-5422-461B-9152-12EB44C40D85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator.Core", "GB.Emulator.Core\GB.Emulator.Core.csproj", "{A41885EE-5422-461B-9152-12EB44C40D85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Emulator.Tests", "GB.Emulator.Tests\GB.Emulator.Tests.csproj", "{9F6FFEEE-DA7B-4D07-9F9D-0C87C1992723}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator.Tests", "GB.Emulator.Tests\GB.Emulator.Tests.csproj", "{9F6FFEEE-DA7B-4D07-9F9D-0C87C1992723}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{69CE0A88-E96E-4C60-A6D8-348BAFD6BFE2}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

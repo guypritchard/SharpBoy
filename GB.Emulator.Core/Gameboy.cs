@@ -17,7 +17,7 @@ namespace GB.Emulator.Core
             this.cpu = new Cpu(this.memory, this.video);
         }
 
-        public void Load(Cartridge cartridge)
+        public void Execute(Cartridge cartridge)
         {
             this.Execute(cartridge.Data);
         }
