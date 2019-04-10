@@ -27,6 +27,7 @@ namespace GB.Emulator.Core
             this.P2 = p2;
 
             this.Action(this.P1, this.P2);
+
             Cpu.Registers.PC = (ushort)(Cpu.Registers.PC + this.Length);
         }
 

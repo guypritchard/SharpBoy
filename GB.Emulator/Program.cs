@@ -10,7 +10,7 @@ namespace GB.Emulator
         {
             var gameboy = new Gameboy();
 
-            gameboy.Execute(await CartridgeLoader.Load(@"Tetris.gb"));
+            gameboy.Execute(await CartridgeLoader.Load(@"sprite.gb"));
         }
     }
 }

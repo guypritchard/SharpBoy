@@ -2,6 +2,6 @@
 {
     public class Roms
     {
-        public const string TetrisRom = @"TestData\Tetris.gb";
+        public const string TestRom = @"TestData\Sprite.gb";
     }
 }

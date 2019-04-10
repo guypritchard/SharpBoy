@@ -15,7 +15,7 @@ namespace GB.Emulator.Tests
         {
             var gameboy = new Gameboy();
 
-            gameboy.Execute(await CartridgeLoader.Load(Roms.TetrisRom));
+            gameboy.Execute(await CartridgeLoader.Load(Roms.TestRom));
         }
     }
 }

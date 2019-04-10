@@ -11,8 +11,8 @@ namespace GB.Emulator.Tests
         [TestMethod]
         public async Task LoadCartridge_Succeeded()
         {
-            Cartridge cart = await CartridgeLoader.Load(Roms.TetrisRom);
-            Assert.AreEqual("TETRIS", cart.Header.Title);
+            Cartridge cart = await CartridgeLoader.Load(Roms.TestRom);
+            Assert.AreEqual("sprite", cart.Header.Title);
             Assert.AreEqual(CartridgeType.RomOnly, cart.Header.CartridgeType);
         }
     }

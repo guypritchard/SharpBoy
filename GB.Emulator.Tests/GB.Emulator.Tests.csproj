@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="TestData\SPRITE.GB">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\Tetris.gb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

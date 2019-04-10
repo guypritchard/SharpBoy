@@ -60,6 +60,13 @@ namespace GB.Emulator.Core
                 },
                 3)
             },
+            {
+                0x31, new Instruction(0x31, $"LD SP, 0x{Cpu.Registers.SP:x}", (p1, p2) =>
+                {
+                    Cpu.Registers.SP = ByteOp.Concat(p1, p2);
+                },
+                3)
+            },
             { 0x76, new Instruction(0x76, "HALT", (p1, p2) => { Environment.Exit(-1); }, 1)},
             { 0xA8, new Instruction(0xA8, "XOR B", (p1, p2) =>
                 {
@@ -113,7 +120,10 @@ namespace GB.Emulator.Core
                 {
                     Cpu.Registers.PC = ByteOp.Concat(p1, p2);
                 },
-                3)
+                0)
+            },
+            {
+                0xF3, new Instruction(0xF3, "DI", (p1, p2) => { }, 1)
             }
         };
         private readonly Memory memory;
