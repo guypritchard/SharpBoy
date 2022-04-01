@@ -8,7 +8,11 @@
             {
                 get
                 {
-                    return ByteOp.BitSet(Cpu.Registers.Flags, 7);
+                    return ByteOp.BitGet(Cpu.Registers.Flags, 7);
+                }
+                set 
+                {
+                  Cpu.Registers.Flags = ByteOp.BitSet(Cpu.Registers.Flags, 7, value);
                 }
             }
 
@@ -16,7 +20,11 @@
             {
                 get
                 {
-                    return ByteOp.BitSet(Cpu.Registers.Flags, 6);
+                    return ByteOp.BitGet(Cpu.Registers.Flags, 6);
+                }
+                set 
+                {
+                  Cpu.Registers.Flags = ByteOp.BitSet(Cpu.Registers.Flags, 6, value);
                 }
             }
 
@@ -24,7 +32,11 @@
             {
                 get
                 {
-                    return ByteOp.BitSet(Cpu.Registers.Flags, 5);
+                    return ByteOp.BitGet(Cpu.Registers.Flags, 5);
+                }
+                set 
+                {
+                  Cpu.Registers.Flags = ByteOp.BitSet(Cpu.Registers.Flags, 5, value);
                 }
             }
 
@@ -32,7 +44,7 @@
             {
                 get
                 {
-                    return ByteOp.BitSet(Cpu.Registers.Flags, 4);
+                    return ByteOp.BitGet(Cpu.Registers.Flags, 4);
                 }
             }
 
@@ -40,21 +52,21 @@
             {
                 get
                 {
-                    return ByteOp.BitSet(Cpu.Registers.Flags, 3);
+                    return ByteOp.BitGet(Cpu.Registers.Flags, 3);
                 }
             }
             public static bool _2
             {
                 get
                 {
-                    return ByteOp.BitSet(Cpu.Registers.Flags, 2);
+                    return ByteOp.BitGet(Cpu.Registers.Flags, 2);
                 }
             }
             public static bool _1
             {
                 get
                 {
-                    return ByteOp.BitSet(Cpu.Registers.Flags, 1);
+                    return ByteOp.BitGet(Cpu.Registers.Flags, 1);
                 }
             }
 
@@ -62,7 +74,7 @@
             {
                 get
                 {
-                    return ByteOp.BitSet(Cpu.Registers.Flags, 0);
+                    return ByteOp.BitGet(Cpu.Registers.Flags, 0);
                 }
             }
         }
@@ -71,13 +83,10 @@
         {
             public static byte A;
             public static byte F;
-
             public static byte B;
             public static byte C;
-
             public static byte D;
             public static byte E = 0xD8;
-
             public static byte H = 0xFF;
             public static byte L = 0xE2;
 

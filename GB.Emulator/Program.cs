@@ -10,7 +10,7 @@ namespace GB.Emulator
         {
             var gameboy = new Gameboy();
 
-            gameboy.Execute(await CartridgeLoader.Load(@"sprite.gb"));
+            gameboy.Execute(await CartridgeLoader.Load(@"../GB.Roms/SPRITE.GB"));
         }
     }
 }

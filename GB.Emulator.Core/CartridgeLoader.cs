@@ -22,7 +22,7 @@ namespace GB.Emulator.Core
             }
             catch (IOException e)
             {
-                throw new CartridgeLoadException($"Unable to load cartrige '{fileName}'", e);
+                throw new CartridgeLoadException($"Unable to load cartridge '{fileName}'", e);
             }
         }
 

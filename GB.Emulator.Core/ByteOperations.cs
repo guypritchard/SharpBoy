@@ -20,9 +20,18 @@ namespace GB.Emulator.Core
             o2 = (byte)(p1);
         }
 
-        public static bool BitSet(byte p1, int bitNumber)
+        public static bool BitGet(byte p1, int bitNumber)
         {
             return ((p1 << bitNumber) & 1) == 1;
+        }
+
+        public static byte BitSet(byte p1, int bitNumber, bool value)
+        {
+          if (value) {
+            return (byte)(p1 | bitNumber);
+          }
+
+          return (byte)(p1 & ~bitNumber); 
         }
     }
 }

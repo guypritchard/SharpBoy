@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace GB.Emulator.Core
+﻿namespace GB.Emulator.Core
 {
     public class Gameboy
     {
