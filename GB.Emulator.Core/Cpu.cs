@@ -53,19 +53,21 @@ namespace GB.Emulator.Core
         return instructions[instruction];
       }
 
-      throw new ArgumentOutOfRangeException($"0x{instruction.ToString("X2")} not implemented at 0x{Cpu.Registers.PC:X4}.");
+      throw new ArgumentOutOfRangeException($"0x{instruction.ToString("X2")} not implemented at {Cpu.Registers.PC:X4}.");
     }
 
     public Dictionary<byte, Instruction> instructions = new Dictionary<byte, Instruction>()
         {
 
-            { 0x00, new Instruction(0x0, "NOP", (p1, p2) => { }, 1) },
+            { 0x00, new Instruction(0x00, "NOP", (p1, p2) => { }, 1) },
             { 0x05, new Instruction(0x05, "DEC B", (p1, p2) => Cpu.Registers.B = Cpu.Operations.Decrement(Cpu.Registers.B), 1)},
             { 0x06, new Instruction(0x06, "LD B", (p1, p2) => { Cpu.Registers.B = p1; }, 2) },
             { 0x0D, new Instruction(0x0D, "DEC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Decrement(Cpu.Registers.C), 1)},
             { 0x0C, new Instruction(0x0C, "INC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Increment(Cpu.Registers.C), 1)},
             { 0x0E, new Instruction(0x0E, "LD C", (p1, p2) => { Cpu.Registers.C = p1;}, 2) },
             { 0x10, new Instruction(0x10, "STOP", (p1, p2) => { Environment.Exit(-1); }, 1)},
+            { 0x15, new Instruction(0x15, "DEC D", (p1, p2) => Cpu.Registers.D = Cpu.Operations.Decrement(Cpu.Registers.D), 1)},
+            { 0x1D, new Instruction(0x1D, "DEC E", (p1, p2) => Cpu.Registers.E = Cpu.Operations.Decrement(Cpu.Registers.E), 1)},
             { 0x20, new Instruction(0x20, "JR NZ", (p1, p2) =>
               {
                 if (Cpu.Flags.Z == false) {
@@ -75,20 +77,21 @@ namespace GB.Emulator.Core
               },
               2)
             },
-            { 0x21, new Instruction(0x21, $"LD(HL)", (p1, p2) =>
+            { 0x21, new Instruction(0x21, "LD(HL)", (p1, p2) =>
               {
                   Cpu.Registers.H = p2;
                   Cpu.Registers.L = p1;
               },
               3)
             },
-            { 0x22, new Instruction(0x22, $"LD(HL+)A", (p1, p2) =>
+            { 0x22, new Instruction(0x22, "LD(HL+)A", (p1, p2) =>
               {
                   Cpu.Memory.Write(Cpu.Registers.A, Cpu.Registers.HL);
                   Cpu.Registers.HL++;
               },
               1)
             },
+            { 0x25, new Instruction(0x25, "DEC H", (p1, p2) => Cpu.Registers.H = Cpu.Operations.Decrement(Cpu.Registers.H), 1)},
             { 0x2A, new Instruction(0x2A, "LD A(HL+)", (p1, p2) =>
               {
                 var memory = Memory.Read(Cpu.Registers.HL);
@@ -97,7 +100,8 @@ namespace GB.Emulator.Core
               },
               1)
             },
-            { 0x31, new Instruction(0x31, $"LD(SP)", (p1, p2) =>
+            { 0x2D, new Instruction(0x2D, "DEC L", (p1, p2) => Cpu.Registers.L = Cpu.Operations.Decrement(Cpu.Registers.L), 1)},
+            { 0x31, new Instruction(0x31, "LD(SP)", (p1, p2) =>
               {
                   Cpu.Registers.SP = ByteOp.Concat(p1, p2);
               },
@@ -110,6 +114,7 @@ namespace GB.Emulator.Core
               },
               1)
             },
+            { 0x3D, new Instruction(0x3D, "DEC A", (p1, p2) => Cpu.Registers.A = Cpu.Operations.Decrement(Cpu.Registers.A), 1)},
             { 0x76, new Instruction(0x76, "HALT", (p1, p2) => { Environment.Exit(-1); }, 1)},
             { 0xA8, new Instruction(0xA8, "XOR B", (p1, p2) =>
                 {
@@ -192,15 +197,12 @@ namespace GB.Emulator.Core
             1
             )
             },
-            {
-              0xEA, new Instruction(0xEA, $"LD A", (p1, p2) => {
+            { 0xEA, new Instruction(0xEA, "LD A", (p1, p2) => {
                 Cpu.Memory.Write(Cpu.Registers.A, ByteOp.Concat(p1, p2));
               },
               3)
             },
-            {
-                0xF3, new Instruction(0xF3, "DI", (p1, p2) => { }, 1)
-            }
+            { 0xF3, new Instruction(0xF3, "DI", (p1, p2) => { }, 1)}
         };
     public readonly Video video;
   }
