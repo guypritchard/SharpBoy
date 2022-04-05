@@ -77,6 +77,10 @@
                     return ByteOp.BitGet(Cpu.Registers.Flags, 0);
                 }
             }
+
+            public static string Dump() {
+              return $"Flags:{Cpu.Registers.Flags:X}\tZ:{Z}\tN:{N}\tH:{H}\t";
+            }
         }
 
         public static class Registers
@@ -107,6 +111,10 @@
             /// Program Counter.
             /// </summary>
             public static ushort PC = 0x100;
+
+            public static string Dump() {
+              return $"PC:{PC:X4}\tSP:{SP:X4}\tHL:{HL:X4}\tA:{A:X2}\tB:{B:X2}\tC:{C:X2}\tD:{D:X2}";
+            }
         }
     }
 }

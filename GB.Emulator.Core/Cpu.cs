@@ -29,8 +29,18 @@ namespace GB.Emulator.Core
           }
         }
       }
+      catch (ArgumentOutOfRangeException aore) {
+        Trace.WriteLine(Cpu.Registers.Dump());
+        Trace.WriteLine(Cpu.Flags.Dump());
+        Trace.WriteLine(aore.Message);
+        throw;
+      }
       catch (Exception e)
       {
+        Instruction instruction = GetInstruction(data[Cpu.Registers.PC]);
+        Trace.WriteLine(instruction.Disassemble());
+        Trace.WriteLine(Cpu.Registers.Dump());
+        Trace.WriteLine(Cpu.Flags.Dump());
         Trace.WriteLine(e.Message);
         throw;
       }
@@ -43,37 +53,24 @@ namespace GB.Emulator.Core
         return instructions[instruction];
       }
 
-      throw new ArgumentOutOfRangeException($"0x{instruction.ToString("X2")} not implemented.");
+      throw new ArgumentOutOfRangeException($"0x{instruction.ToString("X2")} not implemented at 0x{Cpu.Registers.PC:X4}.");
     }
 
     public Dictionary<byte, Instruction> instructions = new Dictionary<byte, Instruction>()
         {
 
             { 0x00, new Instruction(0x0, "NOP", (p1, p2) => { }, 1) },
-            { 0x05, new Instruction(0x05, "DEC B", (p1, p2) => 
-              {
-                // This is a subtract operation so set the 'subtract' flag.
-                Cpu.Flags.N = true;
-
-                // Set the half carry flag if we're going to 'carry the one' from the ones to the tens unit in hex.
-                Cpu.Flags.H = (Cpu.Registers.B & 0x0F) == 0;
-                
-                Cpu.Registers.B -= 1;
-
-                // Set the 'zero' flag if the value is indeed now zero.
-                Cpu.Flags.Z = Cpu.Registers.B == 0;
-              },
-              1) 
-            },
-            { 0x06, new Instruction(0x06, "LD C", (p1, p2) => { Cpu.Registers.C = p1; }, 2) },
-            { 0x0E, new Instruction(0x0E, "LD D", (p1, p2) => { Cpu.Registers.D = p1;}, 2) },
+            { 0x05, new Instruction(0x05, "DEC B", (p1, p2) => Cpu.Registers.B = Cpu.Operations.Decrement(Cpu.Registers.B), 1)},
+            { 0x06, new Instruction(0x06, "LD B", (p1, p2) => { Cpu.Registers.B = p1; }, 2) },
+            { 0x0D, new Instruction(0x0D, "DEC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Decrement(Cpu.Registers.C), 1)},
+            { 0x0C, new Instruction(0x0C, "INC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Increment(Cpu.Registers.C), 1)},
+            { 0x0E, new Instruction(0x0E, "LD C", (p1, p2) => { Cpu.Registers.C = p1;}, 2) },
             { 0x10, new Instruction(0x10, "STOP", (p1, p2) => { Environment.Exit(-1); }, 1)},
             { 0x20, new Instruction(0x20, "JR NZ", (p1, p2) =>
               {
                 if (Cpu.Flags.Z == false) {
-                  // Convert to signed 8 bit value.
-                  var offset = (ushort)((p1 > 0x7F) ? p1 - 0xFF : p1);
-                  Cpu.Registers.PC += offset;
+                  Cpu.Registers.PC += (ushort)(ByteOp.ToSignedByte(p1));
+                  return;
                 }
               },
               2)
@@ -85,13 +82,28 @@ namespace GB.Emulator.Core
               },
               3)
             },
-            {0x31, new Instruction(0x31, $"LD(SP)", (p1, p2) =>
+            { 0x22, new Instruction(0x22, $"LD(HL+)A", (p1, p2) =>
+              {
+                  Cpu.Memory.Write(Cpu.Registers.A, Cpu.Registers.HL);
+                  Cpu.Registers.HL++;
+              },
+              1)
+            },
+            { 0x2A, new Instruction(0x2A, "LD A(HL+)", (p1, p2) =>
+              {
+                var memory = Memory.Read(Cpu.Registers.HL);
+                ByteOp.Split(memory, out Registers.A, out Registers.A);
+                Cpu.Registers.HL++;
+              },
+              1)
+            },
+            { 0x31, new Instruction(0x31, $"LD(SP)", (p1, p2) =>
               {
                   Cpu.Registers.SP = ByteOp.Concat(p1, p2);
               },
               3)
             },
-            { 0x32, new Instruction(0x32, "LD(HL-),A", (p1, p2) => 
+            { 0x32, new Instruction(0x32, "LD(HL-)A", (p1, p2) => 
               {
                 Cpu.Memory.Write(Cpu.Registers.A, Cpu.Registers.HL);
                 Cpu.Registers.HL--;
@@ -147,12 +159,38 @@ namespace GB.Emulator.Core
                 },
                 1)
             },
-            { 0xC3, new Instruction(0xC3, $"JP", (p1, p2) =>
+            { 0xC3, new Instruction(0xC3, "JP", (p1, p2) =>
               {
                   Cpu.Registers.PC = ByteOp.Concat(p1, p2);
               },
               3, 
               false)
+            },
+            { 0xC9, new Instruction(0xC9, "RET", (p1, p2)=> {
+              // Pop the previous PC value from the stack and write it to the Program Counter to return to where we were before the CALL instruction.
+              Trace.WriteLine(Cpu.Registers.Dump());
+              Cpu.Registers.PC = Cpu.Memory.Read(Cpu.Registers.SP);
+              Cpu.Registers.SP -= 2;
+              Trace.WriteLine(Cpu.Registers.Dump());
+            }, 1, false)},
+            { 0xCD, new Instruction(0xCD, "CALL", (p1, p2) => {
+              
+              Trace.WriteLine(Cpu.Registers.Dump());
+              // Write the current Program Counter to the SP register location - we'll come back here later - we're calling a function now.
+              Cpu.Registers.SP -= 2;
+              Cpu.Memory.Write(Cpu.Registers.PC += 3, Cpu.Registers.SP);
+              // Set the Program Counter to be the location of the 'function' we're calling. 
+              Cpu.Registers.PC = ByteOp.Concat(p1, p2);
+              Trace.WriteLine(Cpu.Registers.Dump());
+            }, 
+            3, 
+            false)},
+            { 0xE2, new Instruction(0xE2, "LD C A", (p1, p2) =>
+              {
+                Cpu.Memory.Write(Cpu.Registers.A, Cpu.Registers.C);
+              },
+            1
+            )
             },
             {
               0xEA, new Instruction(0xEA, $"LD A", (p1, p2) => {

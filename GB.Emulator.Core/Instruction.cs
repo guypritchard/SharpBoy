@@ -28,7 +28,7 @@ namespace GB.Emulator.Core
       this.P1 = p1;
       this.P2 = p2; ;
 
-      Trace.WriteLine(this.Disassemble());
+      // Trace.WriteLine(this.Disassemble());
       this.Action(this.P1, this.P2);
 
       if (this.IncrementPc)
