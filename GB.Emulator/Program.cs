@@ -9,8 +9,9 @@ namespace GB.Emulator
         public static async Task Main(string[] args)
         {
             var gameboy = new Gameboy();
+            var cartridge = await CartridgeLoader.Load(@"..\..\..\..\GB.Roms\Sprite.gb");
 
-            gameboy.Execute(await CartridgeLoader.Load(@"../GB.Roms/SPRITE.GB"));
+            gameboy.Execute(cartridge);
         }
     }
 }

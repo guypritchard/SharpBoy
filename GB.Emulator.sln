@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27428.2043
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator", "GB.Emulator\GB.Emulator.csproj", "{6685661C-B856-4DF8-9F66-96F8CF1171A3}"
 EndProject
@@ -11,7 +11,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator.Tests", "GB.Emu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{69CE0A88-E96E-4C60-A6D8-348BAFD6BFE2}"
 	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
 		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GB.Roms", "GB.Roms", "{2BB139DB-1EE5-4BFA-A92C-D222BAAD8150}"
+	ProjectSection(SolutionItems) = preProject
+		GB.Roms\PUZZLE.GB = GB.Roms\PUZZLE.GB
+		GB.Roms\RPN.GB = GB.Roms\RPN.GB
+		GB.Roms\SOUND.GB = GB.Roms\SOUND.GB
+		GB.Roms\SPACE.GB = GB.Roms\SPACE.GB
+		GB.Roms\SPRITE.GB = GB.Roms\SPRITE.GB
+		GB.Roms\TEST.GB = GB.Roms\TEST.GB
 	EndProjectSection
 EndProject
 Global

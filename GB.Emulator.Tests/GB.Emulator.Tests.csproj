@@ -16,13 +16,4 @@
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="TestData\SPRITE.GB">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="TestData\Tetris.gb">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

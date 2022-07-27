@@ -46,6 +46,10 @@
                 {
                     return ByteOp.BitGet(Cpu.Registers.Flags, 4);
                 }
+                set
+                {
+                    Cpu.Registers.Flags = ByteOp.BitSet(Cpu.Registers.Flags, 4, value);
+                }
             }
 
             public static bool _3

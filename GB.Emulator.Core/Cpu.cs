@@ -62,8 +62,8 @@ namespace GB.Emulator.Core
             { 0x00, new Instruction(0x00, "NOP", (p1, p2) => { }, 1) },
             { 0x05, new Instruction(0x05, "DEC B", (p1, p2) => Cpu.Registers.B = Cpu.Operations.Decrement(Cpu.Registers.B), 1)},
             { 0x06, new Instruction(0x06, "LD B", (p1, p2) => { Cpu.Registers.B = p1; }, 2) },
-            { 0x0D, new Instruction(0x0D, "DEC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Decrement(Cpu.Registers.C), 1)},
             { 0x0C, new Instruction(0x0C, "INC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Increment(Cpu.Registers.C), 1)},
+            { 0x0D, new Instruction(0x0D, "DEC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Decrement(Cpu.Registers.C), 1)},
             { 0x0E, new Instruction(0x0E, "LD C", (p1, p2) => { Cpu.Registers.C = p1;}, 2) },
             { 0x10, new Instruction(0x10, "STOP", (p1, p2) => { Environment.Exit(-1); }, 1)},
             { 0x15, new Instruction(0x15, "DEC D", (p1, p2) => Cpu.Registers.D = Cpu.Operations.Decrement(Cpu.Registers.D), 1)},
@@ -94,7 +94,7 @@ namespace GB.Emulator.Core
             { 0x25, new Instruction(0x25, "DEC H", (p1, p2) => Cpu.Registers.H = Cpu.Operations.Decrement(Cpu.Registers.H), 1)},
             { 0x2A, new Instruction(0x2A, "LD A(HL+)", (p1, p2) =>
               {
-                var memory = Memory.Read(Cpu.Registers.HL);
+                var memory = Memory.Read16(Cpu.Registers.HL);
                 ByteOp.Split(memory, out Registers.A, out Registers.A);
                 Cpu.Registers.HL++;
               },
@@ -115,7 +115,14 @@ namespace GB.Emulator.Core
               1)
             },
             { 0x3D, new Instruction(0x3D, "DEC A", (p1, p2) => Cpu.Registers.A = Cpu.Operations.Decrement(Cpu.Registers.A), 1)},
+            { 0x3E, new Instruction(0xEA, "LD A, d8", (p1, p2) => {
+                Cpu.Registers.A = p1;
+              },
+              2)
+            },
+            { 0x43, new Instruction(0x3D, "LD B, E", (p1, p2) => Cpu.Registers.B = Cpu.Registers.E, 1)},
             { 0x76, new Instruction(0x76, "HALT", (p1, p2) => { Environment.Exit(-1); }, 1)},
+            { 0x87, new Instruction(0x76, "ADD A, A", (p1, p2) => { Cpu.Registers.A = Cpu.Operations.Add(Cpu.Registers.A, Cpu.Registers.A); }, 1) },
             { 0xA8, new Instruction(0xA8, "XOR B", (p1, p2) =>
                 {
                     Cpu.Registers.B = 0x0;
@@ -174,7 +181,7 @@ namespace GB.Emulator.Core
             { 0xC9, new Instruction(0xC9, "RET", (p1, p2)=> {
               // Pop the previous PC value from the stack and write it to the Program Counter to return to where we were before the CALL instruction.
               Trace.WriteLine(Cpu.Registers.Dump());
-              Cpu.Registers.PC = Cpu.Memory.Read(Cpu.Registers.SP);
+              Cpu.Registers.PC = Cpu.Memory.Read16(Cpu.Registers.SP);
               Cpu.Registers.SP -= 2;
               Trace.WriteLine(Cpu.Registers.Dump());
             }, 1, false)},
@@ -190,6 +197,11 @@ namespace GB.Emulator.Core
             }, 
             3, 
             false)},
+            { 0xE0, new Instruction(0xEA, "LD (a8), A", (p1, p2) => {
+                Cpu.Memory.Write(Cpu.Registers.A, p1);
+              },
+              2)
+            },
             { 0xE2, new Instruction(0xE2, "LD C A", (p1, p2) =>
               {
                 Cpu.Memory.Write(Cpu.Registers.A, Cpu.Registers.C);
@@ -201,6 +213,11 @@ namespace GB.Emulator.Core
                 Cpu.Memory.Write(Cpu.Registers.A, ByteOp.Concat(p1, p2));
               },
               3)
+            },
+            { 0xF0, new Instruction(0xEA, "LD A, (a8)", (p1, p2) => {
+                Cpu.Registers.A = Cpu.Memory.Read8(p1);
+                },
+              2)
             },
             { 0xF3, new Instruction(0xF3, "DI", (p1, p2) => { }, 1)}
         };
