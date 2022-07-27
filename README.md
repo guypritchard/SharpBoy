@@ -1,9 +1,9 @@
 # SharpBoy
+[![.NET](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml)
+
 A basic Gameboy emulator.
 
 > This is an early work in progress.  
-
-[![.NET](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml)
 
 ## Implementation Reference Docs:
 
