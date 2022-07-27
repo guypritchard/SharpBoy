@@ -2,6 +2,6 @@
 {
     public class Roms
     {
-        public const string TestRom = @"../../../../GB.Roms/Sprite.gb";
+        public const string TestRom = @"../../../../GB.Roms/SPRITE.GB";
     }
 }
