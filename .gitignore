@@ -331,3 +331,4 @@ ASALocalRun/
 
 #Roms
 *.gb
+!GB.Roms/*.gb
