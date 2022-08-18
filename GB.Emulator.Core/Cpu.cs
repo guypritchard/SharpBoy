@@ -53,7 +53,7 @@ namespace GB.Emulator.Core
         return instructions[instruction];
       }
 
-      throw new ArgumentOutOfRangeException($"0x{instruction.ToString("X2")} not implemented at {Cpu.Registers.PC:X4}.");
+      throw new NotImplementedException($"0x{instruction.ToString("X2")} not implemented at 0x{Cpu.Registers.PC:X4}.");
     }
 
     public Dictionary<byte, Instruction> instructions = new Dictionary<byte, Instruction>()
