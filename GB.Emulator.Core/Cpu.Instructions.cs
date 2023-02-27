@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Security.Cryptography;
 
 namespace GB.Emulator.Core
 {
@@ -43,7 +44,7 @@ namespace GB.Emulator.Core
                 0x22,
                 new Instruction(0x22, "LD(HL+)A", (p1, p2) =>
                 {
-                    Cpu.Memory.Write(Cpu.Registers.A, Cpu.Registers.HL);
+                    Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
                     Cpu.Registers.HL++;
                 },
               1)
@@ -72,7 +73,7 @@ namespace GB.Emulator.Core
                 0x32,
                 new Instruction(0x32, "LD(HL-)A", (p1, p2) =>
                 {
-                    Cpu.Memory.Write(Cpu.Registers.A, Cpu.Registers.HL);
+                    Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
                     Cpu.Registers.HL--;
                 },
               1)
@@ -178,7 +179,7 @@ namespace GB.Emulator.Core
                     Trace.WriteLine(Cpu.Registers.Dump());
                     // Write the current Program Counter to the SP register location - we'll come back here later - we're calling a function now.
                     Cpu.Registers.SP -= 2;
-                    Cpu.Memory.Write(Cpu.Registers.PC += 3, Cpu.Registers.SP);
+                    Cpu.Memory.Write16(Cpu.Registers.PC += 3, Cpu.Registers.SP);
                     // Set the Program Counter to be the location of the 'function' we're calling. 
                     Cpu.Registers.PC = ByteOp.Concat(p1, p2);
                     Trace.WriteLine(Cpu.Registers.Dump());
@@ -187,9 +188,27 @@ namespace GB.Emulator.Core
             false)
             },
             {
+                0xD0,
+                new Instruction (0xD0, "RET NC", (p1, p2) =>
+                {
+                    if (Cpu.Flags.C == false)
+                    {
+                        // Pop the SP value back onto the PC.
+                        Trace.WriteLine(Cpu.Registers.Dump());
+                        Cpu.Registers.PC = Cpu.Memory.Read16(Cpu.Registers.SP);
+                        Cpu.Registers.SP += 2;
+                        Trace.WriteLine(Cpu.Registers.Dump());
+                    }
+                    else
+                    {
+                        Cpu.Registers.PC += 1;
+                    }
+                }, 1, false)
+            },
+            {
                 0xE0,
                 new Instruction(0xEA, "LD (a8), A", (p1, p2) => {
-                    Cpu.Memory.Write(Cpu.Registers.A, p1);
+                    Cpu.Memory.Write8(Cpu.Registers.A, p1);
                 },
               2)
             },
@@ -197,7 +216,8 @@ namespace GB.Emulator.Core
                 0xE2,
                 new Instruction(0xE2, "LD C A", (p1, p2) =>
                 {
-                    Cpu.Memory.Write(Cpu.Registers.A, Cpu.Registers.C);
+                    ushort memory = (ushort) (Cpu.Registers.C + 0xFF00);
+                    Cpu.Memory.Write8(Cpu.Registers.A, memory);
                 },
             1
             )
@@ -205,18 +225,40 @@ namespace GB.Emulator.Core
             {
                 0xEA,
                 new Instruction(0xEA, "LD A", (p1, p2) => {
-                    Cpu.Memory.Write(Cpu.Registers.A, ByteOp.Concat(p1, p2));
+                    Cpu.Memory.Write8(Cpu.Registers.A, ByteOp.Concat(p1, p2));
+                    Cpu.Memory.Write8(Cpu.Registers.A, ByteOp.Concat(p1, p2));
                 },
               3)
             },
             {
                 0xF0,
                 new Instruction(0xEA, "LD A, (a8)", (p1, p2) => {
-                    Cpu.Registers.A = Cpu.Memory.Read8(p1);
+                    Cpu.Registers.A = Cpu.Memory.Read8((byte)(0xFF00 + p1));
                 },
               2)
             },
-            { 0xF3, new Instruction(0xF3, "DI", (p1, p2) => { }, 1) }
+            {
+                0xF3,
+                new Instruction(0xF3, "DI", (p1, p2) => { }, 1)
+            },
+            {
+                0xF5,
+                new Instruction(0xF5, "PUSH AF", (p1, p2) => {
+                    Cpu.Registers.SP -= 1;
+                    Cpu.memory.Write8(Cpu.Registers.A, Cpu.Registers.SP);
+                    Cpu.Registers.SP -= 1;
+                    Cpu.memory.Write8(Cpu.Registers.F, Cpu.Registers.SP);
+                    Cpu.Registers.SP -= 2;
+                },
+                1)
+            },
+            {
+                0xFE,
+                new Instruction(0xFE, "CP d8", (p1, p2) => {
+                    Cpu.Flags.Z = Cpu.Registers.A == p1;
+                },
+              2)
+            },
         };
     }
 }

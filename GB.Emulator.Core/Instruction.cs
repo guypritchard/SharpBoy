@@ -23,12 +23,17 @@ namespace GB.Emulator.Core
 
     private byte P2 { get; set; }
 
-    public void Execute(byte p1, byte p2)
+        public override string ToString()
+        {
+            return Name;
+        }
+
+        public void Execute(byte p1, byte p2)
     {
       this.P1 = p1;
-      this.P2 = p2; ;
+      this.P2 = p2;
 
-      // Trace.WriteLine(this.Disassemble());
+      Trace.WriteLine(this.Disassemble());
       this.Action(this.P1, this.P2);
 
       if (this.IncrementPc)
@@ -46,10 +51,10 @@ namespace GB.Emulator.Core
 
       if (this.Length == 2)
       {
-        return $"ROM0:{Cpu.Registers.PC:X4}\t0x{this.Value:X2}\t{this.Name}, 0x{this.P1:X2}\t\t{this.Length}";
+        return $"ROM0:{Cpu.Registers.PC:X4}\t0x{this.Value:X2}\t{this.Name}, 0x{this.P1:X2}\t\t\t{this.Length}";
       }
 
-      return $"ROM0:{Cpu.Registers.PC:X4}\t0x{this.Value:X2}\t{this.Name}, 0x{ByteOp.Concat(this.P1, this.P2):X2}\t\t{this.Length}";
+      return $"ROM0:{Cpu.Registers.PC:X4}\t0x{this.Value:X2}\t{this.Name}, 0x{ByteOp.Concat(this.P1, this.P2):X2}\t\t\t{this.Length}";
     }
   }
 }

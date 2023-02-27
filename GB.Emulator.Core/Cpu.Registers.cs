@@ -83,7 +83,7 @@
             }
 
             public static string Dump() {
-              return $"Flags:{Cpu.Registers.Flags:X}\tZ:{Z}\tN:{N}\tH:{H}\t";
+              return $"Flags:{Cpu.Registers.Flags:X}\tZ:{Z}\tN:{N}\tH:{H}\tC:{C}\t";
             }
         }
 

@@ -13,3 +13,4 @@ A basic Gameboy emulator.
 - http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 - http://gameboy.mongenel.com/dmg/lesson1.html
 - http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
+- http://www.codeslinger.co.uk/pages/projects/gameboy.html
