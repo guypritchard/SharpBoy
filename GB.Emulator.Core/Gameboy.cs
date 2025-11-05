@@ -1,4 +1,4 @@
-﻿using GB.Emulator.Core.InputOutput;
+using GB.Emulator.Core.InputOutput;
 
 namespace GB.Emulator.Core
 {
@@ -21,10 +21,10 @@ namespace GB.Emulator.Core
             this.ramBank1 = new Ram("RAM0", 0xA000, 0xBFFF);
             this.ramBank2 = new Ram("RAM1", 0xC000, 0xCFFF);
             this.ramBank3 = new Ram("RAM2", 0xD000, 0xDFFF);
-            
+
             this.memory = new MemoryMap(
-                lcd, 
-                this.spriteTileManager, 
+                lcd,
+                this.spriteTileManager,
                 this.backgroundTileManager,
                 this.ramBank1,
                 this.ramBank2,

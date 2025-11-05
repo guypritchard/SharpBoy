@@ -1,4 +1,4 @@
-﻿using GB.Emulator.Core.InputOutput;
+using GB.Emulator.Core.InputOutput;
 using System;
 using System.Drawing;
 
@@ -8,14 +8,20 @@ namespace GB.Emulator.Core
     {
         public Video(Lcd lcd)
         {
+            if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1))
+            {
+                throw new PlatformNotSupportedException("Video rendering requires Windows 7 or later.");
+            }
+
             this.lcd = lcd;
+            this.frame = new Bitmap(Video.Width, Video.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
         }
 
         private const int Width = 160;
         private const int Height = 144;
         private readonly Lcd lcd;
-        private byte[] memory = new byte[Video.Width * Video.Height];
-        private Bitmap frame = new Bitmap(Video.Width, Video.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        private readonly byte[] memory = new byte[Video.Width * Video.Height];
+        private readonly Bitmap frame;
 
         public void Step()
         {

@@ -36,10 +36,10 @@ namespace GB.Emulator.Core
                     this.memory[location] = value;
                 }
             }
-            catch (IndexOutOfRangeException iore)
+            catch (IndexOutOfRangeException)
             {
                 Trace.WriteLine($"Error writing {location:X2}:{value}");
-                throw iore;
+                throw;
             }
         }
 
@@ -58,10 +58,10 @@ namespace GB.Emulator.Core
                     device.Write8((ushort)(location + 1), high);
                 }
             }
-            catch (IndexOutOfRangeException iore)
+            catch (IndexOutOfRangeException)
             {
                 Trace.WriteLine($"Error writing {location:X2}:{value}");
-                throw iore;
+                throw;
             }
         }
 
@@ -72,10 +72,10 @@ namespace GB.Emulator.Core
                 var b2 = ByteOp.Concat(this.memory[location + 1], this.memory[location]);
                 return b2;
             }
-            catch (IndexOutOfRangeException iore)
+            catch (IndexOutOfRangeException)
             {
                 Trace.WriteLine($"Error reading {location:X2}");
-                throw iore;
+                throw;
             }
         }
 
@@ -99,10 +99,10 @@ namespace GB.Emulator.Core
 
                 throw new NotImplementedException("Aint nobody handling this memory location for reading.");
             }
-            catch (IndexOutOfRangeException iore)
+            catch (IndexOutOfRangeException)
             {
                 Trace.WriteLine($"Error reading {location:X2}");
-                throw iore;
+                throw;
             }
         }
     }

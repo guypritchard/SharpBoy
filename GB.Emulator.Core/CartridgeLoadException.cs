@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Serialization;
 
 namespace GB.Emulator.Core
 {
@@ -17,8 +16,5 @@ namespace GB.Emulator.Core
         {
         }
 
-        protected CartridgeLoadException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }
