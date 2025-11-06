@@ -1,3 +1,7 @@
+﻿#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using GB.Emulator.Core.InputOutput;
 
 namespace GB.Emulator.Core
@@ -12,6 +16,8 @@ namespace GB.Emulator.Core
         private readonly Ram ramBank1;
         private readonly Ram ramBank2;
         private readonly Ram ramBank3;
+        private Cartridge? cartridge;
+        private byte[] romData = Array.Empty<byte>();
 
         public Gameboy()
         {
@@ -33,14 +39,115 @@ namespace GB.Emulator.Core
             this.cpu = new Cpu(this.memory, this.video);
         }
 
-        public void Execute(Cartridge cartridge)
+        public Cpu Cpu => this.cpu;
+
+        public MemoryMap Memory => this.memory;
+
+        public Cartridge? Cartridge => this.cartridge;
+
+        public void Load(Cartridge newCartridge)
         {
-            this.Execute(cartridge.Data);
+            this.cartridge = newCartridge;
+            this.romData = newCartridge.Data;
+            this.Reset();
         }
 
-        private void Execute(byte[] code)
+        public void Reset()
         {
-            this.cpu.Execute(code);
+            this.memory.Reset();
+            Cpu.Registers.Reset();
+        }
+
+        public void Execute(Cartridge newCartridge)
+        {
+            this.Load(newCartridge);
+            this.ExecuteLoadedRom();
+        }
+
+        public void ExecuteLoadedRom()
+        {
+            if (this.romData.Length == 0)
+            {
+                throw new InvalidOperationException("A cartridge must be loaded before executing.");
+            }
+
+            this.cpu.Execute(this.romData);
+        }
+
+        public CpuStepResult Step()
+        {
+            if (this.romData.Length == 0)
+            {
+                throw new InvalidOperationException("A cartridge must be loaded before stepping.");
+            }
+
+            return this.cpu.ExecuteNextInstruction(this.romData);
+        }
+
+        public IReadOnlyList<CpuStepResult> GetInstructionWindow(int instructionsBefore, int instructionsAfter)
+        {
+            if (this.romData.Length == 0)
+            {
+                return Array.Empty<CpuStepResult>();
+            }
+
+            var queue = new Queue<CpuStepResult>();
+            int address = 0;
+            CpuStepResult? current = null;
+
+            while (address < this.romData.Length)
+            {
+                CpuStepResult decoded = this.cpu.DecodeInstruction(this.romData, (ushort)address);
+                queue.Enqueue(decoded);
+                if (queue.Count > instructionsBefore + 1)
+                {
+                    queue.Dequeue();
+                }
+
+                int length = decoded.Instruction.Length;
+                if (length <= 0)
+                {
+                    length = 1;
+                }
+
+                address += length;
+
+                if (decoded.Address == Cpu.Registers.PC)
+                {
+                    current = decoded;
+                    break;
+                }
+            }
+
+            if (current == null)
+            {
+                return Array.Empty<CpuStepResult>();
+            }
+
+            var window = queue.ToList();
+
+            int nextLength = current.Instruction.Length;
+            if (nextLength <= 0)
+            {
+                nextLength = 1;
+            }
+
+            int nextAddress = current.Address + nextLength;
+
+            for (int i = 0; i < instructionsAfter && nextAddress < this.romData.Length; i++)
+            {
+                CpuStepResult next = this.cpu.DecodeInstruction(this.romData, (ushort)nextAddress);
+                window.Add(next);
+                int length = next.Instruction.Length;
+                if (length <= 0)
+                {
+                    length = 1;
+                }
+
+                nextAddress += length;
+            }
+
+            return window;
         }
     }
 }

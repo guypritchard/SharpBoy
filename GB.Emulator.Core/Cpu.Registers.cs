@@ -119,6 +119,21 @@
             public static string Dump() {
               return $"PC:{PC:X4}\tSP:{SP:X4}\tHL:{HL:X4}\tA:{A:X2}\tB:{B:X2}\tC:{C:X2}\tD:{D:X2}";
             }
+
+            public static void Reset()
+            {
+                A = 0x00;
+                F = 0x00;
+                B = 0x00;
+                C = 0x00;
+                D = 0x00;
+                E = 0xD8;
+                H = 0xFF;
+                L = 0xE2;
+                Flags = 0x00;
+                SP = 0xCFF5;
+                PC = 0x0100;
+            }
         }
     }
 }

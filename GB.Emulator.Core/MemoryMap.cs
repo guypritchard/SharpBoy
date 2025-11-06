@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using GB.Emulator.Core.InputOutput;
@@ -9,6 +10,7 @@ namespace GB.Emulator.Core
     {
         private readonly byte[] memory;
         private readonly IMemoryRange[] devices;
+        private readonly HashSet<ushort> recentWrites = new();
 
         public MemoryMap(params IMemoryRange[] devices)
         {
@@ -35,6 +37,8 @@ namespace GB.Emulator.Core
                     // The device doesn't support writing yet...
                     this.memory[location] = value;
                 }
+
+                this.recentWrites.Add(location);
             }
             catch (IndexOutOfRangeException)
             {
@@ -50,6 +54,8 @@ namespace GB.Emulator.Core
                 ByteOp.Split(value, out byte low, out byte high);
                 this.memory[location] = low;
                 this.memory[location + 1] = high;
+                this.recentWrites.Add(location);
+                this.recentWrites.Add((ushort)(location + 1));
 
                 var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
                 if (device != null)
@@ -104,6 +110,41 @@ namespace GB.Emulator.Core
                 Trace.WriteLine($"Error reading {location:X2}");
                 throw;
             }
+        }
+
+        public void Reset()
+        {
+            Array.Clear(this.memory, 0, this.memory.Length);
+            this.recentWrites.Clear();
+        }
+
+        public byte Peek(ushort address)
+        {
+            if (address >= this.memory.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(address));
+            }
+
+            return this.memory[address];
+        }
+
+        public byte[] Snapshot()
+        {
+            var copy = new byte[this.memory.Length];
+            Array.Copy(this.memory, copy, copy.Length);
+            return copy;
+        }
+
+        internal IReadOnlyCollection<ushort> ConsumeRecentWrites()
+        {
+            if (this.recentWrites.Count == 0)
+            {
+                return Array.Empty<ushort>();
+            }
+
+            ushort[] snapshot = this.recentWrites.ToArray();
+            this.recentWrites.Clear();
+            return snapshot;
         }
     }
 }

@@ -24,33 +24,37 @@ namespace GB.Emulator.Core
             }
             public static byte Increment(byte value)
             {
-                byte local = value;
+                byte result = (byte)(value + 1);
 
                 // This is not a subtract operation so set the 'subtract' flag to false.
                 Cpu.Flags.N = false;
 
-                local += 1;
+                // Half-carry occurs when the low nibble wraps.
+                Cpu.Flags.H = (value & 0x0F) == 0x0F;
 
                 // Set the 'zero' flag if the value is indeed now zero.
-                Cpu.Flags.Z = local == 0;
+                Cpu.Flags.Z = result == 0;
 
-                return local;
+                return result;
             }
             public static byte Add(byte value1, byte value2)
             {
-                byte local = value1;
+                int result = value1 + value2;
+                byte sum = (byte)result;
 
                 // This is not a subtract operation so set the 'subtract' flag to false.
                 Cpu.Flags.N = false;
 
-                int result = value1 + value2;
+                // Carry occurs when the result exceeds 8 bits.
+                Cpu.Flags.C = result > 0xFF;
 
-                Cpu.Flags.C = (result & 0xFF00) == 0;
+                // Half-carry occurs when the low nibble wraps.
+                Cpu.Flags.H = ((value1 & 0x0F) + (value2 & 0x0F)) > 0x0F;
 
                 // Set the 'zero' flag if the value is indeed now zero.
-                Cpu.Flags.Z = local == 0;
+                Cpu.Flags.Z = sum == 0;
 
-                return local;
+                return sum;
             }
         }
     }
