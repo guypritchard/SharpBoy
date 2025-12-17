@@ -35,12 +35,16 @@ partial class DebuggerForm
         this.statusLabel = new System.Windows.Forms.Label();
         this.sidebarPanel = new System.Windows.Forms.Panel();
         this.stackGroupBox = new System.Windows.Forms.GroupBox();
+        this.stackLegendLabel = new System.Windows.Forms.Label();
         this.stackListBox = new System.Windows.Forms.ListBox();
         this.registersGroupBox = new System.Windows.Forms.GroupBox();
         this.registerTable = new System.Windows.Forms.TableLayoutPanel();
         this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
+        this.codePanel = new System.Windows.Forms.Panel();
         this.codeListBox = new System.Windows.Forms.ListBox();
+        this.codeLegendLabel = new System.Windows.Forms.Label();
         this.memoryGroupBox = new System.Windows.Forms.GroupBox();
+        this.memoryLegendLabel = new System.Windows.Forms.Label();
         this.memoryListBox = new System.Windows.Forms.ListBox();
         this.openRomDialog = new System.Windows.Forms.OpenFileDialog();
         this.toolbarPanel.SuspendLayout();
@@ -51,6 +55,7 @@ partial class DebuggerForm
         this.mainSplitContainer.Panel1.SuspendLayout();
         this.mainSplitContainer.Panel2.SuspendLayout();
         this.mainSplitContainer.SuspendLayout();
+        this.codePanel.SuspendLayout();
         this.memoryGroupBox.SuspendLayout();
         this.SuspendLayout();
         // 
@@ -60,11 +65,12 @@ partial class DebuggerForm
         this.toolbarPanel.Controls.Add(this.loadButton);
         this.toolbarPanel.Controls.Add(this.stepButton);
         this.toolbarPanel.Controls.Add(this.resetButton);
+        this.toolbarPanel.Controls.Add(this.statusLabel);
         this.toolbarPanel.Dock = System.Windows.Forms.DockStyle.Top;
         this.toolbarPanel.Location = new System.Drawing.Point(0, 0);
         this.toolbarPanel.Name = "toolbarPanel";
-        this.toolbarPanel.Padding = new System.Windows.Forms.Padding(10);
-        this.toolbarPanel.Size = new System.Drawing.Size(1000, 50);
+        this.toolbarPanel.Padding = new System.Windows.Forms.Padding(10, 10, 10, 6);
+        this.toolbarPanel.Size = new System.Drawing.Size(1000, 44);
         this.toolbarPanel.TabIndex = 0;
         // 
         // loadButton
@@ -102,11 +108,11 @@ partial class DebuggerForm
         // 
         // statusLabel
         // 
-        this.statusLabel.Dock = System.Windows.Forms.DockStyle.Top;
-        this.statusLabel.Location = new System.Drawing.Point(0, 50);
+        this.statusLabel.AutoSize = true;
         this.statusLabel.Name = "statusLabel";
-        this.statusLabel.Padding = new System.Windows.Forms.Padding(12, 0, 12, 8);
-        this.statusLabel.Size = new System.Drawing.Size(1000, 28);
+        this.statusLabel.Padding = new System.Windows.Forms.Padding(8, 4, 8, 4);
+        this.statusLabel.Margin = new System.Windows.Forms.Padding(18, 6, 0, 0);
+        this.statusLabel.Size = new System.Drawing.Size(156, 28);
         this.statusLabel.TabIndex = 1;
         this.statusLabel.Text = "No cartridge loaded.";
         // 
@@ -115,7 +121,7 @@ partial class DebuggerForm
         this.sidebarPanel.Controls.Add(this.stackGroupBox);
         this.sidebarPanel.Controls.Add(this.registersGroupBox);
         this.sidebarPanel.Dock = System.Windows.Forms.DockStyle.Left;
-        this.sidebarPanel.Location = new System.Drawing.Point(0, 78);
+        this.sidebarPanel.Location = new System.Drawing.Point(0, 44);
         this.sidebarPanel.Name = "sidebarPanel";
         this.sidebarPanel.Padding = new System.Windows.Forms.Padding(0, 0, 4, 0);
         this.sidebarPanel.Size = new System.Drawing.Size(280, 522);
@@ -124,6 +130,7 @@ partial class DebuggerForm
         // stackGroupBox
         // 
         this.stackGroupBox.Controls.Add(this.stackListBox);
+        this.stackGroupBox.Controls.Add(this.stackLegendLabel);
         this.stackGroupBox.Dock = System.Windows.Forms.DockStyle.Fill;
         this.stackGroupBox.Location = new System.Drawing.Point(0, 238);
         this.stackGroupBox.Name = "stackGroupBox";
@@ -133,13 +140,25 @@ partial class DebuggerForm
         this.stackGroupBox.TabStop = false;
         this.stackGroupBox.Text = "Stack";
         // 
+        // stackLegendLabel
+        // 
+        this.stackLegendLabel.AutoSize = true;
+        this.stackLegendLabel.Dock = System.Windows.Forms.DockStyle.Top;
+        this.stackLegendLabel.ForeColor = System.Drawing.SystemColors.GrayText;
+        this.stackLegendLabel.Location = new System.Drawing.Point(12, 27);
+        this.stackLegendLabel.Name = "stackLegendLabel";
+        this.stackLegendLabel.Padding = new System.Windows.Forms.Padding(0, 0, 0, 6);
+        this.stackLegendLabel.Size = new System.Drawing.Size(231, 46);
+        this.stackLegendLabel.TabIndex = 1;
+        this.stackLegendLabel.Text = "Top entry (->) is the word at SP.\r\nShows used stack; values are 16-bit little-endian.";
+        // 
         // stackListBox
         // 
         this.stackListBox.Dock = System.Windows.Forms.DockStyle.Fill;
         this.stackListBox.Font = new System.Drawing.Font("Consolas", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
         this.stackListBox.FormattingEnabled = true;
         this.stackListBox.ItemHeight = 20;
-        this.stackListBox.Location = new System.Drawing.Point(12, 27);
+        this.stackListBox.Location = new System.Drawing.Point(12, 73);
         this.stackListBox.Name = "stackListBox";
         this.stackListBox.Size = new System.Drawing.Size(252, 245);
         this.stackListBox.TabIndex = 0;
@@ -174,20 +193,30 @@ partial class DebuggerForm
         // mainSplitContainer
         // 
         this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
-        this.mainSplitContainer.Location = new System.Drawing.Point(280, 78);
+        this.mainSplitContainer.Location = new System.Drawing.Point(0, 0);
         this.mainSplitContainer.Name = "mainSplitContainer";
-        this.mainSplitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
+        this.mainSplitContainer.Orientation = System.Windows.Forms.Orientation.Vertical;
         // 
         // mainSplitContainer.Panel1
         // 
-        this.mainSplitContainer.Panel1.Controls.Add(this.codeListBox);
+        this.mainSplitContainer.Panel1.Controls.Add(this.codePanel);
         // 
         // mainSplitContainer.Panel2
         // 
         this.mainSplitContainer.Panel2.Controls.Add(this.memoryGroupBox);
         this.mainSplitContainer.Size = new System.Drawing.Size(720, 522);
-        this.mainSplitContainer.SplitterDistance = 260;
+        this.mainSplitContainer.SplitterDistance = 420;
         this.mainSplitContainer.TabIndex = 4;
+        // 
+        // codePanel
+        // 
+        this.codePanel.Controls.Add(this.codeListBox);
+        this.codePanel.Controls.Add(this.codeLegendLabel);
+        this.codePanel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.codePanel.Location = new System.Drawing.Point(0, 0);
+        this.codePanel.Name = "codePanel";
+        this.codePanel.Size = new System.Drawing.Size(420, 522);
+        this.codePanel.TabIndex = 1;
         // 
         // codeListBox
         // 
@@ -195,14 +224,26 @@ partial class DebuggerForm
         this.codeListBox.Font = new System.Drawing.Font("Consolas", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
         this.codeListBox.FormattingEnabled = true;
         this.codeListBox.ItemHeight = 20;
-        this.codeListBox.Location = new System.Drawing.Point(0, 0);
+        this.codeListBox.Location = new System.Drawing.Point(0, 38);
         this.codeListBox.Name = "codeListBox";
         this.codeListBox.Size = new System.Drawing.Size(720, 260);
         this.codeListBox.TabIndex = 0;
         // 
+        // codeLegendLabel
+        // 
+        this.codeLegendLabel.Dock = System.Windows.Forms.DockStyle.Top;
+        this.codeLegendLabel.ForeColor = System.Drawing.SystemColors.GrayText;
+        this.codeLegendLabel.Location = new System.Drawing.Point(0, 0);
+        this.codeLegendLabel.Name = "codeLegendLabel";
+        this.codeLegendLabel.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
+        this.codeLegendLabel.Size = new System.Drawing.Size(720, 38);
+        this.codeLegendLabel.TabIndex = 1;
+        this.codeLegendLabel.Text = "Disassembly around the current PC; \">\" marks the instruction at PC.";
+        // 
         // memoryGroupBox
         // 
         this.memoryGroupBox.Controls.Add(this.memoryListBox);
+        this.memoryGroupBox.Controls.Add(this.memoryLegendLabel);
         this.memoryGroupBox.Dock = System.Windows.Forms.DockStyle.Fill;
         this.memoryGroupBox.Location = new System.Drawing.Point(0, 0);
         this.memoryGroupBox.Name = "memoryGroupBox";
@@ -212,13 +253,26 @@ partial class DebuggerForm
         this.memoryGroupBox.TabStop = false;
         this.memoryGroupBox.Text = "Memory";
         // 
+        // memoryLegendLabel
+        // 
+        this.memoryLegendLabel.AutoSize = true;
+        this.memoryLegendLabel.Dock = System.Windows.Forms.DockStyle.Top;
+        this.memoryLegendLabel.ForeColor = System.Drawing.SystemColors.GrayText;
+        this.memoryLegendLabel.Location = new System.Drawing.Point(12, 27);
+        this.memoryLegendLabel.Name = "memoryLegendLabel";
+        this.memoryLegendLabel.Padding = new System.Windows.Forms.Padding(0, 0, 0, 6);
+        this.memoryLegendLabel.Size = new System.Drawing.Size(308, 46);
+        this.memoryLegendLabel.TabIndex = 1;
+        this.memoryLegendLabel.Text = "Legend: \">\" row contains the current PC; \"*\" means\r\nthe row had a write and \"r\" m" +
+"eans a read in the last step. Addresses/bytes are hex.";
+        // 
         // memoryListBox
         // 
         this.memoryListBox.Dock = System.Windows.Forms.DockStyle.Fill;
         this.memoryListBox.Font = new System.Drawing.Font("Consolas", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
         this.memoryListBox.FormattingEnabled = true;
         this.memoryListBox.ItemHeight = 20;
-        this.memoryListBox.Location = new System.Drawing.Point(12, 27);
+        this.memoryListBox.Location = new System.Drawing.Point(12, 73);
         this.memoryListBox.Name = "memoryListBox";
         this.memoryListBox.Size = new System.Drawing.Size(696, 219);
         this.memoryListBox.TabIndex = 0;
@@ -235,10 +289,10 @@ partial class DebuggerForm
         this.ClientSize = new System.Drawing.Size(1000, 600);
         this.Controls.Add(this.mainSplitContainer);
         this.Controls.Add(this.sidebarPanel);
-        this.Controls.Add(this.statusLabel);
         this.Controls.Add(this.toolbarPanel);
         this.MinimumSize = new System.Drawing.Size(840, 540);
         this.Name = "DebuggerForm";
+        this.KeyPreview = true;
         this.Text = "SharpBoy Debugger";
         this.toolbarPanel.ResumeLayout(false);
         this.toolbarPanel.PerformLayout();
@@ -251,6 +305,7 @@ partial class DebuggerForm
         this.mainSplitContainer.Panel2.ResumeLayout(false);
         ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).EndInit();
         this.mainSplitContainer.ResumeLayout(false);
+        this.codePanel.ResumeLayout(false);
         this.memoryGroupBox.ResumeLayout(false);
         this.ResumeLayout(false);
         this.PerformLayout();
@@ -268,10 +323,14 @@ partial class DebuggerForm
     private System.Windows.Forms.GroupBox registersGroupBox;
     private System.Windows.Forms.TableLayoutPanel registerTable;
     private System.Windows.Forms.GroupBox stackGroupBox;
+    private System.Windows.Forms.Label stackLegendLabel;
     private System.Windows.Forms.ListBox stackListBox;
     private System.Windows.Forms.SplitContainer mainSplitContainer;
+    private System.Windows.Forms.Panel codePanel;
     private System.Windows.Forms.ListBox codeListBox;
+    private System.Windows.Forms.Label codeLegendLabel;
     private System.Windows.Forms.GroupBox memoryGroupBox;
+    private System.Windows.Forms.Label memoryLegendLabel;
     private System.Windows.Forms.ListBox memoryListBox;
     private System.Windows.Forms.OpenFileDialog openRomDialog;
 }

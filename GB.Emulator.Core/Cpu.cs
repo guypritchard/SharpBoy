@@ -95,8 +95,9 @@ namespace GB.Emulator.Core
             this.video.Step();
 
             IReadOnlyCollection<ushort> writes = memory.ConsumeRecentWrites();
+            IReadOnlyCollection<ushort> reads = memory.ConsumeRecentReads();
 
-            return new CpuStepResult(instruction, (ushort)pc, parameter1, parameter2, writes);
+            return new CpuStepResult(instruction, (ushort)pc, parameter1, parameter2, writes, reads);
         }
 
         private void HandleExecutionFailure(ArgumentOutOfRangeException exception)

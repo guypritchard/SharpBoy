@@ -10,7 +10,7 @@
       "request": "launch",
       "preLaunchTask": "build",
       // If you have changed target frameworks, make sure to update the program path.
-      "program": "${workspaceFolder}/GB.Emulator/bin/Debug/net6.0/GB.Emulator.dll",
+      "program": "${workspaceFolder}/GB.Debugger/bin/Debug/net8.0-windows/GB.Debugger.exe",
       "args": [],
       "cwd": "${workspaceFolder}/GB.Emulator",
       // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

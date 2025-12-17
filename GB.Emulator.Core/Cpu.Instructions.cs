@@ -81,14 +81,20 @@ namespace GB.Emulator.Core
             { 0x3D, new Instruction(0x3D, "DEC A", (p1, p2) => Cpu.Registers.A = Cpu.Operations.Decrement(Cpu.Registers.A), 1) },
             {
                 0x3E,
-                new Instruction(0xEA, "LD A, d8", (p1, p2) => {
+                new Instruction(0x3E, "LD A, d8", (p1, p2) => {
                     Cpu.Registers.A = p1;
                 },
               2)
             },
-            { 0x43, new Instruction(0x3D, "LD B, E", (p1, p2) => Cpu.Registers.B = Cpu.Registers.E, 1) },
+            { 0x43, new Instruction(0x43, "LD B, E", (p1, p2) => Cpu.Registers.B = Cpu.Registers.E, 1) },
             { 0x76, new Instruction(0x76, "HALT", (p1, p2) => { Environment.Exit(-1); }, 1) },
-            { 0x87, new Instruction(0x76, "ADD A, A", (p1, p2) => { Cpu.Registers.A = Cpu.Operations.Add(Cpu.Registers.A, Cpu.Registers.A); }, 1) },
+            { 0x87, new Instruction(0x87, "ADD A, A", (p1, p2) => { Cpu.Registers.A = Cpu.Operations.Add(Cpu.Registers.A, Cpu.Registers.A); }, 1) },
+            {
+                0x97,
+                new Instruction(0x97, "SUB A, A", (p1, p2) => {
+                    Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.A);
+                }, 1)
+            },
             {
                 0xA8,
                 new Instruction(0xA8, "XOR B", (p1, p2) =>
@@ -207,8 +213,9 @@ namespace GB.Emulator.Core
             },
             {
                 0xE0,
-                new Instruction(0xEA, "LD (a8), A", (p1, p2) => {
-                    Cpu.Memory.Write8(Cpu.Registers.A, p1);
+                new Instruction(0xE0, "LD (a8), A", (p1, p2) => {
+                    ushort memory = (ushort) (p1 + 0xFF00);
+                    Cpu.Memory.Write8(Cpu.Registers.A, memory);
                 },
               2)
             },
@@ -232,7 +239,7 @@ namespace GB.Emulator.Core
             },
             {
                 0xF0,
-                new Instruction(0xEA, "LD A, (a8)", (p1, p2) => {
+                new Instruction(0xF0, "LD A, (a8)", (p1, p2) => {
                     Cpu.Registers.A = Cpu.Memory.Read8((byte)(0xFF00 + p1));
                 },
               2)

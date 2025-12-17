@@ -56,6 +56,26 @@ namespace GB.Emulator.Core
 
                 return sum;
             }
+
+            public static byte Subtract(byte value1, byte value2)
+            {
+                int result = value1 - value2;
+                byte difference = (byte)result;
+
+                // This is a subtract operation so set the 'subtract' flag.
+                Cpu.Flags.N = true;
+
+                // Carry occurs when we go below zero.
+                Cpu.Flags.C = result < 0;
+
+                // Half-carry occurs when we borrow from the upper nibble.
+                Cpu.Flags.H = (value1 & 0x0F) < (value2 & 0x0F);
+
+                // Set the 'zero' flag if the value is indeed now zero.
+                Cpu.Flags.Z = difference == 0;
+
+                return difference;
+            }
         }
     }
 }

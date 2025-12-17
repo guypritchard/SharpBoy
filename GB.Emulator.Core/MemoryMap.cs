@@ -9,19 +9,39 @@ namespace GB.Emulator.Core
     public class MemoryMap
     {
         private readonly byte[] memory;
-        private readonly IMemoryRange[] devices;
+        private readonly List<IMemoryRange> devices;
         private readonly HashSet<ushort> recentWrites = new();
+        private readonly HashSet<ushort> recentReads = new();
 
         public MemoryMap(params IMemoryRange[] devices)
         {
-            this.memory = new byte[ushort.MaxValue];
-            this.devices = devices;
+            this.memory = new byte[ushort.MaxValue + 1];
+            this.devices = new List<IMemoryRange>(devices);
+        }
+
+        public void AddDevice(IMemoryRange device)
+        {
+            this.devices.Add(device);
+        }
+
+        public void LoadRom(byte[] romData)
+        {
+            // Drop any previously loaded ROM device so the new one wins for 0x0000.
+            this.devices.RemoveAll(d => d is Rom);
+
+            int copyLength = Math.Min(romData.Length, this.memory.Length);
+            Array.Copy(romData, 0, this.memory, 0, copyLength);
+
+            // Insert at the front so reads hit ROM before any overlapping devices.
+            this.devices.Insert(0, new Rom("ROM0", romData));
         }
 
         public void Write8(byte value, ushort location)
         {
             try
             {
+                this.memory[location] = value;
+
                 var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
                 if (device == null)
                 {
@@ -52,17 +72,8 @@ namespace GB.Emulator.Core
             try
             {
                 ByteOp.Split(value, out byte low, out byte high);
-                this.memory[location] = low;
-                this.memory[location + 1] = high;
-                this.recentWrites.Add(location);
-                this.recentWrites.Add((ushort)(location + 1));
-
-                var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
-                if (device != null)
-                {
-                    device.Write8(location, low);
-                    device.Write8((ushort)(location + 1), high);
-                }
+                this.Write8(low, location);
+                this.Write8(high, (ushort)(location + 1));
             }
             catch (IndexOutOfRangeException)
             {
@@ -75,8 +86,9 @@ namespace GB.Emulator.Core
         {
             try
             {
-                var b2 = ByteOp.Concat(this.memory[location + 1], this.memory[location]);
-                return b2;
+                byte high = this.Read8((ushort)(location + 1));
+                byte low = this.Read8(location);
+                return ByteOp.Concat(high, low);
             }
             catch (IndexOutOfRangeException)
             {
@@ -85,16 +97,19 @@ namespace GB.Emulator.Core
             }
         }
 
-        public byte Read8(byte location)
+        public byte Read8(ushort location)
         {
             try
             {
                 var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
+                this.recentReads.Add(location);
                 if (device != null)
                 {
                     try
                     {
-                        return device.Read8(location);
+                        byte value = device.Read8(location);
+                        this.memory[location] = value;
+                        return value;
                     }
                     catch (NotImplementedException)
                     {
@@ -116,6 +131,7 @@ namespace GB.Emulator.Core
         {
             Array.Clear(this.memory, 0, this.memory.Length);
             this.recentWrites.Clear();
+            this.recentReads.Clear();
         }
 
         public byte Peek(ushort address)
@@ -144,6 +160,18 @@ namespace GB.Emulator.Core
 
             ushort[] snapshot = this.recentWrites.ToArray();
             this.recentWrites.Clear();
+            return snapshot;
+        }
+
+        internal IReadOnlyCollection<ushort> ConsumeRecentReads()
+        {
+            if (this.recentReads.Count == 0)
+            {
+                return Array.Empty<ushort>();
+            }
+
+            ushort[] snapshot = this.recentReads.ToArray();
+            this.recentReads.Clear();
             return snapshot;
         }
     }

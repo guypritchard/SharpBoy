@@ -109,7 +109,7 @@
             /// <summary>
             /// Stack pointer.
             /// </summary>
-            public static ushort SP = 0xCFF5;
+            public static ushort SP = 0xFFFE;
 
             /// <summary>
             /// Program Counter.
@@ -131,7 +131,7 @@
                 H = 0xFF;
                 L = 0xE2;
                 Flags = 0x00;
-                SP = 0xCFF5;
+                SP = 0xFFFE;
                 PC = 0x0100;
             }
         }

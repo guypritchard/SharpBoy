@@ -17,7 +17,9 @@ public partial class DebuggerForm : Form
 
     private readonly Gameboy gameboy = new();
     private readonly HashSet<ushort> recentWrites = new();
+    private readonly HashSet<ushort> recentReads = new();
     private readonly Dictionary<string, Label> registerLabels = new(StringComparer.Ordinal);
+    private ushort stackStartPointer = Cpu.Registers.SP;
     private Cartridge? cartridge;
     private string? romPath;
 
@@ -53,6 +55,8 @@ public partial class DebuggerForm : Form
             this.romPath = this.openRomDialog.FileName;
 
             this.recentWrites.Clear();
+            this.recentReads.Clear();
+            this.stackStartPointer = Cpu.Registers.SP;
             this.RefreshDebuggerViews();
             this.UpdateButtons(enableStep: true);
 
@@ -81,6 +85,8 @@ public partial class DebuggerForm : Form
 
         this.gameboy.Load(this.cartridge);
         this.recentWrites.Clear();
+        this.recentReads.Clear();
+        this.stackStartPointer = Cpu.Registers.SP;
         this.RefreshDebuggerViews();
         this.UpdateButtons(enableStep: true);
     }
@@ -102,9 +108,19 @@ public partial class DebuggerForm : Form
         {
             CpuStepResult result = this.gameboy.Step();
             this.recentWrites.Clear();
+            this.recentReads.Clear();
             foreach (ushort address in result.WrittenAddresses)
             {
                 this.recentWrites.Add(address);
+            }
+            foreach (ushort address in result.ReadAddresses)
+            {
+                this.recentReads.Add(address);
+            }
+
+            if (result.Instruction.Value is 0x31 or 0xF9 or 0xE8)
+            {
+                this.stackStartPointer = Cpu.Registers.SP;
             }
 
             this.RefreshDebuggerViews();
@@ -112,6 +128,7 @@ public partial class DebuggerForm : Form
         catch (ArgumentOutOfRangeException)
         {
             this.recentWrites.Clear();
+            this.recentReads.Clear();
             this.RefreshDebuggerViews();
             MessageBox.Show(
                 this,
@@ -124,6 +141,7 @@ public partial class DebuggerForm : Form
         catch (Exception ex)
         {
             this.recentWrites.Clear();
+            this.recentReads.Clear();
             this.RefreshDebuggerViews();
             MessageBox.Show(
                 this,
@@ -239,7 +257,10 @@ public partial class DebuggerForm : Form
         }
 
         ushort sp = Cpu.Registers.SP;
-        for (int index = 0; index < StackEntryCount; index++)
+        ushort upperBound = this.stackStartPointer >= sp ? this.stackStartPointer : sp;
+        int wordCount = (upperBound - sp) / 2 + 1;
+
+        for (int index = 0; index < wordCount; index++)
         {
             int address = sp + (index * 2);
             if (address >= memorySnapshot.Length)
@@ -278,10 +299,12 @@ public partial class DebuggerForm : Form
         {
             bool isPcRow = Cpu.Registers.PC >= address && Cpu.Registers.PC < address + MemoryBytesPerRow;
             bool hasRecentWrite = this.recentWrites.Any(write => write >= address && write < address + MemoryBytesPerRow);
+            bool hasRecentRead = this.recentReads.Any(read => read >= address && read < address + MemoryBytesPerRow);
 
-            var builder = new StringBuilder(14 + MemoryBytesPerRow * 3);
+            var builder = new StringBuilder(15 + MemoryBytesPerRow * 3);
             builder.Append(isPcRow ? '>' : ' ');
             builder.Append(hasRecentWrite ? '*' : ' ');
+            builder.Append(hasRecentRead ? 'r' : ' ');
             builder.Append(' ');
             builder.Append($"0x{address:X4}:");
 
@@ -355,5 +378,20 @@ public partial class DebuggerForm : Form
         bool hasCartridge = this.cartridge != null;
         this.stepButton.Enabled = hasCartridge && enableStep;
         this.resetButton.Enabled = hasCartridge;
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.F10)
+        {
+            if (this.stepButton.Enabled)
+            {
+                this.OnStepClicked(this.stepButton, EventArgs.Empty);
+            }
+
+            return true;
+        }
+
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 }
