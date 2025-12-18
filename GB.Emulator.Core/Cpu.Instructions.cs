@@ -230,6 +230,13 @@ namespace GB.Emulator.Core
             )
             },
             {
+                0xE8,
+                new Instruction(0xE8, "ADD SP, d8", (p1, p2) => {
+                    Cpu.Registers.SP += (ushort)(sbyte)p1;
+                },
+                2)
+            },
+            {
                 0xEA,
                 new Instruction(0xEA, "LD A", (p1, p2) => {
                     Cpu.Memory.Write8(Cpu.Registers.A, ByteOp.Concat(p1, p2));

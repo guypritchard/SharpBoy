@@ -17,6 +17,7 @@ namespace GB.Emulator.Core
         private readonly Ram ramBank2;
         private readonly Ram ramBank3;
         private readonly Ram internalRam;
+        private readonly Ram io;
         private readonly Interrupt interrupt;
         private Cartridge? cartridge;
         private byte[] romData = Array.Empty<byte>();
@@ -30,6 +31,7 @@ namespace GB.Emulator.Core
             this.ramBank2 = new Ram("RAM1", 0xC000, 0xCFFF);
             this.ramBank3 = new Ram("RAM2", 0xD000, 0xDFFF);
             this.internalRam = new Ram("Internal RAM", 0xFF80, 0xFFFE);
+            this.io = new Ram("I/O", 0xFF00, 0xFF4C);
             this.interrupt = new Interrupt();
 
             this.memory = new MemoryMap(
@@ -40,6 +42,7 @@ namespace GB.Emulator.Core
                 this.ramBank2,
                 this.ramBank3,
                 this.internalRam,
+                this.io,
                 this.interrupt);
             this.video = new Video(lcd);
             this.cpu = new Cpu(this.memory, this.video);
