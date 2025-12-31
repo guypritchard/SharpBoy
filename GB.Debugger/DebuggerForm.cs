@@ -172,6 +172,9 @@ public partial class DebuggerForm : Form
             ("E", "0x00"),
             ("H", "0x00"),
             ("L", "0x00"),
+            ("LY", "0x00"),
+            ("IF", "0x00"),
+            ("IE", "0x00"),
             ("Flags", "0x00"),
             ("FlagZ", "0"),
             ("FlagN", "0"),
@@ -268,6 +271,9 @@ public partial class DebuggerForm : Form
         this.registerLabels["E"].Text = $"0x{Cpu.Registers.E:X2}";
         this.registerLabels["H"].Text = $"0x{Cpu.Registers.H:X2}";
         this.registerLabels["L"].Text = $"0x{Cpu.Registers.L:X2}";
+        this.registerLabels["LY"].Text = $"0x{this.gameboy.Memory.Read8(0xFF44):X2}";
+        this.registerLabels["IF"].Text = $"0x{this.gameboy.Memory.Read8(0xFF0F):X2}";
+        this.registerLabels["IE"].Text = $"0x{this.gameboy.Memory.Read8(0xFFFF):X2}";
         this.registerLabels["Flags"].Text = $"0x{Cpu.Registers.Flags:X2}";
         this.registerLabels["FlagZ"].Text = Cpu.Flags.Z ? "1" : "0";
         this.registerLabels["FlagN"].Text = Cpu.Flags.N ? "1" : "0";

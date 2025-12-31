@@ -45,11 +45,50 @@ namespace GB.Emulator.Core
 
             if (Instruction.Length == 2)
             {
-                return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{Instruction.Name}, 0x{Operand1:X2}\t\t{Instruction.Length}";
+                string operand = $"0x{Operand1:X2}";
+                if (Instruction.Value is 0xE0 or 0xF0)
+                {
+                    ushort address = (ushort)(0xFF00 + Operand1);
+                    string? label = GetIoLabel(address);
+                    if (label != null)
+                    {
+                        if (Instruction.Value == 0xE0)
+                        {
+                            return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\tLD ({label}), A\t\t{Instruction.Length}";
+                        }
+
+                        return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\tLD A, ({label})\t\t{Instruction.Length}";
+                    }
+                }
+
+                return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{Instruction.Name}, {operand}\t\t{Instruction.Length}";
             }
 
             ushort immediate = ByteOp.Concat(Operand1, Operand2);
-            return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{Instruction.Name}, 0x{immediate:X2}\t\t{Instruction.Length}";
+            string immediateOperand = $"0x{immediate:X2}";
+            string? immediateLabel = GetIoLabel(immediate);
+            if (immediateLabel != null)
+            {
+                if (Instruction.Value == 0xEA)
+                {
+                    return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\tLD ({immediateLabel}), A\t\t{Instruction.Length}";
+                }
+
+                immediateOperand = $"0x{immediate:X2} ({immediateLabel})";
+            }
+
+            return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{Instruction.Name}, {immediateOperand}\t\t{Instruction.Length}";
+        }
+
+        private static string? GetIoLabel(ushort address)
+        {
+            return address switch
+            {
+                0xFF44 => "LY",
+                0xFF0F => "IF",
+                0xFFFF => "IE",
+                _ => null
+            };
         }
     }
 }

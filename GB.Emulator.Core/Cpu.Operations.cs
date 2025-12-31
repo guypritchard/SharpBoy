@@ -69,6 +69,11 @@ namespace GB.Emulator.Core
                 return sum;
             }
 
+            public static ushort Add(ushort value1, ushort value2)
+            {
+                return (ushort)(value1 + value2);
+            }
+
             public static byte Or(byte value1, byte value2)
             {
                 byte result = (byte)(value1 | value2);

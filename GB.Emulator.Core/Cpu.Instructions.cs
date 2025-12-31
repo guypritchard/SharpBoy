@@ -93,6 +93,10 @@ namespace GB.Emulator.Core
                 Cpu.Registers.A = p1;
             }),
             Instr(0x43, "LD B, E", 1, (p1, p2) => Cpu.Registers.B = Cpu.Registers.E),
+            Instr(0x44, "LD B, H", 1, (p1, p2) => Cpu.Registers.B = Cpu.Registers.H),
+            Instr(0x4D, "LD C, L", 1, (p1, p2) => Cpu.Registers.C = Cpu.Registers.L),
+            Instr(0x54, "LD D, H", 1, (p1, p2) => Cpu.Registers.D = Cpu.Registers.H),
+            Instr(0x5D, "LD E, L", 1, (p1, p2) => Cpu.Registers.E = Cpu.Registers.L),
             Instr(0x5F, "LD E, A", 1, (p1, p2) => Cpu.Registers.E = Cpu.Registers.A),
             Instr(0x66, "LD H, (HL)", 1, (p1, p2) =>
             {
@@ -143,6 +147,10 @@ namespace GB.Emulator.Core
 
         private static readonly KeyValuePair<byte, Instruction>[] AddInstructions = new[]
         {
+            Instr(0x29, "ADD HL HL", 1, (p1, p2) =>
+            {
+                Cpu.Registers.HL = (ushort)Cpu.Operations.Add(Cpu.Registers.HL, Cpu.Registers.HL);
+            }),
             Instr(0x39, "ADD HL SP", 1, (p1, p2) =>
             {
                 Cpu.Registers.HL += Cpu.Registers.SP;
