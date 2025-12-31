@@ -43,19 +43,17 @@ namespace GB.Emulator.Core
                 this.memory[location] = value;
 
                 var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
-                if (device == null)
+                if (device != null)
                 {
-                    throw new NotImplementedException($"Aint nobody handling 0x{location:X2} for writing.");
-                }
-                
-                try
-                {
-                    device.Write8(location, value);
-                }
-                catch (NotImplementedException)
-                {
-                    // The device doesn't support writing yet...
-                    this.memory[location] = value;
+                    try
+                    {
+                        device.Write8(location, value);
+                    }
+                    catch (NotImplementedException)
+                    {
+                        // The device doesn't support writing yet...
+                        this.memory[location] = value;
+                    }
                 }
 
                 this.recentWrites.Add(location);
@@ -71,7 +69,7 @@ namespace GB.Emulator.Core
         {
             try
             {
-                ByteOp.Split(value, out byte low, out byte high);
+                ByteOp.Split(value, out byte high, out byte low);
                 this.Write8(low, location);
                 this.Write8(high, (ushort)(location + 1));
             }
@@ -86,9 +84,9 @@ namespace GB.Emulator.Core
         {
             try
             {
-                byte high = this.Read8((ushort)(location + 1));
                 byte low = this.Read8(location);
-                return ByteOp.Concat(high, low);
+                byte high = this.Read8((ushort)(location + 1));
+                return ByteOp.Concat(low, high);
             }
             catch (IndexOutOfRangeException)
             {
@@ -118,7 +116,7 @@ namespace GB.Emulator.Core
                     }
                 }
 
-                throw new NotImplementedException("Aint nobody handling this memory location for reading.");
+                return this.memory[location];
             }
             catch (IndexOutOfRangeException)
             {

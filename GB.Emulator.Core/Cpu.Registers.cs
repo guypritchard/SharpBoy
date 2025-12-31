@@ -104,6 +104,24 @@
                 set => ByteOp.Split(value, out H, out L);
             }
 
+            /// <summary>
+            /// Pseudo BC register pair.
+            /// </summary>
+            public static ushort BC
+            {
+                get => ByteOp.Concat(C, B);
+                set => ByteOp.Split(value, out B, out C);
+            }
+
+            /// <summary>
+            /// Pseudo DE register pair.
+            /// </summary>
+            public static ushort DE
+            {
+                get => ByteOp.Concat(E, D);
+                set => ByteOp.Split(value, out D, out E);
+            }
+
             public static byte Flags;
 
             /// <summary>

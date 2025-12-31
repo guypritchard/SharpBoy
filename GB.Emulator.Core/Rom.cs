@@ -29,7 +29,7 @@ namespace GB.Emulator.Core
 
         public void Write8(ushort location, byte value)
         {
-           throw new NotImplementedException();
+           // ROM is read-only for now.
         }
 
         public byte Read8(ushort location)

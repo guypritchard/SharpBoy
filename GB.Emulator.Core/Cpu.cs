@@ -54,12 +54,17 @@ namespace GB.Emulator.Core
 
         private Instruction GetInstruction(byte instruction)
         {
-            if (instructions.ContainsKey(instruction))
+            if (TryGetInstruction(instruction, out Instruction result))
             {
-                return instructions[instruction];
+                return result;
             }
 
             throw new NotImplementedException($"0x{instruction.ToString("X2")} not implemented at 0x{Cpu.Registers.PC:X4}.");
+        }
+
+        private bool TryGetInstruction(byte instruction, out Instruction result)
+        {
+            return instructions.TryGetValue(instruction, out result);
         }
 
         public readonly Video video;
@@ -109,7 +114,11 @@ namespace GB.Emulator.Core
 
         private void HandleExecutionFailure(byte[] data, Exception exception)
         {
-            Instruction instruction = GetInstruction(data[Cpu.Registers.PC]);
+            Instruction instruction;
+            if (!TryGetInstruction(data[Cpu.Registers.PC], out instruction))
+            {
+                instruction = new Instruction(data[Cpu.Registers.PC], $"NOTIMPL 0x{data[Cpu.Registers.PC]:X2}", (p1, p2) => { }, 1);
+            }
             Trace.WriteLine(instruction.Disassemble());
             Trace.WriteLine(Cpu.Registers.Dump());
             Trace.WriteLine(Cpu.Flags.Dump());
@@ -125,13 +134,9 @@ namespace GB.Emulator.Core
 
             Instruction instruction;
             byte opcode = data[address];
-            try
+            if (!TryGetInstruction(opcode, out instruction))
             {
-                instruction = GetInstruction(opcode);
-            }
-            catch (NotImplementedException)
-            {
-                instruction = new Instruction(opcode, $"DB 0x{opcode:X2}", (p1, p2) => { }, 1);
+                instruction = new Instruction(opcode, $"NOTIMPL 0x{opcode:X2}", (p1, p2) => { }, 1);
             }
 
             byte parameter1 = 0x0;

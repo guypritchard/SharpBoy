@@ -8,7 +8,7 @@
       "name": ".NET Core Launch (console)",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build",
+      "preLaunchTask": "rebuild-debugger",
       // If you have changed target frameworks, make sure to update the program path.
       "program": "${workspaceFolder}/GB.Debugger/bin/Debug/net8.0-windows/GB.Debugger.exe",
       "args": [],

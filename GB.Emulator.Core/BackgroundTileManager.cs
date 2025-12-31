@@ -1,32 +1,25 @@
-﻿using GB.Emulator.Core.InputOutput;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using GB.Emulator.Core.InputOutput;
 
 namespace GB.Emulator.Core
 {
     public class BackgroundTileManager : IMemoryRange
     {
-        public BackgroundTileManager()
-        {
+        private const ushort StartAddress = 0x9800;
+        private const ushort EndAddress = 0x9BFF;
+        private readonly byte[] memory = new byte[EndAddress - StartAddress + 1];
 
-        }
+        public ushort Start => StartAddress;
 
-        public ushort Start => 0x9800;
-
-        public ushort End => 0x97FF;
+        public ushort End => EndAddress;
 
         public byte Read8(ushort location)
         {
-            throw new NotImplementedException();
+            return this.memory[location - StartAddress];
         }
 
         public void Write8(ushort location, byte value)
         {
-            Trace.WriteLine("Writing to background tile manager");
+            this.memory[location - StartAddress] = value;
         }
     }
 }

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using GB.Emulator.Core;
@@ -13,12 +13,16 @@ public partial class DebuggerForm : Form
 {
     private const int StackEntryCount = 8;
     private const int MemoryBytesPerRow = 16;
+    private const int MemorySize = 0x10000;
+    private const int MemoryRowCount = MemorySize / MemoryBytesPerRow;
     private const int SurroundingInstructionCount = 8;
 
     private readonly Gameboy gameboy = new();
     private readonly HashSet<ushort> recentWrites = new();
     private readonly HashSet<ushort> recentReads = new();
     private readonly Dictionary<string, Label> registerLabels = new(StringComparer.Ordinal);
+    private HashSet<int> lastMemoryHighlightRows = new();
+    private bool memoryViewInitialized;
     private ushort stackStartPointer = Cpu.Registers.SP;
     private Cartridge? cartridge;
     private string? romPath;
@@ -57,6 +61,7 @@ public partial class DebuggerForm : Form
             this.recentWrites.Clear();
             this.recentReads.Clear();
             this.stackStartPointer = Cpu.Registers.SP;
+            this.ResetMemoryViewState();
             this.RefreshDebuggerViews();
             this.UpdateButtons(enableStep: true);
 
@@ -87,6 +92,7 @@ public partial class DebuggerForm : Form
         this.recentWrites.Clear();
         this.recentReads.Clear();
         this.stackStartPointer = Cpu.Registers.SP;
+        this.ResetMemoryViewState();
         this.RefreshDebuggerViews();
         this.UpdateButtons(enableStep: true);
     }
@@ -123,13 +129,13 @@ public partial class DebuggerForm : Form
                 this.stackStartPointer = Cpu.Registers.SP;
             }
 
-            this.RefreshDebuggerViews();
+            this.RefreshDebuggerViews(reportTiming: true);
         }
         catch (ArgumentOutOfRangeException)
         {
             this.recentWrites.Clear();
             this.recentReads.Clear();
-            this.RefreshDebuggerViews();
+            this.RefreshDebuggerViews(reportTiming: true);
             MessageBox.Show(
                 this,
                 "Reached the end of the cartridge data.",
@@ -142,7 +148,7 @@ public partial class DebuggerForm : Form
         {
             this.recentWrites.Clear();
             this.recentReads.Clear();
-            this.RefreshDebuggerViews();
+            this.RefreshDebuggerViews(reportTiming: true);
             MessageBox.Show(
                 this,
                 ex.Message,
@@ -212,13 +218,38 @@ public partial class DebuggerForm : Form
 
     private void RefreshDebuggerViews()
     {
+        this.RefreshDebuggerViews(reportTiming: false);
+    }
+
+    private void RefreshDebuggerViews(bool reportTiming)
+    {
+        long startTicks = Stopwatch.GetTimestamp();
         this.UpdateRegisterView();
+        long registersTicks = Stopwatch.GetTimestamp();
 
-        byte[]? memorySnapshot = this.cartridge != null ? this.gameboy.Memory.Snapshot() : null;
+        this.UpdateStackView();
+        long stackTicks = Stopwatch.GetTimestamp();
 
-        this.UpdateStackView(memorySnapshot);
-        this.UpdateMemoryView(memorySnapshot);
+        this.UpdateMemoryView();
+        long memoryTicks = Stopwatch.GetTimestamp();
+
         this.UpdateCodeView();
+        long codeTicks = Stopwatch.GetTimestamp();
+
+        if (reportTiming)
+        {
+            this.statusLabel.Text =
+                $"Step {TicksToMilliseconds(codeTicks - startTicks):0.0}ms | " +
+                $"reg {TicksToMilliseconds(registersTicks - startTicks):0.0} | " +
+                $"stack {TicksToMilliseconds(stackTicks - registersTicks):0.0} | " +
+                $"mem {TicksToMilliseconds(memoryTicks - stackTicks):0.0} | " +
+                $"code {TicksToMilliseconds(codeTicks - memoryTicks):0.0}";
+        }
+    }
+
+    private static double TicksToMilliseconds(long ticks)
+    {
+        return ticks * 1000.0 / Stopwatch.Frequency;
     }
 
     private void UpdateRegisterView()
@@ -244,12 +275,12 @@ public partial class DebuggerForm : Form
         this.registerLabels["FlagC"].Text = Cpu.Flags.C ? "1" : "0";
     }
 
-    private void UpdateStackView(byte[]? memorySnapshot)
+    private void UpdateStackView()
     {
         this.stackListBox.BeginUpdate();
         this.stackListBox.Items.Clear();
 
-        if (memorySnapshot == null)
+        if (this.cartridge == null)
         {
             this.stackListBox.Items.Add("Load a ROM to view stack.");
             this.stackListBox.EndUpdate();
@@ -263,13 +294,13 @@ public partial class DebuggerForm : Form
         for (int index = 0; index < wordCount; index++)
         {
             int address = sp + (index * 2);
-            if (address >= memorySnapshot.Length)
+            if (address >= MemorySize)
             {
                 break;
             }
 
-            byte low = memorySnapshot[address];
-            byte high = address + 1 < memorySnapshot.Length ? memorySnapshot[address + 1] : (byte)0x00;
+            byte low = this.gameboy.Memory.Peek((ushort)address);
+            byte high = address + 1 < MemorySize ? this.gameboy.Memory.Peek((ushort)(address + 1)) : (byte)0x00;
             ushort value = (ushort)(low | (high << 8));
             string prefix = index == 0 ? "->" : "  ";
             this.stackListBox.Items.Add($"{prefix} 0x{address:X4}: 0x{value:X4}");
@@ -283,41 +314,106 @@ public partial class DebuggerForm : Form
         this.stackListBox.EndUpdate();
     }
 
-    private void UpdateMemoryView(byte[]? memorySnapshot)
+    private void UpdateMemoryView()
     {
         this.memoryListBox.BeginUpdate();
-        this.memoryListBox.Items.Clear();
 
-        if (memorySnapshot == null)
+        if (this.cartridge == null)
         {
+            this.memoryListBox.Items.Clear();
             this.memoryListBox.Items.Add("Load a ROM to view memory.");
+            this.memoryViewInitialized = false;
+            this.lastMemoryHighlightRows.Clear();
             this.memoryListBox.EndUpdate();
             return;
         }
 
-        for (int address = 0; address < memorySnapshot.Length; address += MemoryBytesPerRow)
+        int currentPcRow = Cpu.Registers.PC / MemoryBytesPerRow;
+        HashSet<int> rowsWithWrite = this.BuildRowsForAddresses(this.recentWrites);
+        HashSet<int> rowsWithRead = this.BuildRowsForAddresses(this.recentReads);
+
+        if (!this.memoryViewInitialized || this.memoryListBox.Items.Count != MemoryRowCount)
         {
-            bool isPcRow = Cpu.Registers.PC >= address && Cpu.Registers.PC < address + MemoryBytesPerRow;
-            bool hasRecentWrite = this.recentWrites.Any(write => write >= address && write < address + MemoryBytesPerRow);
-            bool hasRecentRead = this.recentReads.Any(read => read >= address && read < address + MemoryBytesPerRow);
-
-            var builder = new StringBuilder(15 + MemoryBytesPerRow * 3);
-            builder.Append(isPcRow ? '>' : ' ');
-            builder.Append(hasRecentWrite ? '*' : ' ');
-            builder.Append(hasRecentRead ? 'r' : ' ');
-            builder.Append(' ');
-            builder.Append($"0x{address:X4}:");
-
-            for (int offset = 0; offset < MemoryBytesPerRow && address + offset < memorySnapshot.Length; offset++)
+            this.memoryListBox.Items.Clear();
+            for (int row = 0; row < MemoryRowCount; row++)
             {
-                builder.Append(' ');
-                builder.Append(memorySnapshot[address + offset].ToString("X2"));
+                int address = row * MemoryBytesPerRow;
+                this.memoryListBox.Items.Add(
+                    this.BuildMemoryRow(
+                        address,
+                        row == currentPcRow,
+                        rowsWithWrite.Contains(row),
+                        rowsWithRead.Contains(row)));
             }
 
-            this.memoryListBox.Items.Add(builder.ToString());
+            this.memoryViewInitialized = true;
+            this.lastMemoryHighlightRows = new HashSet<int>(rowsWithWrite);
+            this.lastMemoryHighlightRows.UnionWith(rowsWithRead);
+            this.lastMemoryHighlightRows.Add(currentPcRow);
+            this.memoryListBox.EndUpdate();
+            return;
         }
 
+        var newHighlightRows = new HashSet<int>(rowsWithWrite);
+        newHighlightRows.UnionWith(rowsWithRead);
+        newHighlightRows.Add(currentPcRow);
+
+        var rowsToUpdate = new HashSet<int>(this.lastMemoryHighlightRows);
+        rowsToUpdate.UnionWith(newHighlightRows);
+
+        foreach (int row in rowsToUpdate)
+        {
+            if (row < 0 || row >= MemoryRowCount)
+            {
+                continue;
+            }
+
+            int address = row * MemoryBytesPerRow;
+            this.memoryListBox.Items[row] = this.BuildMemoryRow(
+                address,
+                row == currentPcRow,
+                rowsWithWrite.Contains(row),
+                rowsWithRead.Contains(row));
+        }
+
+        this.lastMemoryHighlightRows = newHighlightRows;
         this.memoryListBox.EndUpdate();
+    }
+
+    private HashSet<int> BuildRowsForAddresses(IEnumerable<ushort> addresses)
+    {
+        var rows = new HashSet<int>();
+        foreach (ushort address in addresses)
+        {
+            rows.Add(address / MemoryBytesPerRow);
+        }
+
+        return rows;
+    }
+
+    private string BuildMemoryRow(int address, bool isPcRow, bool hasRecentWrite, bool hasRecentRead)
+    {
+        var builder = new StringBuilder(15 + MemoryBytesPerRow * 3);
+        builder.Append(isPcRow ? '>' : ' ');
+        builder.Append(hasRecentWrite ? '*' : ' ');
+        builder.Append(hasRecentRead ? 'r' : ' ');
+        builder.Append(' ');
+        builder.Append($"0x{address:X4}:");
+
+        for (int offset = 0; offset < MemoryBytesPerRow && address + offset < MemorySize; offset++)
+        {
+            builder.Append(' ');
+            byte value = this.gameboy.Memory.Peek((ushort)(address + offset));
+            builder.Append(value.ToString("X2"));
+        }
+
+        return builder.ToString();
+    }
+
+    private void ResetMemoryViewState()
+    {
+        this.memoryViewInitialized = false;
+        this.lastMemoryHighlightRows.Clear();
     }
 
     private void UpdateCodeView()
