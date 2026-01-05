@@ -31,6 +31,7 @@ partial class DebuggerForm
         this.toolbarPanel = new System.Windows.Forms.FlowLayoutPanel();
         this.loadButton = new System.Windows.Forms.Button();
         this.stepButton = new System.Windows.Forms.Button();
+        this.stepBackButton = new System.Windows.Forms.Button();
         this.resetButton = new System.Windows.Forms.Button();
         this.statusLabel = new System.Windows.Forms.Label();
         this.sidebarPanel = new System.Windows.Forms.Panel();
@@ -64,6 +65,7 @@ partial class DebuggerForm
         this.toolbarPanel.AutoSize = true;
         this.toolbarPanel.Controls.Add(this.loadButton);
         this.toolbarPanel.Controls.Add(this.stepButton);
+        this.toolbarPanel.Controls.Add(this.stepBackButton);
         this.toolbarPanel.Controls.Add(this.resetButton);
         this.toolbarPanel.Controls.Add(this.statusLabel);
         this.toolbarPanel.Dock = System.Windows.Forms.DockStyle.Top;
@@ -95,13 +97,24 @@ partial class DebuggerForm
         this.stepButton.UseVisualStyleBackColor = true;
         this.stepButton.Click += new System.EventHandler(this.OnStepClicked);
         // 
+        // stepBackButton
+        // 
+        this.stepBackButton.AutoSize = true;
+        this.stepBackButton.Location = new System.Drawing.Point(171, 13);
+        this.stepBackButton.Name = "stepBackButton";
+        this.stepBackButton.Size = new System.Drawing.Size(89, 27);
+        this.stepBackButton.TabIndex = 2;
+        this.stepBackButton.Text = "Step Back";
+        this.stepBackButton.UseVisualStyleBackColor = true;
+        this.stepBackButton.Click += new System.EventHandler(this.OnStepBackClicked);
+        // 
         // resetButton
         // 
         this.resetButton.AutoSize = true;
-        this.resetButton.Location = new System.Drawing.Point(171, 13);
+        this.resetButton.Location = new System.Drawing.Point(266, 13);
         this.resetButton.Name = "resetButton";
         this.resetButton.Size = new System.Drawing.Size(52, 27);
-        this.resetButton.TabIndex = 2;
+        this.resetButton.TabIndex = 3;
         this.resetButton.Text = "Reset";
         this.resetButton.UseVisualStyleBackColor = true;
         this.resetButton.Click += new System.EventHandler(this.OnResetClicked);
@@ -223,9 +236,13 @@ partial class DebuggerForm
         this.codeListBox.Dock = System.Windows.Forms.DockStyle.Fill;
         this.codeListBox.Font = new System.Drawing.Font("Consolas", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
         this.codeListBox.FormattingEnabled = true;
+        this.codeListBox.HorizontalScrollbar = true;
+        this.codeListBox.IntegralHeight = false;
         this.codeListBox.ItemHeight = 20;
         this.codeListBox.Location = new System.Drawing.Point(0, 38);
         this.codeListBox.Name = "codeListBox";
+        this.codeListBox.ScrollAlwaysVisible = true;
+        this.codeListBox.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
         this.codeListBox.Size = new System.Drawing.Size(720, 260);
         this.codeListBox.TabIndex = 0;
         // 
@@ -238,7 +255,7 @@ partial class DebuggerForm
         this.codeLegendLabel.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
         this.codeLegendLabel.Size = new System.Drawing.Size(720, 38);
         this.codeLegendLabel.TabIndex = 1;
-        this.codeLegendLabel.Text = "Disassembly around the current PC; \">\" marks the instruction at PC.";
+        this.codeLegendLabel.Text = "ROM disassembly; \">\" marks the instruction at PC.";
         // 
         // memoryGroupBox
         // 
@@ -317,6 +334,7 @@ partial class DebuggerForm
     private System.Windows.Forms.FlowLayoutPanel toolbarPanel;
     private System.Windows.Forms.Button loadButton;
     private System.Windows.Forms.Button stepButton;
+    private System.Windows.Forms.Button stepBackButton;
     private System.Windows.Forms.Button resetButton;
     private System.Windows.Forms.Label statusLabel;
     private System.Windows.Forms.Panel sidebarPanel;

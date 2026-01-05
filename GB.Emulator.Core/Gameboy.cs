@@ -11,6 +11,7 @@ namespace GB.Emulator.Core
         private readonly Cpu cpu;
         private readonly MemoryMap memory;
         private readonly Video video;
+        private readonly Lcd lcd;
         private readonly SpriteTileManager spriteTileManager;
         private readonly BackgroundTileManager backgroundTileManager;
         private readonly Ram ramBank1;
@@ -24,7 +25,7 @@ namespace GB.Emulator.Core
 
         public Gameboy()
         {
-            var lcd = new Lcd();
+            this.lcd = new Lcd();
             this.spriteTileManager = new SpriteTileManager();
             this.backgroundTileManager = new BackgroundTileManager();
             this.ramBank1 = new Ram("RAM0", 0xA000, 0xBFFF);
@@ -35,7 +36,7 @@ namespace GB.Emulator.Core
             this.interrupt = new Interrupt();
 
             this.memory = new MemoryMap(
-                lcd,
+                this.lcd,
                 this.spriteTileManager,
                 this.backgroundTileManager,
                 this.ramBank1,
@@ -44,7 +45,7 @@ namespace GB.Emulator.Core
                 this.internalRam,
                 this.io,
                 this.interrupt);
-            this.video = new Video(lcd);
+            this.video = new Video(this.lcd);
             this.cpu = new Cpu(this.memory, this.video);
         }
 
@@ -153,6 +154,102 @@ namespace GB.Emulator.Core
             }
 
             return window;
+        }
+
+        public IReadOnlyList<CpuStepResult> GetDisassembly()
+        {
+            if (this.romData.Length == 0)
+            {
+                return Array.Empty<CpuStepResult>();
+            }
+
+            var results = new List<CpuStepResult>();
+            int address = 0;
+
+            while (address < this.romData.Length)
+            {
+                CpuStepResult decoded;
+                try
+                {
+                    decoded = this.cpu.DecodeInstruction(this.romData, (ushort)address);
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    break;
+                }
+
+                results.Add(decoded);
+
+                int length = decoded.Instruction.Length;
+                if (length <= 0)
+                {
+                    length = 1;
+                }
+
+                address += length;
+            }
+
+            return results;
+        }
+
+        public GameboyState CaptureState()
+        {
+            var registers = new CpuRegistersState(
+                Cpu.Registers.A,
+                Cpu.Registers.F,
+                Cpu.Registers.B,
+                Cpu.Registers.C,
+                Cpu.Registers.D,
+                Cpu.Registers.E,
+                Cpu.Registers.H,
+                Cpu.Registers.L,
+                Cpu.Registers.Flags,
+                Cpu.Registers.SP,
+                Cpu.Registers.PC);
+
+            return new GameboyState(
+                registers,
+                this.memory.Snapshot(),
+                this.ramBank1.Snapshot(),
+                this.ramBank2.Snapshot(),
+                this.ramBank3.Snapshot(),
+                this.internalRam.Snapshot(),
+                this.io.Snapshot(),
+                this.spriteTileManager.Snapshot(),
+                this.backgroundTileManager.Snapshot(),
+                this.lcd.Snapshot(),
+                this.interrupt.Snapshot());
+        }
+
+        public void RestoreState(GameboyState state)
+        {
+            if (state == null)
+            {
+                throw new ArgumentNullException(nameof(state));
+            }
+
+            Cpu.Registers.A = state.Registers.A;
+            Cpu.Registers.F = state.Registers.F;
+            Cpu.Registers.B = state.Registers.B;
+            Cpu.Registers.C = state.Registers.C;
+            Cpu.Registers.D = state.Registers.D;
+            Cpu.Registers.E = state.Registers.E;
+            Cpu.Registers.H = state.Registers.H;
+            Cpu.Registers.L = state.Registers.L;
+            Cpu.Registers.Flags = state.Registers.Flags;
+            Cpu.Registers.SP = state.Registers.SP;
+            Cpu.Registers.PC = state.Registers.PC;
+
+            this.memory.RestoreSnapshot(state.Memory);
+            this.ramBank1.Restore(state.RamBank1);
+            this.ramBank2.Restore(state.RamBank2);
+            this.ramBank3.Restore(state.RamBank3);
+            this.internalRam.Restore(state.InternalRam);
+            this.io.Restore(state.Io);
+            this.spriteTileManager.Restore(state.SpriteTiles);
+            this.backgroundTileManager.Restore(state.BackgroundTiles);
+            this.lcd.Restore(state.LcdState);
+            this.interrupt.Restore(state.InterruptFlags);
         }
     }
 }

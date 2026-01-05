@@ -42,6 +42,11 @@ namespace GB.Emulator.Core
             return Instr(opcode, name, 1, (p1, p2) => setter(0x0));
         }
 
+        private static KeyValuePair<byte, Instruction> XorRegister(byte opcode, string name, Func<byte> getter)
+        {
+            return Instr(opcode, name, 1, (p1, p2) => Cpu.Registers.A = Operations.Xor(Cpu.Registers.A, getter()));
+        }
+
         private static KeyValuePair<byte, Instruction> OrRegister(byte opcode, string name, Func<byte> getter)
         {
             return Instr(opcode, name, 1, (p1, p2) => Cpu.Registers.A = Operations.Or(Cpu.Registers.A, getter()));
@@ -54,9 +59,9 @@ namespace GB.Emulator.Core
 
         private static readonly KeyValuePair<byte, Instruction>[] LdInstructions = new[]
         {
-            LdImmediate(0x06, "LD B", v => Cpu.Registers.B = v),
-            LdImmediate(0x0E, "LD C", v => Cpu.Registers.C = v),
-            Instr(0x21, "LD(HL)", 3, (p1, p2) =>
+            LdImmediate(0x06, "LD B, d8", v => Cpu.Registers.B = v),
+            LdImmediate(0x0E, "LD C, d8", v => Cpu.Registers.C = v),
+            Instr(0x21, "LD HL, d16", 3, (p1, p2) =>
             {
                 Cpu.Registers.H = p2;
                 Cpu.Registers.L = p1;
@@ -65,25 +70,25 @@ namespace GB.Emulator.Core
             {
                 Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.BC);
             }),
-            Instr(0x12, "LD A (DE)", 1, (p1, p2) =>
+            Instr(0x12, "LD A, (DE)", 1, (p1, p2) =>
             {
                 Cpu.Registers.A = Memory.Read8(Cpu.Registers.DE);
             }),
-            Instr(0x22, "LD(HL+)A", 1, (p1, p2) =>
+            Instr(0x22, "LD (HL+), A", 1, (p1, p2) =>
             {
                 Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
                 Cpu.Registers.HL++;
             }),
-            Instr(0x2A, "LD A(HL+)", 1, (p1, p2) =>
+            Instr(0x2A, "LD A, (HL+)", 1, (p1, p2) =>
             {
                 Cpu.Registers.A = Memory.Read8(Cpu.Registers.HL);
                 Cpu.Registers.HL++;
             }),
-            Instr(0x31, "LD(SP)", 3, (p1, p2) =>
+            Instr(0x31, "LD SP, d16", 3, (p1, p2) =>
             {
                 Cpu.Registers.SP = ByteOp.Concat(p1, p2);
             }),
-            Instr(0x32, "LD(HL-)A", 1, (p1, p2) =>
+            Instr(0x32, "LD (HL-), A", 1, (p1, p2) =>
             {
                 Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
                 Cpu.Registers.HL--;
@@ -119,12 +124,12 @@ namespace GB.Emulator.Core
                 ushort memory = (ushort)(p1 + 0xFF00);
                 Cpu.Memory.Write8(Cpu.Registers.A, memory);
             }),
-            Instr(0xE2, "LD C A", 1, (p1, p2) =>
+            Instr(0xE2, "LD (C), A", 1, (p1, p2) =>
             {
                 ushort memory = (ushort)(Cpu.Registers.C + 0xFF00);
                 Cpu.Memory.Write8(Cpu.Registers.A, memory);
             }),
-            Instr(0xEA, "LD A", 3, (p1, p2) =>
+            Instr(0xEA, "LD (a16), A", 3, (p1, p2) =>
             {
                 Cpu.Memory.Write8(Cpu.Registers.A, ByteOp.Concat(p1, p2));
             }),
@@ -183,17 +188,17 @@ namespace GB.Emulator.Core
 
         private static readonly KeyValuePair<byte, Instruction>[] XorInstructions = new[]
         {
-            XorZero(0xA8, "XOR B", v => Cpu.Registers.B = v),
-            XorZero(0xA9, "XOR C", v => Cpu.Registers.C = v),
-            XorZero(0xAA, "XOR D", v => Cpu.Registers.D = v),
-            XorZero(0xAB, "XOR E", v => Cpu.Registers.E = v),
-            XorZero(0xAC, "XOR H", v => Cpu.Registers.H = v),
-            XorZero(0xAD, "XOR L", v => Cpu.Registers.L = v),
+            XorRegister(0xA8, "XOR B", () => Cpu.Registers.B),
+            XorRegister(0xA9, "XOR C", () => Cpu.Registers.C),
+            XorRegister(0xAA, "XOR D", () => Cpu.Registers.D),
+            XorRegister(0xAB, "XOR E", () => Cpu.Registers.E),
+            XorRegister(0xAC, "XOR H", () => Cpu.Registers.H),
+            XorRegister(0xAD, "XOR L", () => Cpu.Registers.L),
             Instr(0xAE, "XOR (HL)", 1, (p1, p2) =>
             {
-                Cpu.Registers.HL = 0x0;
+                Cpu.Registers.A = Operations.Xor(Cpu.Registers.A, Cpu.Memory.Read8(Cpu.Registers.HL));
             }),
-            XorZero(0xAF, "XOR A", v => Cpu.Registers.A = v),
+            XorRegister(0xAF, "XOR A", () => Cpu.Registers.A),
         };
 
         private static readonly KeyValuePair<byte, Instruction>[] OrInstructions = new[]
@@ -209,7 +214,7 @@ namespace GB.Emulator.Core
                 Cpu.Registers.A = Cpu.Operations.Or(Cpu.Registers.A, Cpu.Memory.Read8(Cpu.Registers.HL));
             }),
             OrRegister(0xB7, "OR A", () => Cpu.Registers.A),
-            OrOperand(0xF6, "OR d8", (p1) => Cpu.Registers.A),
+            OrOperand(0xF6, "OR d8", p1 => p1),
         };
 
         private static readonly KeyValuePair<byte, Instruction>[] CompareInstructions = new[]
@@ -348,7 +353,7 @@ namespace GB.Emulator.Core
         private static readonly KeyValuePair<byte, Instruction>[] SystemInstructions = new[]
         {
             Instr(0x00, "NOP", 1, (p1, p2) => { }),
-            Instr(0x10, "STOP", 1, (p1, p2) => { Environment.Exit(-1); }),
+            Instr(0x10, "STOP", 2, (p1, p2) => { Environment.Exit(-1); }),
             Instr(0x76, "HALT", 1, (p1, p2) => { Environment.Exit(-1); }),
             Instr(0xF3, "DI", 1, (p1, p2) => { }),
         };

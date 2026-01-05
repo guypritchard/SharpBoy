@@ -15,12 +15,17 @@ public partial class DebuggerForm : Form
     private const int MemoryBytesPerRow = 16;
     private const int MemorySize = 0x10000;
     private const int MemoryRowCount = MemorySize / MemoryBytesPerRow;
-    private const int SurroundingInstructionCount = 8;
+    private const int CodeScrollMargin = 3;
+    private const int MaxStepHistory = 200;
 
     private readonly Gameboy gameboy = new();
     private readonly HashSet<ushort> recentWrites = new();
     private readonly HashSet<ushort> recentReads = new();
     private readonly Dictionary<string, Label> registerLabels = new(StringComparer.Ordinal);
+    private readonly Dictionary<ushort, int> disassemblyIndexByAddress = new();
+    private readonly List<DebuggerSnapshot> stepHistory = new();
+    private IReadOnlyList<CpuStepResult> disassemblyCache = Array.Empty<CpuStepResult>();
+    private int lastCodeIndex = -1;
     private HashSet<int> lastMemoryHighlightRows = new();
     private bool memoryViewInitialized;
     private ushort stackStartPointer = Cpu.Registers.SP;
@@ -30,6 +35,7 @@ public partial class DebuggerForm : Form
     public DebuggerForm()
     {
         InitializeComponent();
+        this.codeListBox.KeyDown += this.OnCodeListBoxKeyDown;
         this.CreateRegisterLabels();
         this.RefreshDebuggerViews();
         this.UpdateButtons();
@@ -57,6 +63,8 @@ public partial class DebuggerForm : Form
             this.gameboy.Load(loadedCartridge);
             this.cartridge = loadedCartridge;
             this.romPath = this.openRomDialog.FileName;
+            this.BuildDisassemblyCache();
+            this.stepHistory.Clear();
 
             this.recentWrites.Clear();
             this.recentReads.Clear();
@@ -89,6 +97,7 @@ public partial class DebuggerForm : Form
         }
 
         this.gameboy.Load(this.cartridge);
+        this.stepHistory.Clear();
         this.recentWrites.Clear();
         this.recentReads.Clear();
         this.stackStartPointer = Cpu.Registers.SP;
@@ -110,6 +119,9 @@ public partial class DebuggerForm : Form
             return;
         }
 
+        DebuggerSnapshot snapshot = this.CaptureSnapshot();
+        this.PushSnapshot(snapshot);
+
         try
         {
             CpuStepResult result = this.gameboy.Step();
@@ -130,6 +142,7 @@ public partial class DebuggerForm : Form
             }
 
             this.RefreshDebuggerViews(reportTiming: true);
+            this.UpdateButtons(enableStep: true);
         }
         catch (ArgumentOutOfRangeException)
         {
@@ -422,8 +435,12 @@ public partial class DebuggerForm : Form
         this.lastMemoryHighlightRows.Clear();
     }
 
-    private void UpdateCodeView()
+    private void BuildDisassemblyCache()
     {
+        this.disassemblyCache = Array.Empty<CpuStepResult>();
+        this.disassemblyIndexByAddress.Clear();
+        this.lastCodeIndex = -1;
+
         this.codeListBox.BeginUpdate();
         this.codeListBox.Items.Clear();
 
@@ -434,10 +451,10 @@ public partial class DebuggerForm : Form
             return;
         }
 
-        IReadOnlyList<CpuStepResult> window;
+        IReadOnlyList<CpuStepResult> disassembly;
         try
         {
-            window = this.gameboy.GetInstructionWindow(SurroundingInstructionCount, SurroundingInstructionCount);
+            disassembly = this.gameboy.GetDisassembly();
         }
         catch (Exception ex)
         {
@@ -446,33 +463,212 @@ public partial class DebuggerForm : Form
             return;
         }
 
-        if (window.Count == 0)
+        if (disassembly.Count == 0)
         {
-            this.codeListBox.Items.Add("Unable to disassemble at current PC.");
+            this.codeListBox.Items.Add("Unable to disassemble ROM.");
             this.codeListBox.EndUpdate();
             return;
         }
 
-        int selectedIndex = -1;
-        for (int i = 0; i < window.Count; i++)
+        this.disassemblyCache = disassembly;
+        int maxWidth = 0;
+
+        for (int i = 0; i < disassembly.Count; i++)
         {
-            bool isCurrent = window[i].Address == Cpu.Registers.PC;
-            if (isCurrent)
+            CpuStepResult entry = disassembly[i];
+            if (!this.disassemblyIndexByAddress.ContainsKey(entry.Address))
             {
-                selectedIndex = i;
+                this.disassemblyIndexByAddress[entry.Address] = i;
             }
 
-            string prefix = isCurrent ? ">" : " ";
-            this.codeListBox.Items.Add($"{prefix} {window[i].Disassembly}");
+            string line = FormatCodeLine(entry, false);
+            this.codeListBox.Items.Add(line);
+
+            int width = TextRenderer.MeasureText(line, this.codeListBox.Font).Width;
+            if (width > maxWidth)
+            {
+                maxWidth = width;
+            }
         }
 
-        if (selectedIndex >= 0)
+        this.codeListBox.HorizontalExtent = Math.Max(maxWidth + 8, this.codeListBox.ClientSize.Width);
+        this.codeListBox.EndUpdate();
+    }
+
+    private static string FormatCodeLine(CpuStepResult entry, bool isCurrent)
+    {
+        string prefix = isCurrent ? ">" : " ";
+        return $"{prefix} {entry.Disassembly}";
+    }
+
+    private void UpdateCodeView()
+    {
+        if (this.cartridge == null)
         {
-            this.codeListBox.SelectedIndex = selectedIndex;
-            this.codeListBox.TopIndex = Math.Max(0, selectedIndex - 3);
+            this.BuildDisassemblyCache();
+            return;
         }
+
+        if (this.disassemblyCache.Count == 0)
+        {
+            this.BuildDisassemblyCache();
+            if (this.disassemblyCache.Count == 0)
+            {
+                return;
+            }
+        }
+
+        if (!this.disassemblyIndexByAddress.TryGetValue(Cpu.Registers.PC, out int currentIndex))
+        {
+            if (this.lastCodeIndex >= 0 && this.lastCodeIndex < this.codeListBox.Items.Count)
+            {
+                CpuStepResult previous = this.disassemblyCache[this.lastCodeIndex];
+                this.codeListBox.Items[this.lastCodeIndex] = FormatCodeLine(previous, false);
+                this.lastCodeIndex = -1;
+            }
+
+            return;
+        }
+
+        this.codeListBox.BeginUpdate();
+
+        if (this.lastCodeIndex >= 0 && this.lastCodeIndex != currentIndex)
+        {
+            CpuStepResult previous = this.disassemblyCache[this.lastCodeIndex];
+            this.codeListBox.Items[this.lastCodeIndex] = FormatCodeLine(previous, false);
+        }
+
+        CpuStepResult current = this.disassemblyCache[currentIndex];
+        this.codeListBox.Items[currentIndex] = FormatCodeLine(current, true);
+        this.lastCodeIndex = currentIndex;
 
         this.codeListBox.EndUpdate();
+
+        this.EnsureCodeRowVisible(currentIndex);
+    }
+
+    private void EnsureCodeRowVisible(int index)
+    {
+        if (index < 0 || index >= this.codeListBox.Items.Count)
+        {
+            return;
+        }
+
+        int visibleCount = Math.Max(1, this.codeListBox.ClientSize.Height / this.codeListBox.ItemHeight);
+        int topIndex = this.codeListBox.TopIndex;
+        int bottomIndex = topIndex + visibleCount - 1;
+
+        if (index < topIndex || index > bottomIndex)
+        {
+            int newTopIndex = Math.Max(0, index - CodeScrollMargin);
+            int maxTopIndex = Math.Max(0, this.codeListBox.Items.Count - visibleCount);
+            this.codeListBox.TopIndex = Math.Min(newTopIndex, maxTopIndex);
+        }
+    }
+
+    private void OnCodeListBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Control && e.KeyCode == Keys.C)
+        {
+            this.CopySelectedCodeLines();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Control && e.KeyCode == Keys.A)
+        {
+            this.SelectAllCodeLines();
+            e.Handled = true;
+        }
+    }
+
+    private void CopySelectedCodeLines()
+    {
+        if (this.codeListBox.Items.Count == 0)
+        {
+            return;
+        }
+
+        var lines = new List<string>();
+        foreach (object item in this.codeListBox.SelectedItems)
+        {
+            string? line = item?.ToString();
+            if (!string.IsNullOrEmpty(line))
+            {
+                lines.Add(line);
+            }
+        }
+
+        if (lines.Count == 0 && this.lastCodeIndex >= 0 && this.lastCodeIndex < this.codeListBox.Items.Count)
+        {
+            string? line = this.codeListBox.Items[this.lastCodeIndex]?.ToString();
+            if (!string.IsNullOrEmpty(line))
+            {
+                lines.Add(line);
+            }
+        }
+
+        if (lines.Count == 0)
+        {
+            return;
+        }
+
+        Clipboard.SetText(string.Join(Environment.NewLine, lines));
+    }
+
+    private void SelectAllCodeLines()
+    {
+        if (this.codeListBox.Items.Count == 0)
+        {
+            return;
+        }
+
+        this.codeListBox.BeginUpdate();
+        for (int i = 0; i < this.codeListBox.Items.Count; i++)
+        {
+            this.codeListBox.SetSelected(i, true);
+        }
+        this.codeListBox.EndUpdate();
+    }
+
+    private DebuggerSnapshot CaptureSnapshot()
+    {
+        return new DebuggerSnapshot(
+            this.gameboy.CaptureState(),
+            new HashSet<ushort>(this.recentWrites),
+            new HashSet<ushort>(this.recentReads),
+            this.stackStartPointer);
+    }
+
+    private void PushSnapshot(DebuggerSnapshot snapshot)
+    {
+        this.stepHistory.Add(snapshot);
+        if (this.stepHistory.Count > MaxStepHistory)
+        {
+            this.stepHistory.RemoveAt(0);
+        }
+    }
+
+    private void OnStepBackClicked(object? sender, EventArgs e)
+    {
+        if (this.stepHistory.Count == 0)
+        {
+            return;
+        }
+
+        DebuggerSnapshot snapshot = this.stepHistory[^1];
+        this.stepHistory.RemoveAt(this.stepHistory.Count - 1);
+
+        this.gameboy.RestoreState(snapshot.GameboyState);
+        this.recentWrites.Clear();
+        this.recentReads.Clear();
+        this.recentWrites.UnionWith(snapshot.RecentWrites);
+        this.recentReads.UnionWith(snapshot.RecentReads);
+        this.stackStartPointer = snapshot.StackStartPointer;
+
+        this.ResetMemoryViewState();
+        this.RefreshDebuggerViews();
+        this.UpdateButtons(enableStep: true);
     }
 
     private void UpdateButtons(bool enableStep = false)
@@ -480,10 +676,21 @@ public partial class DebuggerForm : Form
         bool hasCartridge = this.cartridge != null;
         this.stepButton.Enabled = hasCartridge && enableStep;
         this.resetButton.Enabled = hasCartridge;
+        this.stepBackButton.Enabled = hasCartridge && this.stepHistory.Count > 0;
     }
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
+        if (keyData == (Keys.Shift | Keys.F10))
+        {
+            if (this.stepBackButton.Enabled)
+            {
+                this.OnStepBackClicked(this.stepBackButton, EventArgs.Empty);
+            }
+
+            return true;
+        }
+
         if (keyData == Keys.F10)
         {
             if (this.stepButton.Enabled)
@@ -495,5 +702,28 @@ public partial class DebuggerForm : Form
         }
 
         return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    private sealed class DebuggerSnapshot
+    {
+        public DebuggerSnapshot(
+            GameboyState gameboyState,
+            HashSet<ushort> recentWrites,
+            HashSet<ushort> recentReads,
+            ushort stackStartPointer)
+        {
+            this.GameboyState = gameboyState;
+            this.RecentWrites = recentWrites;
+            this.RecentReads = recentReads;
+            this.StackStartPointer = stackStartPointer;
+        }
+
+        public GameboyState GameboyState { get; }
+
+        public HashSet<ushort> RecentWrites { get; }
+
+        public HashSet<ushort> RecentReads { get; }
+
+        public ushort StackStartPointer { get; }
     }
 }

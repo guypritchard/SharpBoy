@@ -17,9 +17,31 @@ namespace GB.Emulator.Core
             return this.memory[location - StartAddress];
         }
 
-        public void Write8(ushort location, byte value)
-        {
-            this.memory[location - StartAddress] = value;
-        }
+    public void Write8(ushort location, byte value)
+    {
+        this.memory[location - StartAddress] = value;
     }
+
+    internal byte[] Snapshot()
+    {
+        var copy = new byte[this.memory.Length];
+        System.Array.Copy(this.memory, copy, copy.Length);
+        return copy;
+    }
+
+    internal void Restore(byte[] snapshot)
+    {
+        if (snapshot == null)
+        {
+            throw new System.ArgumentNullException(nameof(snapshot));
+        }
+
+        if (snapshot.Length != this.memory.Length)
+        {
+            throw new System.ArgumentException("Snapshot size does not match memory size.", nameof(snapshot));
+        }
+
+        System.Array.Copy(snapshot, this.memory, this.memory.Length);
+    }
+}
 }

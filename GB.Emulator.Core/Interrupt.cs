@@ -30,4 +30,14 @@ public class Interrupt : IMemoryRange
     {
         return this.interruptFlags;
     }
+
+    internal byte Snapshot()
+    {
+        return this.interruptFlags;
+    }
+
+    internal void Restore(byte snapshot)
+    {
+        this.interruptFlags = snapshot;
+    }
 }

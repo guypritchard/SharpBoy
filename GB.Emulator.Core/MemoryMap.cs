@@ -149,6 +149,23 @@ namespace GB.Emulator.Core
             return copy;
         }
 
+        public void RestoreSnapshot(byte[] snapshot)
+        {
+            if (snapshot == null)
+            {
+                throw new ArgumentNullException(nameof(snapshot));
+            }
+
+            if (snapshot.Length != this.memory.Length)
+            {
+                throw new ArgumentException("Snapshot size does not match memory size.", nameof(snapshot));
+            }
+
+            Array.Copy(snapshot, this.memory, this.memory.Length);
+            this.recentWrites.Clear();
+            this.recentReads.Clear();
+        }
+
         internal IReadOnlyCollection<ushort> ConsumeRecentWrites()
         {
             if (this.recentWrites.Count == 0)

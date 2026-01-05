@@ -61,11 +61,12 @@ namespace GB.Emulator.Core
                     }
                 }
 
-                return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{Instruction.Name}, {operand}\t\t{Instruction.Length}";
+                string formatted = Instruction.FormatWithOperand(Instruction.Name, operand);
+                return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{formatted}\t\t{Instruction.Length}";
             }
 
             ushort immediate = ByteOp.Concat(Operand1, Operand2);
-            string immediateOperand = $"0x{immediate:X2}";
+            string immediateOperand = $"0x{immediate:X4}";
             string? immediateLabel = GetIoLabel(immediate);
             if (immediateLabel != null)
             {
@@ -74,10 +75,11 @@ namespace GB.Emulator.Core
                     return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\tLD ({immediateLabel}), A\t\t{Instruction.Length}";
                 }
 
-                immediateOperand = $"0x{immediate:X2} ({immediateLabel})";
+                immediateOperand = $"0x{immediate:X4} ({immediateLabel})";
             }
 
-            return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{Instruction.Name}, {immediateOperand}\t\t{Instruction.Length}";
+            string immediateFormatted = Instruction.FormatWithOperand(Instruction.Name, immediateOperand);
+            return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{immediateFormatted}\t\t{Instruction.Length}";
         }
 
         private static string? GetIoLabel(ushort address)

@@ -86,6 +86,18 @@ namespace GB.Emulator.Core
                 return result;
             }
 
+            public static byte Xor(byte value1, byte value2)
+            {
+                byte result = (byte)(value1 ^ value2);
+
+                Cpu.Flags.Z = result == 0;
+                Cpu.Flags.N = false;
+                Cpu.Flags.H = false;
+                Cpu.Flags.C = false;
+
+                return result;
+            }
+
             public static byte Subtract(byte value1, byte value2)
             {
                 int result = value1 - value2;
