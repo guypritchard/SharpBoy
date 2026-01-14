@@ -50,15 +50,7 @@ namespace GB.Emulator.Core
                 {
                     ushort address = (ushort)(0xFF00 + Operand1);
                     string? label = GetIoLabel(address);
-                    if (label != null)
-                    {
-                        if (Instruction.Value == 0xE0)
-                        {
-                            return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\tLD ({label}), A\t\t{Instruction.Length}";
-                        }
-
-                        return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\tLD A, ({label})\t\t{Instruction.Length}";
-                    }
+                    operand = label ?? $"0x{address:X4}";
                 }
 
                 string formatted = Instruction.FormatWithOperand(Instruction.Name, operand);
@@ -70,12 +62,9 @@ namespace GB.Emulator.Core
             string? immediateLabel = GetIoLabel(immediate);
             if (immediateLabel != null)
             {
-                if (Instruction.Value == 0xEA)
-                {
-                    return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\tLD ({immediateLabel}), A\t\t{Instruction.Length}";
-                }
-
-                immediateOperand = $"0x{immediate:X4} ({immediateLabel})";
+                immediateOperand = Instruction.Value == 0xEA
+                    ? immediateLabel
+                    : $"0x{immediate:X4} ({immediateLabel})";
             }
 
             string immediateFormatted = Instruction.FormatWithOperand(Instruction.Name, immediateOperand);

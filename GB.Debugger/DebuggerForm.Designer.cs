@@ -40,6 +40,26 @@ partial class DebuggerForm
         this.stackListBox = new System.Windows.Forms.ListBox();
         this.registersGroupBox = new System.Windows.Forms.GroupBox();
         this.registerTable = new System.Windows.Forms.TableLayoutPanel();
+        this.interruptsGroupBox = new System.Windows.Forms.GroupBox();
+        this.interruptsTable = new System.Windows.Forms.TableLayoutPanel();
+        this.interruptNameHeaderLabel = new System.Windows.Forms.Label();
+        this.interruptIfHeaderLabel = new System.Windows.Forms.Label();
+        this.interruptIeHeaderLabel = new System.Windows.Forms.Label();
+        this.interruptVblankLabel = new System.Windows.Forms.Label();
+        this.interruptLcdStatLabel = new System.Windows.Forms.Label();
+        this.interruptTimerLabel = new System.Windows.Forms.Label();
+        this.interruptSerialLabel = new System.Windows.Forms.Label();
+        this.interruptJoypadLabel = new System.Windows.Forms.Label();
+        this.interruptIfVblankCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIeVblankCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIfLcdStatCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIeLcdStatCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIfTimerCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIeTimerCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIfSerialCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIeSerialCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIfJoypadCheckBox = new System.Windows.Forms.CheckBox();
+        this.interruptIeJoypadCheckBox = new System.Windows.Forms.CheckBox();
         this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
         this.codePanel = new System.Windows.Forms.Panel();
         this.codeListBox = new System.Windows.Forms.ListBox();
@@ -52,6 +72,8 @@ partial class DebuggerForm
         this.sidebarPanel.SuspendLayout();
         this.stackGroupBox.SuspendLayout();
         this.registersGroupBox.SuspendLayout();
+        this.interruptsGroupBox.SuspendLayout();
+        this.interruptsTable.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
         this.mainSplitContainer.Panel1.SuspendLayout();
         this.mainSplitContainer.Panel2.SuspendLayout();
@@ -132,6 +154,7 @@ partial class DebuggerForm
         // sidebarPanel
         // 
         this.sidebarPanel.Controls.Add(this.stackGroupBox);
+        this.sidebarPanel.Controls.Add(this.interruptsGroupBox);
         this.sidebarPanel.Controls.Add(this.registersGroupBox);
         this.sidebarPanel.Dock = System.Windows.Forms.DockStyle.Left;
         this.sidebarPanel.Location = new System.Drawing.Point(0, 44);
@@ -149,7 +172,7 @@ partial class DebuggerForm
         this.stackGroupBox.Name = "stackGroupBox";
         this.stackGroupBox.Padding = new System.Windows.Forms.Padding(12);
         this.stackGroupBox.Size = new System.Drawing.Size(276, 284);
-        this.stackGroupBox.TabIndex = 1;
+        this.stackGroupBox.TabIndex = 2;
         this.stackGroupBox.TabStop = false;
         this.stackGroupBox.Text = "Stack";
         // 
@@ -175,6 +198,219 @@ partial class DebuggerForm
         this.stackListBox.Name = "stackListBox";
         this.stackListBox.Size = new System.Drawing.Size(252, 245);
         this.stackListBox.TabIndex = 0;
+        // 
+        // interruptsGroupBox
+        // 
+        this.interruptsGroupBox.AutoSize = true;
+        this.interruptsGroupBox.Controls.Add(this.interruptsTable);
+        this.interruptsGroupBox.Dock = System.Windows.Forms.DockStyle.Top;
+        this.interruptsGroupBox.Location = new System.Drawing.Point(0, 238);
+        this.interruptsGroupBox.Name = "interruptsGroupBox";
+        this.interruptsGroupBox.Padding = new System.Windows.Forms.Padding(12);
+        this.interruptsGroupBox.Size = new System.Drawing.Size(276, 170);
+        this.interruptsGroupBox.TabIndex = 1;
+        this.interruptsGroupBox.TabStop = false;
+        this.interruptsGroupBox.Text = "Interrupts";
+        // 
+        // interruptsTable
+        // 
+        this.interruptsTable.AutoSize = true;
+        this.interruptsTable.ColumnCount = 3;
+        this.interruptsTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 60F));
+        this.interruptsTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20F));
+        this.interruptsTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20F));
+        this.interruptsTable.Controls.Add(this.interruptNameHeaderLabel, 0, 0);
+        this.interruptsTable.Controls.Add(this.interruptIfHeaderLabel, 1, 0);
+        this.interruptsTable.Controls.Add(this.interruptIeHeaderLabel, 2, 0);
+        this.interruptsTable.Controls.Add(this.interruptVblankLabel, 0, 1);
+        this.interruptsTable.Controls.Add(this.interruptIfVblankCheckBox, 1, 1);
+        this.interruptsTable.Controls.Add(this.interruptIeVblankCheckBox, 2, 1);
+        this.interruptsTable.Controls.Add(this.interruptLcdStatLabel, 0, 2);
+        this.interruptsTable.Controls.Add(this.interruptIfLcdStatCheckBox, 1, 2);
+        this.interruptsTable.Controls.Add(this.interruptIeLcdStatCheckBox, 2, 2);
+        this.interruptsTable.Controls.Add(this.interruptTimerLabel, 0, 3);
+        this.interruptsTable.Controls.Add(this.interruptIfTimerCheckBox, 1, 3);
+        this.interruptsTable.Controls.Add(this.interruptIeTimerCheckBox, 2, 3);
+        this.interruptsTable.Controls.Add(this.interruptSerialLabel, 0, 4);
+        this.interruptsTable.Controls.Add(this.interruptIfSerialCheckBox, 1, 4);
+        this.interruptsTable.Controls.Add(this.interruptIeSerialCheckBox, 2, 4);
+        this.interruptsTable.Controls.Add(this.interruptJoypadLabel, 0, 5);
+        this.interruptsTable.Controls.Add(this.interruptIfJoypadCheckBox, 1, 5);
+        this.interruptsTable.Controls.Add(this.interruptIeJoypadCheckBox, 2, 5);
+        this.interruptsTable.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptsTable.Location = new System.Drawing.Point(12, 27);
+        this.interruptsTable.Name = "interruptsTable";
+        this.interruptsTable.RowCount = 6;
+        this.interruptsTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.interruptsTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.interruptsTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.interruptsTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.interruptsTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.interruptsTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.interruptsTable.Size = new System.Drawing.Size(252, 131);
+        this.interruptsTable.TabIndex = 0;
+        // 
+        // interruptNameHeaderLabel
+        // 
+        this.interruptNameHeaderLabel.AutoSize = true;
+        this.interruptNameHeaderLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptNameHeaderLabel.Name = "interruptNameHeaderLabel";
+        this.interruptNameHeaderLabel.Padding = new System.Windows.Forms.Padding(0, 0, 0, 4);
+        this.interruptNameHeaderLabel.Text = "Flag";
+        this.interruptNameHeaderLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        // 
+        // interruptIfHeaderLabel
+        // 
+        this.interruptIfHeaderLabel.AutoSize = true;
+        this.interruptIfHeaderLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptIfHeaderLabel.Name = "interruptIfHeaderLabel";
+        this.interruptIfHeaderLabel.Padding = new System.Windows.Forms.Padding(0, 0, 0, 4);
+        this.interruptIfHeaderLabel.Text = "IF";
+        this.interruptIfHeaderLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+        // 
+        // interruptIeHeaderLabel
+        // 
+        this.interruptIeHeaderLabel.AutoSize = true;
+        this.interruptIeHeaderLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptIeHeaderLabel.Name = "interruptIeHeaderLabel";
+        this.interruptIeHeaderLabel.Padding = new System.Windows.Forms.Padding(0, 0, 0, 4);
+        this.interruptIeHeaderLabel.Text = "IE";
+        this.interruptIeHeaderLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+        // 
+        // interruptVblankLabel
+        // 
+        this.interruptVblankLabel.AutoSize = true;
+        this.interruptVblankLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptVblankLabel.Name = "interruptVblankLabel";
+        this.interruptVblankLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.interruptVblankLabel.Text = "VBlank";
+        this.interruptVblankLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        // 
+        // interruptLcdStatLabel
+        // 
+        this.interruptLcdStatLabel.AutoSize = true;
+        this.interruptLcdStatLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptLcdStatLabel.Name = "interruptLcdStatLabel";
+        this.interruptLcdStatLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.interruptLcdStatLabel.Text = "LCD STAT";
+        this.interruptLcdStatLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        // 
+        // interruptTimerLabel
+        // 
+        this.interruptTimerLabel.AutoSize = true;
+        this.interruptTimerLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptTimerLabel.Name = "interruptTimerLabel";
+        this.interruptTimerLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.interruptTimerLabel.Text = "Timer";
+        this.interruptTimerLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        // 
+        // interruptSerialLabel
+        // 
+        this.interruptSerialLabel.AutoSize = true;
+        this.interruptSerialLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptSerialLabel.Name = "interruptSerialLabel";
+        this.interruptSerialLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.interruptSerialLabel.Text = "Serial";
+        this.interruptSerialLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        // 
+        // interruptJoypadLabel
+        // 
+        this.interruptJoypadLabel.AutoSize = true;
+        this.interruptJoypadLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.interruptJoypadLabel.Name = "interruptJoypadLabel";
+        this.interruptJoypadLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.interruptJoypadLabel.Text = "Joypad";
+        this.interruptJoypadLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        // 
+        // interruptIfVblankCheckBox
+        // 
+        this.interruptIfVblankCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIfVblankCheckBox.AutoCheck = false;
+        this.interruptIfVblankCheckBox.AutoSize = true;
+        this.interruptIfVblankCheckBox.Name = "interruptIfVblankCheckBox";
+        this.interruptIfVblankCheckBox.TabStop = false;
+        this.interruptIfVblankCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIeVblankCheckBox
+        // 
+        this.interruptIeVblankCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIeVblankCheckBox.AutoCheck = false;
+        this.interruptIeVblankCheckBox.AutoSize = true;
+        this.interruptIeVblankCheckBox.Name = "interruptIeVblankCheckBox";
+        this.interruptIeVblankCheckBox.TabStop = false;
+        this.interruptIeVblankCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIfLcdStatCheckBox
+        // 
+        this.interruptIfLcdStatCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIfLcdStatCheckBox.AutoCheck = false;
+        this.interruptIfLcdStatCheckBox.AutoSize = true;
+        this.interruptIfLcdStatCheckBox.Name = "interruptIfLcdStatCheckBox";
+        this.interruptIfLcdStatCheckBox.TabStop = false;
+        this.interruptIfLcdStatCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIeLcdStatCheckBox
+        // 
+        this.interruptIeLcdStatCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIeLcdStatCheckBox.AutoCheck = false;
+        this.interruptIeLcdStatCheckBox.AutoSize = true;
+        this.interruptIeLcdStatCheckBox.Name = "interruptIeLcdStatCheckBox";
+        this.interruptIeLcdStatCheckBox.TabStop = false;
+        this.interruptIeLcdStatCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIfTimerCheckBox
+        // 
+        this.interruptIfTimerCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIfTimerCheckBox.AutoCheck = false;
+        this.interruptIfTimerCheckBox.AutoSize = true;
+        this.interruptIfTimerCheckBox.Name = "interruptIfTimerCheckBox";
+        this.interruptIfTimerCheckBox.TabStop = false;
+        this.interruptIfTimerCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIeTimerCheckBox
+        // 
+        this.interruptIeTimerCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIeTimerCheckBox.AutoCheck = false;
+        this.interruptIeTimerCheckBox.AutoSize = true;
+        this.interruptIeTimerCheckBox.Name = "interruptIeTimerCheckBox";
+        this.interruptIeTimerCheckBox.TabStop = false;
+        this.interruptIeTimerCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIfSerialCheckBox
+        // 
+        this.interruptIfSerialCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIfSerialCheckBox.AutoCheck = false;
+        this.interruptIfSerialCheckBox.AutoSize = true;
+        this.interruptIfSerialCheckBox.Name = "interruptIfSerialCheckBox";
+        this.interruptIfSerialCheckBox.TabStop = false;
+        this.interruptIfSerialCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIeSerialCheckBox
+        // 
+        this.interruptIeSerialCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIeSerialCheckBox.AutoCheck = false;
+        this.interruptIeSerialCheckBox.AutoSize = true;
+        this.interruptIeSerialCheckBox.Name = "interruptIeSerialCheckBox";
+        this.interruptIeSerialCheckBox.TabStop = false;
+        this.interruptIeSerialCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIfJoypadCheckBox
+        // 
+        this.interruptIfJoypadCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIfJoypadCheckBox.AutoCheck = false;
+        this.interruptIfJoypadCheckBox.AutoSize = true;
+        this.interruptIfJoypadCheckBox.Name = "interruptIfJoypadCheckBox";
+        this.interruptIfJoypadCheckBox.TabStop = false;
+        this.interruptIfJoypadCheckBox.UseVisualStyleBackColor = true;
+        // 
+        // interruptIeJoypadCheckBox
+        // 
+        this.interruptIeJoypadCheckBox.Anchor = System.Windows.Forms.AnchorStyles.None;
+        this.interruptIeJoypadCheckBox.AutoCheck = false;
+        this.interruptIeJoypadCheckBox.AutoSize = true;
+        this.interruptIeJoypadCheckBox.Name = "interruptIeJoypadCheckBox";
+        this.interruptIeJoypadCheckBox.TabStop = false;
+        this.interruptIeJoypadCheckBox.UseVisualStyleBackColor = true;
         // 
         // registersGroupBox
         // 
@@ -316,6 +552,10 @@ partial class DebuggerForm
         this.sidebarPanel.ResumeLayout(false);
         this.sidebarPanel.PerformLayout();
         this.stackGroupBox.ResumeLayout(false);
+        this.interruptsTable.ResumeLayout(false);
+        this.interruptsTable.PerformLayout();
+        this.interruptsGroupBox.ResumeLayout(false);
+        this.interruptsGroupBox.PerformLayout();
         this.registersGroupBox.ResumeLayout(false);
         this.registersGroupBox.PerformLayout();
         this.mainSplitContainer.Panel1.ResumeLayout(false);
@@ -340,6 +580,26 @@ partial class DebuggerForm
     private System.Windows.Forms.Panel sidebarPanel;
     private System.Windows.Forms.GroupBox registersGroupBox;
     private System.Windows.Forms.TableLayoutPanel registerTable;
+    private System.Windows.Forms.GroupBox interruptsGroupBox;
+    private System.Windows.Forms.TableLayoutPanel interruptsTable;
+    private System.Windows.Forms.Label interruptNameHeaderLabel;
+    private System.Windows.Forms.Label interruptIfHeaderLabel;
+    private System.Windows.Forms.Label interruptIeHeaderLabel;
+    private System.Windows.Forms.Label interruptVblankLabel;
+    private System.Windows.Forms.Label interruptLcdStatLabel;
+    private System.Windows.Forms.Label interruptTimerLabel;
+    private System.Windows.Forms.Label interruptSerialLabel;
+    private System.Windows.Forms.Label interruptJoypadLabel;
+    private System.Windows.Forms.CheckBox interruptIfVblankCheckBox;
+    private System.Windows.Forms.CheckBox interruptIeVblankCheckBox;
+    private System.Windows.Forms.CheckBox interruptIfLcdStatCheckBox;
+    private System.Windows.Forms.CheckBox interruptIeLcdStatCheckBox;
+    private System.Windows.Forms.CheckBox interruptIfTimerCheckBox;
+    private System.Windows.Forms.CheckBox interruptIeTimerCheckBox;
+    private System.Windows.Forms.CheckBox interruptIfSerialCheckBox;
+    private System.Windows.Forms.CheckBox interruptIeSerialCheckBox;
+    private System.Windows.Forms.CheckBox interruptIfJoypadCheckBox;
+    private System.Windows.Forms.CheckBox interruptIeJoypadCheckBox;
     private System.Windows.Forms.GroupBox stackGroupBox;
     private System.Windows.Forms.Label stackLegendLabel;
     private System.Windows.Forms.ListBox stackListBox;

@@ -241,6 +241,7 @@ public partial class DebuggerForm : Form
     {
         long startTicks = Stopwatch.GetTimestamp();
         this.UpdateRegisterView();
+        this.UpdateInterruptView();
         long registersTicks = Stopwatch.GetTimestamp();
 
         this.UpdateStackView();
@@ -292,6 +293,24 @@ public partial class DebuggerForm : Form
         this.registerLabels["FlagN"].Text = Cpu.Flags.N ? "1" : "0";
         this.registerLabels["FlagH"].Text = Cpu.Flags.H ? "1" : "0";
         this.registerLabels["FlagC"].Text = Cpu.Flags.C ? "1" : "0";
+    }
+
+    private void UpdateInterruptView()
+    {
+        byte interruptFlags = this.gameboy.Memory.Read8(0xFF0F);
+        byte interruptEnable = this.gameboy.Memory.Read8(0xFFFF);
+
+        UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x01, this.interruptIfVblankCheckBox, this.interruptIeVblankCheckBox);
+        UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x02, this.interruptIfLcdStatCheckBox, this.interruptIeLcdStatCheckBox);
+        UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x04, this.interruptIfTimerCheckBox, this.interruptIeTimerCheckBox);
+        UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x08, this.interruptIfSerialCheckBox, this.interruptIeSerialCheckBox);
+        UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x10, this.interruptIfJoypadCheckBox, this.interruptIeJoypadCheckBox);
+    }
+
+    private static void UpdateInterruptCheckboxes(byte flags, byte enable, byte mask, CheckBox flagsCheckBox, CheckBox enableCheckBox)
+    {
+        flagsCheckBox.Checked = (flags & mask) != 0;
+        enableCheckBox.Checked = (enable & mask) != 0;
     }
 
     private void UpdateStackView()

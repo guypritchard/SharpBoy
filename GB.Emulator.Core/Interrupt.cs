@@ -19,7 +19,7 @@ public class Interrupt : IMemoryRange
         get; private set;
     }
 
-    private byte interruptFlags = 0xE1;
+    private byte interruptFlags = 0x00;
 
     public void Write8(ushort location, byte value)
     {

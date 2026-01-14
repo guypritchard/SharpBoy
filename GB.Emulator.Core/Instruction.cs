@@ -52,12 +52,27 @@ namespace GB.Emulator.Core
       if (this.Length == 2)
       {
         string operand = $"0x{this.P1:X2}";
+        if (this.Value is 0xE0 or 0xF0)
+        {
+          ushort address = (ushort)(0xFF00 + this.P1);
+          string label = GetIoLabel(address);
+          operand = label ?? $"0x{address:X4}";
+        }
+
         string formatted = FormatWithOperand(this.Name, operand);
         return $"ROM0:{Cpu.Registers.PC:X4}\t0x{this.Value:X2}\t{formatted}\t\t\t{this.Length}";
       }
 
       ushort immediate = ByteOp.Concat(this.P1, this.P2);
       string immediateOperand = $"0x{immediate:X4}";
+      string immediateLabel = GetIoLabel(immediate);
+      if (immediateLabel != null)
+      {
+        immediateOperand = this.Value == 0xEA
+          ? immediateLabel
+          : $"0x{immediate:X4} ({immediateLabel})";
+      }
+
       string immediateFormatted = FormatWithOperand(this.Name, immediateOperand);
       return $"ROM0:{Cpu.Registers.PC:X4}\t0x{this.Value:X2}\t{immediateFormatted}\t\t\t{this.Length}";
     }
@@ -95,6 +110,17 @@ namespace GB.Emulator.Core
       }
 
       return $"{name}, {operand}";
+    }
+
+    private static string GetIoLabel(ushort address)
+    {
+      return address switch
+      {
+        0xFF44 => "LY",
+        0xFF0F => "IF",
+        0xFFFF => "IE",
+        _ => null
+      };
     }
   }
 }

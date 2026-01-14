@@ -23,9 +23,9 @@ namespace GB.Emulator.Core
         private readonly byte[] memory = new byte[Video.Width * Video.Height];
         private readonly Bitmap frame;
 
-        public void Step()
+        public byte Step(int cycles = 4)
         {
-            this.lcd.Step();
+            return this.lcd.Step(cycles);
         }
 
         public void BitBlt(byte[] incomingFrame)

@@ -97,7 +97,12 @@ namespace GB.Emulator.Core
             }
 
             instruction.Execute(parameter1, parameter2);
-            this.video.Step();
+            byte interruptRequest = this.video.Step();
+            if (interruptRequest != 0)
+            {
+                byte flags = Cpu.Memory.Peek(0xFF0F);
+                Cpu.Memory.Write8((byte)(flags | interruptRequest), 0xFF0F);
+            }
 
             IReadOnlyCollection<ushort> writes = memory.ConsumeRecentWrites();
             IReadOnlyCollection<ushort> reads = memory.ConsumeRecentReads();
