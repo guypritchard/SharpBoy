@@ -7,6 +7,8 @@ A basic Gameboy emulator.
 
 ## Implementation Reference Docs:
 
+- I made this:  https://guypritchard.github.io/SharpBoy-Opcode-Manual/
+
 - This is excellent:  https://meganesulli.com/generate-gb-opcodes/
 - https://cturt.github.io/cinoop.html
 - https://web.archive.org/web/20141105020940/http://problemkaputt.de/pandocs.htm#thecartridgeheader

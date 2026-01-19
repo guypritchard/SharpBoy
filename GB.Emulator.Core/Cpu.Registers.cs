@@ -104,12 +104,30 @@
                 set => ByteOp.Split(value, out H, out L);
             }
 
+            /// <summary>
+            /// Pseudo BC register pair.
+            /// </summary>
+            public static ushort BC
+            {
+                get => ByteOp.Concat(C, B);
+                set => ByteOp.Split(value, out B, out C);
+            }
+
+            /// <summary>
+            /// Pseudo DE register pair.
+            /// </summary>
+            public static ushort DE
+            {
+                get => ByteOp.Concat(E, D);
+                set => ByteOp.Split(value, out D, out E);
+            }
+
             public static byte Flags;
 
             /// <summary>
             /// Stack pointer.
             /// </summary>
-            public static ushort SP = 0xCFF5;
+            public static ushort SP = 0xFFFE;
 
             /// <summary>
             /// Program Counter.
@@ -131,7 +149,7 @@
                 H = 0xFF;
                 L = 0xE2;
                 Flags = 0x00;
-                SP = 0xCFF5;
+                SP = 0xFFFE;
                 PC = 0x0100;
             }
         }
