@@ -22,6 +22,12 @@ namespace GB.Emulator.Core
 
                 return local;
             }
+
+            public static ushort Decrement(ushort value)
+            {
+                return (ushort)(value - 1);
+            }
+
             public static byte Increment(byte value)
             {
                 byte result = (byte)(value + 1);
@@ -37,6 +43,12 @@ namespace GB.Emulator.Core
 
                 return result;
             }
+
+            public static ushort Increment(ushort value)
+            {
+                return (ushort)(value + 1);
+            }
+
             public static byte Add(byte value1, byte value2)
             {
                 int result = value1 + value2;
@@ -55,6 +67,109 @@ namespace GB.Emulator.Core
                 Cpu.Flags.Z = sum == 0;
 
                 return sum;
+            }
+
+            public static ushort Add(ushort value1, ushort value2)
+            {
+                return (ushort)(value1 + value2);
+            }
+
+            public static byte AddWithCarry(byte value1, byte value2)
+            {
+                int carry = Cpu.Flags.C ? 1 : 0;
+                int result = value1 + value2 + carry;
+                byte sum = (byte)result;
+
+                // This is not a subtract operation so set the 'subtract' flag to false.
+                Cpu.Flags.N = false;
+
+                // Carry occurs when the result exceeds 8 bits.
+                Cpu.Flags.C = result > 0xFF;
+
+                // Half-carry occurs when the low nibble wraps.
+                Cpu.Flags.H = ((value1 & 0x0F) + (value2 & 0x0F) + carry) > 0x0F;
+
+                // Set the 'zero' flag if the value is indeed now zero.
+                Cpu.Flags.Z = sum == 0;
+
+                return sum;
+            }
+
+            public static byte And(byte value1, byte value2)
+            {
+                byte result = (byte)(value1 & value2);
+
+                Cpu.Flags.Z = result == 0;
+                Cpu.Flags.N = false;
+                Cpu.Flags.H = true;
+                Cpu.Flags.C = false;
+
+                return result;
+            }
+
+            public static byte Or(byte value1, byte value2)
+            {
+                byte result = (byte)(value1 | value2);
+
+                Cpu.Flags.Z = result == 0;
+                Cpu.Flags.N = false;
+                Cpu.Flags.H = false;
+                Cpu.Flags.C = false;
+
+                return result;
+            }
+
+            public static byte Xor(byte value1, byte value2)
+            {
+                byte result = (byte)(value1 ^ value2);
+
+                Cpu.Flags.Z = result == 0;
+                Cpu.Flags.N = false;
+                Cpu.Flags.H = false;
+                Cpu.Flags.C = false;
+
+                return result;
+            }
+
+            public static byte Subtract(byte value1, byte value2)
+            {
+                int result = value1 - value2;
+                byte difference = (byte)result;
+
+                // This is a subtract operation so set the 'subtract' flag.
+                Cpu.Flags.N = true;
+
+                // Carry occurs when we go below zero.
+                Cpu.Flags.C = result < 0;
+
+                // Half-carry occurs when we borrow from the upper nibble.
+                Cpu.Flags.H = (value1 & 0x0F) < (value2 & 0x0F);
+
+                // Set the 'zero' flag if the value is indeed now zero.
+                Cpu.Flags.Z = difference == 0;
+
+                return difference;
+            }
+
+            public static byte SubtractWithCarry(byte value1, byte value2)
+            {
+                int carry = Cpu.Flags.C ? 1 : 0;
+                int result = value1 - value2 - carry;
+                byte difference = (byte)result;
+
+                // This is a subtract operation so set the 'subtract' flag.
+                Cpu.Flags.N = true;
+
+                // Carry occurs when we go below zero.
+                Cpu.Flags.C = result < 0;
+
+                // Half-carry occurs when we borrow from the upper nibble.
+                Cpu.Flags.H = (value1 & 0x0F) < ((value2 & 0x0F) + carry);
+
+                // Set the 'zero' flag if the value is indeed now zero.
+                Cpu.Flags.Z = difference == 0;
+
+                return difference;
             }
         }
     }

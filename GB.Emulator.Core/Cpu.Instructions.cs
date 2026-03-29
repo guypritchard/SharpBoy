@@ -1,264 +1,424 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security.Cryptography;
+using System.Linq;
 
 namespace GB.Emulator.Core
 {
     public partial class Cpu
     {
-        private Dictionary<byte, Instruction> instructions = new()
+        private static KeyValuePair<byte, Instruction> Instr(byte opcode, string name, ushort length, Action<byte, byte> handler, bool incrementPc = true)
         {
+            return new(opcode, new Instruction(opcode, name, handler, length, incrementPc));
+        }
 
-            { 0x00, new Instruction(0x00, "NOP", (p1, p2) => { }, 1) },
-            { 0x05, new Instruction(0x05, "DEC B", (p1, p2) => Cpu.Registers.B = Cpu.Operations.Decrement(Cpu.Registers.B), 1) },
-            { 0x06, new Instruction(0x06, "LD B", (p1, p2) => { Cpu.Registers.B = p1; }, 2) },
-            { 0x0C, new Instruction(0x0C, "INC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Increment(Cpu.Registers.C), 1) },
-            { 0x0D, new Instruction(0x0D, "DEC C", (p1, p2) => Cpu.Registers.C = Cpu.Operations.Decrement(Cpu.Registers.C), 1) },
-            { 0x0E, new Instruction(0x0E, "LD C", (p1, p2) => { Cpu.Registers.C = p1; }, 2) },
-            { 0x10, new Instruction(0x10, "STOP", (p1, p2) => { Environment.Exit(-1); }, 1) },
-            { 0x15, new Instruction(0x15, "DEC D", (p1, p2) => Cpu.Registers.D = Cpu.Operations.Decrement(Cpu.Registers.D), 1) },
-            { 0x1D, new Instruction(0x1D, "DEC E", (p1, p2) => Cpu.Registers.E = Cpu.Operations.Decrement(Cpu.Registers.E), 1) },
+        private static KeyValuePair<byte, Instruction> Dec(byte opcode, string registerName, Func<byte> getter, Action<byte> setter)
+        {
+            return Instr(opcode, $"DEC {registerName}", 1, (p1, p2) => setter(Operations.Decrement(getter())));
+        }
+
+        private static KeyValuePair<byte, Instruction> Dec(byte opcode, string registerName, Func<ushort> getter, Action<ushort> setter)
+        {
+            return Instr(opcode, $"DEC {registerName}", 1, (p1, p2) => setter(Operations.Decrement(getter())));
+        }
+
+        private static KeyValuePair<byte, Instruction> Inc(byte opcode, string registerName, Func<byte> getter, Action<byte> setter)
+        {
+            return Instr(opcode, $"INC {registerName}", 1, (p1, p2) => setter(Operations.Increment(getter())));
+        }
+
+        private static KeyValuePair<byte, Instruction> Inc(byte opcode, string registerName, Func<ushort> getter, Action<ushort> setter)
+        {
+            return Instr(opcode, $"INC {registerName}", 1, (p1, p2) => setter(Operations.Increment(getter())));
+        }
+
+        private static KeyValuePair<byte, Instruction> LdImmediate(byte opcode, string name, Action<byte> setter)
+        {
+            return Instr(opcode, name, 2, (p1, p2) => setter(p1));
+        }
+
+        private static KeyValuePair<byte, Instruction> XorZero(byte opcode, string name, Action<byte> setter)
+        {
+            return Instr(opcode, name, 1, (p1, p2) => setter(0x0));
+        }
+
+        private static KeyValuePair<byte, Instruction> XorRegister(byte opcode, string name, Func<byte> getter)
+        {
+            return Instr(opcode, name, 1, (p1, p2) => Cpu.Registers.A = Operations.Xor(Cpu.Registers.A, getter()));
+        }
+
+        private static KeyValuePair<byte, Instruction> OrRegister(byte opcode, string name, Func<byte> getter)
+        {
+            return Instr(opcode, name, 1, (p1, p2) => Cpu.Registers.A = Operations.Or(Cpu.Registers.A, getter()));
+        }
+
+        private static KeyValuePair<byte, Instruction> OrOperand(byte opcode, string name, Func<byte, byte> getter)
+        {
+            return Instr(opcode, name, 2, (p1, p2) => Cpu.Registers.A = Operations.Or(Cpu.Registers.A, getter(p1)));
+        }
+
+        private static readonly KeyValuePair<byte, Instruction>[] LdInstructions = new[]
+        {
+            LdImmediate(0x01, "LD BC, d16", v => Cpu.Registers.BC = ByteOp.Concat(v, Cpu.Registers.C)),
+            LdImmediate(0x06, "LD B, d8", v => Cpu.Registers.B = v),
+            LdImmediate(0x0A, "LD A, (BC)", v => Cpu.Registers.A = Cpu.Memory.Read8(Cpu.Registers.BC)),
+            LdImmediate(0x0E, "LD C, d8", v => Cpu.Registers.C = v),
+            LdImmediate(0x11, "LD DE, d16", v => Cpu.Registers.DE = ByteOp.Concat(v, Cpu.Registers.E)),
+            Instr(0x21, "LD HL, d16", 3, (p1, p2) =>
             {
-                0x20,
-                new Instruction(0x20, "JR NZ", (p1, p2) =>
+                Cpu.Registers.H = p2;
+                Cpu.Registers.L = p1;
+            }),
+            Instr(0x02, "LD (BC), A", 1, (p1, p2) =>
+            {
+                Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.BC);
+            }),
+            Instr(0x12, "LD A, (DE)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Memory.Read8(Cpu.Registers.DE);
+            }),
+            Instr(0x22, "LD (HL+), A", 1, (p1, p2) =>
+            {
+                Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
+                Cpu.Registers.HL++;
+            }),
+            Instr(0x2A, "LD A, (HL+)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Memory.Read8(Cpu.Registers.HL);
+                Cpu.Registers.HL++;
+            }),
+            Instr(0x31, "LD SP, d16", 3, (p1, p2) =>
+            {
+                Cpu.Registers.SP = ByteOp.Concat(p1, p2);
+            }),
+            Instr(0x32, "LD (HL-), A", 1, (p1, p2) =>
+            {
+                Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
+                Cpu.Registers.HL--;
+            }),
+            Instr(0x3E, "LD A, d8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.A = p1;
+            }),
+            Instr(0x43, "LD B, E", 1, (p1, p2) => Cpu.Registers.B = Cpu.Registers.E),
+            Instr(0x44, "LD B, H", 1, (p1, p2) => Cpu.Registers.B = Cpu.Registers.H),
+            Instr(0x4D, "LD C, L", 1, (p1, p2) => Cpu.Registers.C = Cpu.Registers.L),
+            Instr(0x54, "LD D, H", 1, (p1, p2) => Cpu.Registers.D = Cpu.Registers.H),
+            Instr(0x5D, "LD E, L", 1, (p1, p2) => Cpu.Registers.E = Cpu.Registers.L),
+            Instr(0x5F, "LD E, A", 1, (p1, p2) => Cpu.Registers.E = Cpu.Registers.A),
+            Instr(0x66, "LD H, (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.H = Cpu.Memory.Read8(Cpu.Registers.HL);
+            }),
+            Instr(0x67, "LD L, (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.L = Cpu.Memory.Read8(Cpu.Registers.HL);
+            }),
+            Instr(0x68, "LD L, B", 1, (p1, p2) => Cpu.Registers.L = Cpu.Registers.B),
+            Instr(0x69, "LD L, C", 1, (p1, p2) => Cpu.Registers.L = Cpu.Registers.C),
+            Instr(0x6F, "LD L, A", 1, (p1, p2) => Cpu.Registers.L = Cpu.Registers.A),
+            Instr(0x7A, "LD A, D", 1, (p1, p2) => Cpu.Registers.A = Cpu.Registers.D),
+            Instr(0x7B, "LD A, E", 1, (p1, p2) => Cpu.Registers.A = Cpu.Registers.E),
+            Instr(0x7C, "LD A, H", 1, (p1, p2) => Cpu.Registers.A = Cpu.Registers.H),
+            Instr(0x7D, "LD A, L", 1, (p1, p2) => Cpu.Registers.A = Cpu.Registers.L),
+            Instr(0x7E, "LD A, (HL)", 1, (p1, p2) => Cpu.Registers.A = Memory.Read8(Cpu.Registers.HL)),
+            Instr(0xE0, "LD (a8), A", 2, (p1, p2) =>
+            {
+                ushort memory = (ushort)(p1 + 0xFF00);
+                Cpu.Memory.Write8(Cpu.Registers.A, memory);
+            }),
+            Instr(0xE2, "LD (C), A", 1, (p1, p2) =>
+            {
+                ushort memory = (ushort)(Cpu.Registers.C + 0xFF00);
+                Cpu.Memory.Write8(Cpu.Registers.A, memory);
+            }),
+            Instr(0xEA, "LD (a16), A", 3, (p1, p2) =>
+            {
+                Cpu.Memory.Write8(Cpu.Registers.A, ByteOp.Concat(p1, p2));
+            }),
+            Instr(0xF0, "LD A, (a8)", 2, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Memory.Read8((ushort)(0xFF00 + p1));
+            }),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] NoOpLoadInstructions = new[]
+        {
+            Instr(0x40, "LD B, B", 1, (p1, p2) => { }),
+            Instr(0x49, "LD C, C", 1, (p1, p2) => { }),
+            Instr(0x52, "LD D, D", 1, (p1, p2) => { }),
+            Instr(0x5B, "LD E, E", 1, (p1, p2) => { }),
+            Instr(0x64, "LD H, H", 1, (p1, p2) => { }),
+            Instr(0x6D, "LD L, L", 1, (p1, p2) => { }),
+            Instr(0x7F, "LD A, A", 1, (p1, p2) => { }),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] AddInstructions = new[]
+        {
+            Instr(0x09, "ADD HL BC", 1, (p1, p2) =>
+            {
+                Cpu.Registers.HL = (ushort)Cpu.Operations.Add(Cpu.Registers.HL, Cpu.Registers.BC);
+            }),
+            Instr(0x19, "ADD HL DE", 1, (p1, p2) =>
+            {
+                Cpu.Registers.HL = (ushort)Cpu.Operations.Add(Cpu.Registers.HL, Cpu.Registers.DE);
+            }),
+            Instr(0x29, "ADD HL HL", 1, (p1, p2) =>
+            {
+                Cpu.Registers.HL = (ushort)Cpu.Operations.Add(Cpu.Registers.HL, Cpu.Registers.HL);
+            }),
+            Instr(0x39, "ADD HL SP", 1, (p1, p2) =>
+            {
+                Cpu.Registers.HL += Cpu.Registers.SP;
+            }),
+            Instr(0x80, "ADD A, B", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Add(Cpu.Registers.A, Cpu.Registers.B);
+            }),
+            Instr(0x87, "ADD A, A", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Add(Cpu.Registers.A, Cpu.Registers.A);
+            }),
+            Instr(0xE6, "AND d8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.And(Cpu.Registers.A, p1);
+            }),
+            Instr(0xE8, "ADD SP, d8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.SP += (ushort)(sbyte)p1;
+            }),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] SubInstructions = new[]
+        {
+            Instr(0x95, "SUB A, L", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.L);
+            }),
+            Instr(0x97, "SUB A, A", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.A);
+            }),
+            Instr(0x9C, "SBC A, H", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.SubtractWithCarry(Cpu.Registers.A, Cpu.Registers.H);
+            }),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] XorInstructions = new[]
+        {
+            XorRegister(0xA8, "XOR B", () => Cpu.Registers.B),
+            XorRegister(0xA9, "XOR C", () => Cpu.Registers.C),
+            XorRegister(0xAA, "XOR D", () => Cpu.Registers.D),
+            XorRegister(0xAB, "XOR E", () => Cpu.Registers.E),
+            XorRegister(0xAC, "XOR H", () => Cpu.Registers.H),
+            XorRegister(0xAD, "XOR L", () => Cpu.Registers.L),
+            Instr(0xAE, "XOR (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Operations.Xor(Cpu.Registers.A, Cpu.Memory.Read8(Cpu.Registers.HL));
+            }),
+            XorRegister(0xAF, "XOR A", () => Cpu.Registers.A),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] OrInstructions = new[]
+        {
+            OrRegister(0xB0, "OR B", () => Cpu.Registers.B),
+            OrRegister(0xB1, "OR C", () => Cpu.Registers.C),
+            OrRegister(0xB2, "OR D", () => Cpu.Registers.D),
+            OrRegister(0xB3, "OR E", () => Cpu.Registers.E),
+            OrRegister(0xB4, "OR H", () => Cpu.Registers.H),
+            OrRegister(0xB5, "OR L", () => Cpu.Registers.L),
+            Instr(0xB6, "OR (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Or(Cpu.Registers.A, Cpu.Memory.Read8(Cpu.Registers.HL));
+            }),
+            OrRegister(0xB7, "OR A", () => Cpu.Registers.A),
+            OrOperand(0xF6, "OR d8", p1 => p1),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] CompareInstructions = new[]
+        {
+            Instr(0xFE, "CP d8", 2, (p1, p2) =>
+            {
+                Cpu.Flags.Z = Cpu.Registers.A == p1;
+            }),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] IncrementDecrementInstructions = new[]
+        {
+            Inc(0x03, "BC", () => Cpu.Registers.BC, v => Cpu.Registers.BC = v),
+            Inc(0x04, "B", () => Cpu.Registers.B, v => Cpu.Registers.B = v),
+            Dec(0x05, "B", () => Cpu.Registers.B, v => Cpu.Registers.B = v),
+            Inc(0x0C, "C", () => Cpu.Registers.C, v => Cpu.Registers.C = v),
+            Dec(0x0D, "C", () => Cpu.Registers.C, v => Cpu.Registers.C = v),
+            Inc(0x13, "DE", () => Cpu.Registers.DE, v => Cpu.Registers.DE = v),
+            Dec(0x15, "D", () => Cpu.Registers.D, v => Cpu.Registers.D = v),
+            Dec(0x1B, "DE", () => Cpu.Registers.DE, v => Cpu.Registers.DE = v),
+            Dec(0x1D, "E", () => Cpu.Registers.E, v => Cpu.Registers.E = v),
+            Inc(0x23, "HL", () => Cpu.Registers.HL, v => Cpu.Registers.HL = v),
+            Dec(0x25, "H", () => Cpu.Registers.H, v => Cpu.Registers.H = v),
+            Dec(0x2B, "HL", () => Cpu.Registers.HL, v => Cpu.Registers.HL = v),
+            Dec(0x2D, "L", () => Cpu.Registers.L, v => Cpu.Registers.L = v),
+            Dec(0x3D, "A", () => Cpu.Registers.A, v => Cpu.Registers.A = v),
+            Inc(0x33, "SP", () => Cpu.Registers.SP, v => Cpu.Registers.SP = v),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] JumpInstructions = new[]
+        {
+            Instr(0x18, "JR s8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.PC += (ushort)(ByteOp.ToSignedByte(p1));
+            }),
+            Instr(0x20, "JR NZ, s8", 2, (p1, p2) =>
+            {
+                if (Cpu.Flags.Z == false)
                 {
-                    if (Cpu.Flags.Z == false)
-                    {
-                        Cpu.Registers.PC += (ushort)(ByteOp.ToSignedByte(p1));
-                        return;
-                    }
-                },
-              2)
-            },
+                    Cpu.Registers.PC += (ushort)(ByteOp.ToSignedByte(p1));
+                    return;
+                }
+            }),
+            Instr(0x30, "JR NC, s8", 2, (p1, p2) =>
             {
-                0x21,
-                new Instruction(0x21, "LD(HL)", (p1, p2) =>
+                if (Cpu.Flags.C == false)
                 {
-                    Cpu.Registers.H = p2;
-                    Cpu.Registers.L = p1;
-                },
-              3)
-            },
+                    Cpu.Registers.PC += (ushort)(ByteOp.ToSignedByte(p1));
+                    return;
+                }
+            }),
+            Instr(0xC2, "JP NZ", 3, (p1, p2) =>
             {
-                0x22,
-                new Instruction(0x22, "LD(HL+)A", (p1, p2) =>
-                {
-                    Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
-                    Cpu.Registers.HL++;
-                },
-              1)
-            },
-            { 0x25, new Instruction(0x25, "DEC H", (p1, p2) => Cpu.Registers.H = Cpu.Operations.Decrement(Cpu.Registers.H), 1) },
-            {
-                0x2A,
-                new Instruction(0x2A, "LD A(HL+)", (p1, p2) =>
-                {
-                    var memory = Memory.Read16(Cpu.Registers.HL);
-                    ByteOp.Split(memory, out Registers.A, out Registers.A);
-                    Cpu.Registers.HL++;
-                },
-              1)
-            },
-            { 0x2D, new Instruction(0x2D, "DEC L", (p1, p2) => Cpu.Registers.L = Cpu.Operations.Decrement(Cpu.Registers.L), 1) },
-            {
-                0x31,
-                new Instruction(0x31, "LD(SP)", (p1, p2) =>
-                {
-                    Cpu.Registers.SP = ByteOp.Concat(p1, p2);
-                },
-              3)
-            },
-            {
-                0x32,
-                new Instruction(0x32, "LD(HL-)A", (p1, p2) =>
-                {
-                    Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
-                    Cpu.Registers.HL--;
-                },
-              1)
-            },
-            { 0x3D, new Instruction(0x3D, "DEC A", (p1, p2) => Cpu.Registers.A = Cpu.Operations.Decrement(Cpu.Registers.A), 1) },
-            {
-                0x3E,
-                new Instruction(0xEA, "LD A, d8", (p1, p2) => {
-                    Cpu.Registers.A = p1;
-                },
-              2)
-            },
-            { 0x43, new Instruction(0x3D, "LD B, E", (p1, p2) => Cpu.Registers.B = Cpu.Registers.E, 1) },
-            { 0x76, new Instruction(0x76, "HALT", (p1, p2) => { Environment.Exit(-1); }, 1) },
-            { 0x87, new Instruction(0x76, "ADD A, A", (p1, p2) => { Cpu.Registers.A = Cpu.Operations.Add(Cpu.Registers.A, Cpu.Registers.A); }, 1) },
-            {
-                0xA8,
-                new Instruction(0xA8, "XOR B", (p1, p2) =>
-                {
-                    Cpu.Registers.B = 0x0;
-                },
-                1)
-            },
-            {
-                0xA9,
-                new Instruction(0xA9, "XOR C", (p1, p2) =>
-                {
-                    Cpu.Registers.C = 0x0;
-                },
-                1)
-            },
-            {
-                0xAA,
-                new Instruction(0xAA, "XOR D", (p1, p2) =>
-                {
-                    Cpu.Registers.D = 0x0;
-                },
-                1)
-            },
-            {
-                0xAB,
-                new Instruction(0xAB, "XOR E", (p1, p2) =>
-                {
-                    Cpu.Registers.E = 0x0;
-                },
-                1)
-            },
-            {
-                0xAC,
-                new Instruction(0xAC, "XOR H", (p1, p2) =>
-                {
-                    Cpu.Registers.H = 0x0;
-                },
-                1)
-            },
-            {
-                0xAD,
-                new Instruction(0xAD, "XOR L", (p1, p2) =>
-                {
-                    Cpu.Registers.L = 0x0;
-                },
-                1)
-            },
-            {
-                0xAE,
-                new Instruction(0xAE, "XOR (HL)", (p1, p2) =>
-                {
-                    Cpu.Registers.HL = 0x0;
-                },
-                1)
-            },
-            {
-                0xAF,
-                new Instruction(0xAF, "XOR A", (p1, p2) =>
-                {
-                    Cpu.Registers.A = 0x0;
-                },
-                1)
-            },
-            {
-                0xC3,
-                new Instruction(0xC3, "JP", (p1, p2) =>
+                if (Cpu.Flags.Z == false)
                 {
                     Cpu.Registers.PC = ByteOp.Concat(p1, p2);
-                },
-              3,
-              false)
-            },
+                }
+                else
+                {
+                    Cpu.Registers.PC += 3;
+                }
+            }, incrementPc: false),
+            Instr(0xC3, "JP", 3, (p1, p2) =>
             {
-                0xC9,
-                new Instruction(0xC9, "RET", (p1, p2) => {
-                    // Pop the previous PC value from the stack and write it to the Program Counter to return to where we were before the CALL instruction.
+                Cpu.Registers.PC = ByteOp.Concat(p1, p2);
+            }, incrementPc: false),
+            Instr(0xC5, "PUSH BC", 1, (p1, p2) =>
+            {
+                Cpu.Registers.SP -= 1;
+                Cpu.Memory.Write8(Cpu.Registers.B, Cpu.Registers.SP);
+                Cpu.Registers.SP -= 1;
+                Cpu.Memory.Write8(Cpu.Registers.C, Cpu.Registers.SP);
+            }),
+            Instr(0xC9, "RET", 1, (p1, p2) =>
+            {
+                // Pop the previous PC value from the stack and write it to the Program Counter to return to where we were before the CALL instruction.
+                Trace.WriteLine(Cpu.Registers.Dump());
+                Cpu.Registers.PC = Cpu.Memory.Read16(Cpu.Registers.SP);
+                Cpu.Registers.SP += 2;
+                Trace.WriteLine(Cpu.Registers.Dump());
+            }, incrementPc: false),
+            Instr(0xCD, "CALL", 3, (p1, p2) =>
+            {
+
+                Trace.WriteLine(Cpu.Registers.Dump());
+                // Write the current Program Counter to the SP register location - we'll come back here later - we're calling a function now.
+                Cpu.Registers.SP -= 2;
+                Cpu.Memory.Write16(Cpu.Registers.PC += 3, Cpu.Registers.SP);
+                // Set the Program Counter to be the location of the 'function' we're calling. 
+                Cpu.Registers.PC = ByteOp.Concat(p1, p2);
+                Trace.WriteLine(Cpu.Registers.Dump());
+            }, incrementPc: false),
+            Instr(0xCE, "ADC A, d8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.AddWithCarry(Cpu.Registers.A, p1);
+            }),
+            Instr(0xD0, "RET NC", 1, (p1, p2) =>
+            {
+                if (Cpu.Flags.C == false)
+                {
+                    // Pop the SP value back onto the PC.
                     Trace.WriteLine(Cpu.Registers.Dump());
                     Cpu.Registers.PC = Cpu.Memory.Read16(Cpu.Registers.SP);
-                    Cpu.Registers.SP -= 2;
+                    Cpu.Registers.SP += 2;
                     Trace.WriteLine(Cpu.Registers.Dump());
-                }, 1, false)
-            },
-            {
-                0xCD,
-                new Instruction(0xCD, "CALL", (p1, p2) => {
-
-                    Trace.WriteLine(Cpu.Registers.Dump());
-                    // Write the current Program Counter to the SP register location - we'll come back here later - we're calling a function now.
-                    Cpu.Registers.SP -= 2;
-                    Cpu.Memory.Write16(Cpu.Registers.PC += 3, Cpu.Registers.SP);
-                    // Set the Program Counter to be the location of the 'function' we're calling. 
-                    Cpu.Registers.PC = ByteOp.Concat(p1, p2);
-                    Trace.WriteLine(Cpu.Registers.Dump());
-                },
-            3,
-            false)
-            },
-            {
-                0xD0,
-                new Instruction (0xD0, "RET NC", (p1, p2) =>
+                }
+                else
                 {
-                    if (Cpu.Flags.C == false)
-                    {
-                        // Pop the SP value back onto the PC.
-                        Trace.WriteLine(Cpu.Registers.Dump());
-                        Cpu.Registers.PC = Cpu.Memory.Read16(Cpu.Registers.SP);
-                        Cpu.Registers.SP += 2;
-                        Trace.WriteLine(Cpu.Registers.Dump());
-                    }
-                    else
-                    {
-                        Cpu.Registers.PC += 1;
-                    }
-                }, 1, false)
-            },
+                    Cpu.Registers.PC += 1;
+                }
+            }, incrementPc: false),
+            Instr(0xD8, "RET C", 1, (p1, p2) =>
             {
-                0xE0,
-                new Instruction(0xEA, "LD (a8), A", (p1, p2) => {
-                    Cpu.Memory.Write8(Cpu.Registers.A, p1);
-                },
-              2)
-            },
-            {
-                0xE2,
-                new Instruction(0xE2, "LD C A", (p1, p2) =>
+                if (Cpu.Flags.C == true)
                 {
-                    ushort memory = (ushort) (Cpu.Registers.C + 0xFF00);
-                    Cpu.Memory.Write8(Cpu.Registers.A, memory);
-                },
-            1
-            )
-            },
-            {
-                0xEA,
-                new Instruction(0xEA, "LD A", (p1, p2) => {
-                    Cpu.Memory.Write8(Cpu.Registers.A, ByteOp.Concat(p1, p2));
-                    Cpu.Memory.Write8(Cpu.Registers.A, ByteOp.Concat(p1, p2));
-                },
-              3)
-            },
-            {
-                0xF0,
-                new Instruction(0xEA, "LD A, (a8)", (p1, p2) => {
-                    Cpu.Registers.A = Cpu.Memory.Read8((byte)(0xFF00 + p1));
-                },
-              2)
-            },
-            {
-                0xF3,
-                new Instruction(0xF3, "DI", (p1, p2) => { }, 1)
-            },
-            {
-                0xF5,
-                new Instruction(0xF5, "PUSH AF", (p1, p2) => {
-                    Cpu.Registers.SP -= 1;
-                    Cpu.memory.Write8(Cpu.Registers.A, Cpu.Registers.SP);
-                    Cpu.Registers.SP -= 1;
-                    Cpu.memory.Write8(Cpu.Registers.F, Cpu.Registers.SP);
-                    Cpu.Registers.SP -= 2;
-                },
-                1)
-            },
-            {
-                0xFE,
-                new Instruction(0xFE, "CP d8", (p1, p2) => {
-                    Cpu.Flags.Z = Cpu.Registers.A == p1;
-                },
-              2)
-            },
+                    // Pop the SP value back onto the PC.
+                    Trace.WriteLine(Cpu.Registers.Dump());
+                    Cpu.Registers.PC = Cpu.Memory.Read16(Cpu.Registers.SP);
+                    Cpu.Registers.SP += 2;
+                    Trace.WriteLine(Cpu.Registers.Dump());
+                }
+                else
+                {
+                    Cpu.Registers.PC += 1;
+                }
+            }, incrementPc: false),
         };
+
+        private static readonly KeyValuePair<byte, Instruction>[] StackInstructions = new[]
+        {
+            Instr(0xC1, "POP BC", 1, (p1, p2) =>
+            {
+                ByteOp.Split(Cpu.Memory.Read16(Cpu.Registers.SP), out Cpu.Registers.B, out Cpu.Registers.C);
+                Cpu.Registers.SP += 2;
+            }),
+            Instr(0xD1, "POP DE", 1, (p1, p2) =>
+            {
+                ByteOp.Split(Cpu.Memory.Read16(Cpu.Registers.SP), out Cpu.Registers.D, out Cpu.Registers.E);
+                Cpu.Registers.SP += 2;
+            }),
+            Instr(0xE1, "POP HL", 1, (p1, p2) =>
+            {
+                ByteOp.Split(Cpu.Memory.Read16(Cpu.Registers.SP), out Cpu.Registers.H, out Cpu.Registers.L);
+                Cpu.Registers.SP += 2;
+            }),
+            Instr(0xE5, "PUSH HL", 1, (p1, p2) =>
+            {
+                Cpu.Registers.SP -= 1;
+                Cpu.memory.Write8(Cpu.Registers.H, Cpu.Registers.SP);
+                Cpu.Registers.SP -= 1;
+                Cpu.memory.Write8(Cpu.Registers.L, Cpu.Registers.SP);
+            }),
+            Instr(0xF1, "POP AF", 1, (p1, p2) =>
+            {
+                ByteOp.Split(Cpu.Memory.Read16(Cpu.Registers.SP), out Cpu.Registers.A, out Cpu.Registers.F);
+                Cpu.Registers.SP += 2;
+            }),
+            Instr(0xF5, "PUSH AF", 1, (p1, p2) =>
+            {
+                Cpu.Registers.SP -= 1;
+                Cpu.memory.Write8(Cpu.Registers.A, Cpu.Registers.SP);
+                Cpu.Registers.SP -= 1;
+                Cpu.memory.Write8(Cpu.Registers.F, Cpu.Registers.SP);
+            }),
+        };
+
+        private static readonly KeyValuePair<byte, Instruction>[] SystemInstructions = new[]
+        {
+            Instr(0x00, "NOP", 1, (p1, p2) => { }),
+            Instr(0x10, "STOP", 2, (p1, p2) => { Environment.Exit(-1); }),
+            Instr(0x76, "HALT", 1, (p1, p2) => { Environment.Exit(-1); }),
+            Instr(0xF3, "DI", 1, (p1, p2) => { }),
+        };
+
+        private Dictionary<byte, Instruction> instructions = new(
+            LdInstructions
+                .Concat(NoOpLoadInstructions)
+                .Concat(AddInstructions)
+                .Concat(SubInstructions)
+                .Concat(XorInstructions)
+                .Concat(OrInstructions)
+                .Concat(CompareInstructions)
+                .Concat(IncrementDecrementInstructions)
+                .Concat(JumpInstructions)
+                .Concat(StackInstructions)
+                .Concat(SystemInstructions));
     }
 }
