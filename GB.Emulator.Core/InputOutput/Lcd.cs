@@ -33,6 +33,16 @@ namespace GB.Emulator.Core.InputOutput
 
         public ushort End => 0xff46;
 
+        internal void Reset()
+        {
+            Control = 0;
+            ScrollX = 0;
+            ScrollY = 0;
+            LyCompare = 0;
+            statControl = 0;
+            ResetTiming();
+        }
+
         public byte Read8(ushort location)
         {
             switch (location)

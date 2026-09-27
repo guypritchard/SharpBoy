@@ -12,6 +12,8 @@ namespace GB.Emulator.Core
 
         public ushort End => EndAddress;
 
+        internal void Reset() => System.Array.Clear(this.memory, 0, this.memory.Length);
+
         public byte Read8(ushort location)
         {
             return this.memory[location - StartAddress];

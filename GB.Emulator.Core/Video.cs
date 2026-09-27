@@ -17,8 +17,8 @@ namespace GB.Emulator.Core
             this.frame = new Bitmap(Video.Width, Video.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
         }
 
-        private const int Width = 160;
-        private const int Height = 144;
+        public const int Width = 160;
+        public const int Height = 144;
         private readonly Lcd lcd;
         private readonly byte[] memory = new byte[Video.Width * Video.Height];
         private readonly Bitmap frame;

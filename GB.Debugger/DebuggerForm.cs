@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using GB.Emulator.Core;
@@ -17,6 +20,23 @@ public partial class DebuggerForm : Form
     private const int MemoryRowCount = MemorySize / MemoryBytesPerRow;
     private const int CodeScrollMargin = 3;
     private const int MaxStepHistory = 200;
+    private const int ScanlinesPerFrame = 154;
+    private const int VBlankStartScanline = 144;
+    private const int TileDataStart = 0x8000;
+    private const int TileBytesPerTile = 16;
+    private const int TilePixelSize = 8;
+    private const int TileColumns = 16;
+    private const int TileScale = 2;
+    private const int TraceIntervalMs = 16;
+    private const int TraceStepsPerTick = 50;
+    private const string TilesLegendText = "384 tiles · VRAM 0x8000–0x97FF · raw 2bpp patterns";
+    private static readonly Color[] TilePalette =
+    {
+        Color.White,
+        Color.LightGray,
+        Color.DarkGray,
+        Color.Black
+    };
 
     private readonly Gameboy gameboy = new();
     private readonly HashSet<ushort> recentWrites = new();
@@ -24,10 +44,23 @@ public partial class DebuggerForm : Form
     private readonly Dictionary<string, Label> registerLabels = new(StringComparer.Ordinal);
     private readonly Dictionary<ushort, int> disassemblyIndexByAddress = new();
     private readonly List<DebuggerSnapshot> stepHistory = new();
+    private readonly System.Windows.Forms.Timer traceTimer = new();
+    private readonly InteractionDiagramControl interactionDiagram = new();
+    private readonly TextBox interactionDetails = new();
+    private readonly FrameDisplayControl screenDisplay = new();
+    private readonly Label screenLegendLabel = new();
+    private readonly Panel tilesViewport = new();
+    private readonly TabPage videoTab = new("Video");
+    private bool screenDirty = true;
+    private bool tilesDirty = true;
+    private int hoveredTile = -1;
+    private CpuStepResult? lastInteractionStep;
+    private byte scanlineBeforeLastStep;
     private IReadOnlyList<CpuStepResult> disassemblyCache = Array.Empty<CpuStepResult>();
     private int lastCodeIndex = -1;
     private HashSet<int> lastMemoryHighlightRows = new();
     private bool memoryViewInitialized;
+    private bool traceRunning;
     private ushort stackStartPointer = Cpu.Registers.SP;
     private Cartridge? cartridge;
     private string? romPath;
@@ -35,7 +68,10 @@ public partial class DebuggerForm : Form
     public DebuggerForm()
     {
         InitializeComponent();
+        this.InitializeInteractionView();
         this.codeListBox.KeyDown += this.OnCodeListBoxKeyDown;
+        this.traceTimer.Interval = TraceIntervalMs;
+        this.traceTimer.Tick += this.OnTraceTick;
         this.CreateRegisterLabels();
         this.RefreshDebuggerViews();
         this.UpdateButtons();
@@ -43,6 +79,7 @@ public partial class DebuggerForm : Form
 
     private async void OnLoadRomClicked(object? sender, EventArgs e)
     {
+        this.StopTrace();
         if (!string.IsNullOrEmpty(this.romPath))
         {
             string? directory = Path.GetDirectoryName(this.romPath);
@@ -65,6 +102,8 @@ public partial class DebuggerForm : Form
             this.romPath = this.openRomDialog.FileName;
             this.BuildDisassemblyCache();
             this.stepHistory.Clear();
+            this.lastInteractionStep = null;
+            this.screenDirty = this.tilesDirty = true;
 
             this.recentWrites.Clear();
             this.recentReads.Clear();
@@ -96,8 +135,11 @@ public partial class DebuggerForm : Form
             return;
         }
 
+        this.StopTrace();
         this.gameboy.Load(this.cartridge);
         this.stepHistory.Clear();
+        this.lastInteractionStep = null;
+        this.screenDirty = this.tilesDirty = true;
         this.recentWrites.Clear();
         this.recentReads.Clear();
         this.stackStartPointer = Cpu.Registers.SP;
@@ -108,47 +150,102 @@ public partial class DebuggerForm : Form
 
     private void OnStepClicked(object? sender, EventArgs e)
     {
+        StepResult outcome = this.StepOnce(out string? errorMessage);
+        switch (outcome)
+        {
+            case StepResult.Success:
+                this.RefreshDebuggerViews(reportTiming: true);
+                this.UpdateButtons(enableStep: true);
+                break;
+            case StepResult.NoCartridge:
+                MessageBox.Show(
+                    this,
+                    "Load a ROM before stepping through instructions.",
+                    "No ROM loaded",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                break;
+            case StepResult.EndOfRom:
+                this.RefreshDebuggerViews(reportTiming: true);
+                MessageBox.Show(
+                    this,
+                    "Reached the end of the cartridge data.",
+                    "Execution complete",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                this.UpdateButtons(enableStep: false);
+                break;
+            case StepResult.Error:
+                this.RefreshDebuggerViews(reportTiming: true);
+                MessageBox.Show(
+                    this,
+                    errorMessage ?? "Unknown execution error.",
+                    "Execution error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                this.UpdateButtons(enableStep: false);
+                break;
+        }
+    }
+
+    private void OnTraceClicked(object? sender, EventArgs e)
+    {
         if (this.cartridge == null)
         {
             MessageBox.Show(
                 this,
-                "Load a ROM before stepping through instructions.",
+                "Load a ROM before tracing.",
                 "No ROM loaded",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
             return;
         }
 
-        DebuggerSnapshot snapshot = this.CaptureSnapshot();
-        this.PushSnapshot(snapshot);
-
-        try
+        if (this.traceRunning)
         {
-            CpuStepResult result = this.gameboy.Step();
-            this.recentWrites.Clear();
-            this.recentReads.Clear();
-            foreach (ushort address in result.WrittenAddresses)
-            {
-                this.recentWrites.Add(address);
-            }
-            foreach (ushort address in result.ReadAddresses)
-            {
-                this.recentReads.Add(address);
-            }
-
-            if (result.Instruction.Value is 0x31 or 0xF9 or 0xE8)
-            {
-                this.stackStartPointer = Cpu.Registers.SP;
-            }
-
-            this.RefreshDebuggerViews(reportTiming: true);
-            this.UpdateButtons(enableStep: true);
+            return;
         }
-        catch (ArgumentOutOfRangeException)
+
+        this.traceRunning = true;
+        this.traceTimer.Start();
+        this.UpdateButtons(enableStep: true);
+    }
+
+    private void OnStopClicked(object? sender, EventArgs e)
+    {
+        this.StopTrace();
+    }
+
+    private void OnTraceTick(object? sender, EventArgs e)
+    {
+        if (!this.traceRunning)
         {
-            this.recentWrites.Clear();
-            this.recentReads.Clear();
-            this.RefreshDebuggerViews(reportTiming: true);
+            return;
+        }
+
+        StepResult outcome = StepResult.Success;
+        string? errorMessage = null;
+
+        for (int i = 0; i < TraceStepsPerTick; i++)
+        {
+            outcome = this.StepOnce(out errorMessage);
+            if (outcome != StepResult.Success)
+            {
+                break;
+            }
+        }
+
+        this.RefreshDebuggerViews();
+
+        if (outcome == StepResult.Success)
+        {
+            return;
+        }
+
+        this.StopTrace();
+
+        if (outcome == StepResult.EndOfRom)
+        {
             MessageBox.Show(
                 this,
                 "Reached the end of the cartridge data.",
@@ -156,15 +253,14 @@ public partial class DebuggerForm : Form
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
             this.UpdateButtons(enableStep: false);
+            return;
         }
-        catch (Exception ex)
+
+        if (outcome == StepResult.Error)
         {
-            this.recentWrites.Clear();
-            this.recentReads.Clear();
-            this.RefreshDebuggerViews(reportTiming: true);
             MessageBox.Show(
                 this,
-                ex.Message,
+                errorMessage ?? "Unknown execution error.",
                 "Execution error",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
@@ -232,6 +328,83 @@ public partial class DebuggerForm : Form
         this.registerTable.ResumeLayout();
     }
 
+    private void InitializeInteractionView()
+    {
+        Rectangle workArea = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1380, 800);
+        this.MinimumSize = new Size(Math.Min(1100, workArea.Width), Math.Min(600, workArea.Height));
+        this.Size = new Size(Math.Min(1380, workArea.Width), Math.Min(800, workArea.Height));
+        this.StartPosition = FormStartPosition.CenterScreen;
+        this.mainSplitContainer.SplitterDistance = 465;
+
+        var tabs = new TabControl { Dock = DockStyle.Fill };
+        var memoryTab = new TabPage("Memory");
+        var interactionTab = new TabPage("Interaction map");
+        this.mainSplitContainer.Panel2.Controls.Remove(this.rightSplitContainer);
+        this.rightSplitContainer.Dock = DockStyle.Fill;
+        this.rightSplitContainer.Panel1.Controls.Remove(this.memoryGroupBox);
+        memoryTab.Controls.Add(this.memoryGroupBox);
+
+        var screenGroupBox = new GroupBox
+        {
+            Text = "Current screen",
+            Dock = DockStyle.Fill,
+            Padding = new Padding(12)
+        };
+        this.screenLegendLabel.Dock = DockStyle.Top;
+        this.screenLegendLabel.Height = 34;
+        this.screenLegendLabel.ForeColor = SystemColors.GrayText;
+        this.screenLegendLabel.Text = "Current VRAM/LCD preview (not a completed PPU frame).";
+        this.screenDisplay.Dock = DockStyle.Fill;
+        screenGroupBox.Controls.Add(this.screenDisplay);
+        screenGroupBox.Controls.Add(this.screenLegendLabel);
+        this.rightSplitContainer.Panel1.Controls.Add(screenGroupBox);
+
+        this.tilesGroupBox.Controls.Remove(this.tilesPictureBox);
+        this.tilesViewport.Dock = DockStyle.Fill;
+        this.tilesViewport.AutoScroll = true;
+        this.tilesViewport.BackColor = Color.FromArgb(226, 232, 240);
+        this.tilesPictureBox.Dock = DockStyle.None;
+        this.tilesPictureBox.SizeMode = PictureBoxSizeMode.Normal;
+        this.tilesPictureBox.Location = Point.Empty;
+        this.tilesPictureBox.Size = new Size(
+            DmgScreenRenderer.TileAtlasWidth * TileScale,
+            DmgScreenRenderer.TileAtlasHeight * TileScale);
+        this.tilesPictureBox.MouseMove += this.OnTileMouseMove;
+        this.tilesPictureBox.MouseLeave += (_, _) =>
+        {
+            this.hoveredTile = -1;
+            this.tilesLegendLabel.Text = TilesLegendText;
+        };
+        this.tilesViewport.Controls.Add(this.tilesPictureBox);
+        this.tilesGroupBox.Controls.Add(this.tilesViewport);
+        this.tilesGroupBox.Controls.SetChildIndex(this.tilesViewport, 0);
+        this.rightSplitContainer.SplitterDistance = 390;
+        this.videoTab.Controls.Add(this.rightSplitContainer);
+
+        this.interactionDetails.Dock = DockStyle.Bottom;
+        this.interactionDetails.Height = 180;
+        this.interactionDetails.Multiline = true;
+        this.interactionDetails.ReadOnly = true;
+        this.interactionDetails.ScrollBars = ScrollBars.Vertical;
+        this.interactionDetails.BackColor = Color.FromArgb(248, 250, 252);
+        this.interactionDetails.ForeColor = Color.FromArgb(30, 41, 59);
+        this.interactionDetails.Font = new Font("Consolas", 10F);
+        this.interactionDetails.BorderStyle = BorderStyle.None;
+        this.interactionDetails.Margin = new Padding(8);
+        this.interactionDiagram.Dock = DockStyle.Fill;
+        interactionTab.Controls.Add(this.interactionDiagram);
+        interactionTab.Controls.Add(this.interactionDetails);
+
+        tabs.TabPages.Add(this.videoTab);
+        tabs.TabPages.Add(interactionTab);
+        tabs.TabPages.Add(memoryTab);
+        tabs.SelectedIndexChanged += (_, _) =>
+        {
+            if (tabs.SelectedTab == this.videoTab) this.UpdateGraphicsView();
+        };
+        this.mainSplitContainer.Panel2.Controls.Add(tabs);
+    }
+
     private void RefreshDebuggerViews()
     {
         this.RefreshDebuggerViews(reportTiming: false);
@@ -242,6 +415,7 @@ public partial class DebuggerForm : Form
         long startTicks = Stopwatch.GetTimestamp();
         this.UpdateRegisterView();
         this.UpdateInterruptView();
+        this.UpdateLcdView();
         long registersTicks = Stopwatch.GetTimestamp();
 
         this.UpdateStackView();
@@ -250,7 +424,11 @@ public partial class DebuggerForm : Form
         this.UpdateMemoryView();
         long memoryTicks = Stopwatch.GetTimestamp();
 
+        this.UpdateGraphicsView();
+        long tilesTicks = Stopwatch.GetTimestamp();
+
         this.UpdateCodeView();
+        this.UpdateInteractionView();
         long codeTicks = Stopwatch.GetTimestamp();
 
         if (reportTiming)
@@ -260,7 +438,8 @@ public partial class DebuggerForm : Form
                 $"reg {TicksToMilliseconds(registersTicks - startTicks):0.0} | " +
                 $"stack {TicksToMilliseconds(stackTicks - registersTicks):0.0} | " +
                 $"mem {TicksToMilliseconds(memoryTicks - stackTicks):0.0} | " +
-                $"code {TicksToMilliseconds(codeTicks - memoryTicks):0.0}";
+                $"tiles {TicksToMilliseconds(tilesTicks - memoryTicks):0.0} | " +
+                $"code {TicksToMilliseconds(codeTicks - tilesTicks):0.0}";
         }
     }
 
@@ -268,6 +447,69 @@ public partial class DebuggerForm : Form
     {
         return ticks * 1000.0 / Stopwatch.Frequency;
     }
+
+    private void UpdateInteractionView()
+    {
+        byte scanline = this.gameboy.Scanline;
+        this.interactionDiagram.ShowStep(
+            this.lastInteractionStep,
+            Cpu.Registers.PC,
+            scanline,
+            this.lastInteractionStep == null ? scanline : this.scanlineBeforeLastStep,
+            this.cartridge != null,
+            this.recentReads,
+            this.recentWrites);
+
+        if (this.cartridge == null)
+        {
+            this.interactionDetails.Text = "Load a ROM, then press Step (F10) to follow one instruction at a time.";
+            return;
+        }
+
+        if (this.lastInteractionStep == null)
+        {
+            this.interactionDetails.Text =
+                "Press Step (F10) to see memory accesses and device register activity.\r\n" +
+                "Step Back (Shift+F10) restores the previous interaction.";
+            return;
+        }
+
+        var lines = new List<string>
+        {
+            $"Executed  {this.lastInteractionStep.Disassembly.Replace('\t', ' ')}",
+            $"CPU       PC is now 0x{Cpu.Registers.PC:X4}. The opcode came from loaded ROM bytes.",
+            FormatAccesses("READ", this.recentReads),
+            FormatAccesses("WRITE", this.recentWrites),
+            $"VIDEO     LCD timing stepped; scanline {this.scanlineBeforeLastStep} → {scanline}. " +
+                "Green arrows show VRAM, OAM, and LCD register access.",
+            "SOUND     0xFF10–0xFF3F are sound registers; audio synthesis is not implemented.",
+            "COUNTS    Read/write counts are unique addresses. Instruction fetch uses loaded ROM bytes."
+        };
+        this.interactionDetails.Lines = lines.ToArray();
+    }
+
+    private static string FormatAccesses(string label, IEnumerable<ushort> addresses)
+    {
+        string[] entries = addresses.OrderBy(address => address)
+            .Select(address => $"0x{address:X4} ({DescribeAddress(address)})")
+            .ToArray();
+        return $"{label,-10}{(entries.Length == 0 ? "none" : string.Join(", ", entries))}";
+    }
+
+    private static string DescribeAddress(ushort address) => address switch
+    {
+        >= 0x0000 and <= 0x7FFF => "ROM",
+        >= 0x8000 and <= 0x9FFF => "video RAM",
+        >= 0xA000 and <= 0xBFFF => "cartridge RAM",
+        >= 0xC000 and <= 0xDFFF => "work RAM",
+        >= 0xFE00 and <= 0xFE9F => "sprite OAM",
+        >= 0xFF10 and <= 0xFF3F => "sound register",
+        >= 0xFF40 and <= 0xFF4B => "LCD register",
+        0xFFFF => "interrupt enable",
+        >= 0xFF00 and <= 0xFF7F => "I/O",
+        >= 0xFF80 and <= 0xFFFE => "high RAM",
+        _ => "memory"
+    };
 
     private void UpdateRegisterView()
     {
@@ -285,9 +527,9 @@ public partial class DebuggerForm : Form
         this.registerLabels["E"].Text = $"0x{Cpu.Registers.E:X2}";
         this.registerLabels["H"].Text = $"0x{Cpu.Registers.H:X2}";
         this.registerLabels["L"].Text = $"0x{Cpu.Registers.L:X2}";
-        this.registerLabels["LY"].Text = $"0x{this.gameboy.Memory.Read8(0xFF44):X2}";
-        this.registerLabels["IF"].Text = $"0x{this.gameboy.Memory.Read8(0xFF0F):X2}";
-        this.registerLabels["IE"].Text = $"0x{this.gameboy.Memory.Read8(0xFFFF):X2}";
+        this.registerLabels["LY"].Text = $"0x{this.gameboy.Scanline:X2}";
+        this.registerLabels["IF"].Text = $"0x{this.gameboy.Memory.Peek(0xFF0F):X2}";
+        this.registerLabels["IE"].Text = $"0x{this.gameboy.Memory.Peek(0xFFFF):X2}";
         this.registerLabels["Flags"].Text = $"0x{Cpu.Registers.Flags:X2}";
         this.registerLabels["FlagZ"].Text = Cpu.Flags.Z ? "1" : "0";
         this.registerLabels["FlagN"].Text = Cpu.Flags.N ? "1" : "0";
@@ -297,14 +539,45 @@ public partial class DebuggerForm : Form
 
     private void UpdateInterruptView()
     {
-        byte interruptFlags = this.gameboy.Memory.Read8(0xFF0F);
-        byte interruptEnable = this.gameboy.Memory.Read8(0xFFFF);
+        byte interruptFlags = this.gameboy.Memory.Peek(0xFF0F);
+        byte interruptEnable = this.gameboy.Memory.Peek(0xFFFF);
 
         UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x01, this.interruptIfVblankCheckBox, this.interruptIeVblankCheckBox);
         UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x02, this.interruptIfLcdStatCheckBox, this.interruptIeLcdStatCheckBox);
         UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x04, this.interruptIfTimerCheckBox, this.interruptIeTimerCheckBox);
         UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x08, this.interruptIfSerialCheckBox, this.interruptIeSerialCheckBox);
         UpdateInterruptCheckboxes(interruptFlags, interruptEnable, 0x10, this.interruptIfJoypadCheckBox, this.interruptIeJoypadCheckBox);
+    }
+
+    private void UpdateLcdView()
+    {
+        if (this.cartridge == null)
+        {
+            this.lcdScanlineValueLabel.Text = "n/a";
+            this.lcdVblankValueLabel.Text = "n/a";
+            this.lcdScanlineProgressBar.Enabled = false;
+            this.lcdScanlineProgressBar.Value = 0;
+            return;
+        }
+
+        this.lcdScanlineProgressBar.Enabled = true;
+        byte scanline = this.gameboy.Scanline;
+        bool vblank = scanline >= VBlankStartScanline;
+
+        this.lcdScanlineValueLabel.Text = $"{scanline} / {ScanlinesPerFrame - 1}";
+        this.lcdVblankValueLabel.Text = vblank ? "Yes" : "No";
+
+        int value = scanline;
+        if (value < this.lcdScanlineProgressBar.Minimum)
+        {
+            value = this.lcdScanlineProgressBar.Minimum;
+        }
+        if (value > this.lcdScanlineProgressBar.Maximum)
+        {
+            value = this.lcdScanlineProgressBar.Maximum;
+        }
+
+        this.lcdScanlineProgressBar.Value = value;
     }
 
     private static void UpdateInterruptCheckboxes(byte flags, byte enable, byte mask, CheckBox flagsCheckBox, CheckBox enableCheckBox)
@@ -452,6 +725,94 @@ public partial class DebuggerForm : Form
     {
         this.memoryViewInitialized = false;
         this.lastMemoryHighlightRows.Clear();
+    }
+
+    private void UpdateGraphicsView()
+    {
+        if (this.cartridge == null)
+        {
+            this.tilesLegendLabel.Text = "Load a ROM to view tiles.";
+            this.ReplaceTileImage(null);
+            this.screenDisplay.SetFrame(null);
+            this.screenLegendLabel.Text = "Load a ROM to see the screen preview.";
+            return;
+        }
+
+        this.screenLegendLabel.Text =
+            $"Current VRAM/LCD preview · LCD {((this.gameboy.Memory.Peek(0xFF40) & 0x80) != 0 ? "on" : "off")} " +
+            $"· SCX {this.gameboy.Memory.Peek(0xFF43)} · SCY {this.gameboy.Memory.Peek(0xFF42)}";
+        if (!this.videoTab.Visible || (!this.screenDirty && !this.tilesDirty)) return;
+
+        byte[] memory = this.gameboy.Memory.Snapshot();
+        if (this.screenDirty)
+        {
+            var shades = new byte[DmgScreenRenderer.Width * DmgScreenRenderer.Height];
+            DmgScreenRenderer.RenderScreen(memory, shades);
+            this.screenDisplay.SetFrame(CreatePixelBitmap(shades,
+                DmgScreenRenderer.Width, DmgScreenRenderer.Height, 1));
+            this.screenDirty = false;
+        }
+
+        if (this.tilesDirty)
+        {
+            var shades = new byte[DmgScreenRenderer.TileAtlasWidth * DmgScreenRenderer.TileAtlasHeight];
+            DmgScreenRenderer.RenderTileAtlas(memory, shades);
+            this.ReplaceTileImage(CreatePixelBitmap(shades,
+                DmgScreenRenderer.TileAtlasWidth, DmgScreenRenderer.TileAtlasHeight, TileScale));
+            this.tilesDirty = false;
+        }
+
+        if (this.hoveredTile < 0) this.tilesLegendLabel.Text = TilesLegendText;
+    }
+
+    private static Bitmap CreatePixelBitmap(ReadOnlySpan<byte> shades, int width, int height, int scale)
+    {
+        int pixelWidth = width * scale;
+        int pixelHeight = height * scale;
+        var bitmap = new Bitmap(pixelWidth, pixelHeight, PixelFormat.Format32bppArgb);
+        var pixels = new int[pixelWidth * pixelHeight];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int color = TilePalette[shades[y * width + x]].ToArgb();
+                int target = y * scale * pixelWidth + x * scale;
+                for (int dy = 0; dy < scale; dy++)
+                    for (int dx = 0; dx < scale; dx++)
+                        pixels[target + dy * pixelWidth + dx] = color;
+            }
+        }
+
+        BitmapData data = bitmap.LockBits(new Rectangle(0, 0, pixelWidth, pixelHeight),
+            ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+        try
+        {
+            Marshal.Copy(pixels, 0, data.Scan0, pixels.Length);
+        }
+        finally
+        {
+            bitmap.UnlockBits(data);
+        }
+        return bitmap;
+    }
+
+    private void OnTileMouseMove(object? sender, MouseEventArgs e)
+    {
+        int column = e.X / (TilePixelSize * TileScale);
+        int row = e.Y / (TilePixelSize * TileScale);
+        int tile = row * TileColumns + column;
+        if (column < 0 || column >= TileColumns || row < 0 || row >= DmgScreenRenderer.TileRows ||
+            tile == this.hoveredTile) return;
+
+        this.hoveredTile = tile;
+        this.tilesLegendLabel.Text = $"Tile {tile} · VRAM 0x{TileDataStart + tile * TileBytesPerTile:X4}";
+    }
+
+    private void ReplaceTileImage(Image? image)
+    {
+        Image? previous = this.tilesPictureBox.Image;
+        this.tilesPictureBox.Image = image;
+        previous?.Dispose();
     }
 
     private void BuildDisassemblyCache()
@@ -656,7 +1017,9 @@ public partial class DebuggerForm : Form
             this.gameboy.CaptureState(),
             new HashSet<ushort>(this.recentWrites),
             new HashSet<ushort>(this.recentReads),
-            this.stackStartPointer);
+            this.stackStartPointer,
+            this.lastInteractionStep,
+            this.scanlineBeforeLastStep);
     }
 
     private void PushSnapshot(DebuggerSnapshot snapshot)
@@ -670,6 +1033,11 @@ public partial class DebuggerForm : Form
 
     private void OnStepBackClicked(object? sender, EventArgs e)
     {
+        if (this.traceRunning)
+        {
+            return;
+        }
+
         if (this.stepHistory.Count == 0)
         {
             return;
@@ -684,18 +1052,92 @@ public partial class DebuggerForm : Form
         this.recentWrites.UnionWith(snapshot.RecentWrites);
         this.recentReads.UnionWith(snapshot.RecentReads);
         this.stackStartPointer = snapshot.StackStartPointer;
+        this.lastInteractionStep = snapshot.LastInteractionStep;
+        this.scanlineBeforeLastStep = snapshot.ScanlineBeforeLastStep;
 
         this.ResetMemoryViewState();
+        this.screenDirty = this.tilesDirty = true;
         this.RefreshDebuggerViews();
         this.UpdateButtons(enableStep: true);
+    }
+
+    private StepResult StepOnce(out string? errorMessage)
+    {
+        errorMessage = null;
+
+        if (this.cartridge == null)
+        {
+            return StepResult.NoCartridge;
+        }
+
+        DebuggerSnapshot snapshot = this.CaptureSnapshot();
+        this.PushSnapshot(snapshot);
+        byte previousScanline = this.gameboy.Scanline;
+
+        try
+        {
+            CpuStepResult result = this.gameboy.Step();
+            this.lastInteractionStep = result;
+            this.scanlineBeforeLastStep = previousScanline;
+            this.recentWrites.Clear();
+            this.recentReads.Clear();
+            foreach (ushort address in result.WrittenAddresses)
+            {
+                this.recentWrites.Add(address);
+                if (address is >= 0x8000 and <= 0x9FFF or >= 0xFE00 and <= 0xFE9F or >= 0xFF40 and <= 0xFF4B)
+                    this.screenDirty = true;
+                if (address is >= 0x8000 and <= 0x97FF)
+                    this.tilesDirty = true;
+            }
+            foreach (ushort address in result.ReadAddresses)
+            {
+                this.recentReads.Add(address);
+            }
+
+            if (result.Instruction.Value is 0x31 or 0xF9 or 0xE8)
+            {
+                this.stackStartPointer = Cpu.Registers.SP;
+            }
+
+            return StepResult.Success;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            this.lastInteractionStep = null;
+            this.recentWrites.Clear();
+            this.recentReads.Clear();
+            return StepResult.EndOfRom;
+        }
+        catch (Exception ex)
+        {
+            this.lastInteractionStep = null;
+            this.recentWrites.Clear();
+            this.recentReads.Clear();
+            errorMessage = ex.Message;
+            return StepResult.Error;
+        }
     }
 
     private void UpdateButtons(bool enableStep = false)
     {
         bool hasCartridge = this.cartridge != null;
-        this.stepButton.Enabled = hasCartridge && enableStep;
-        this.resetButton.Enabled = hasCartridge;
-        this.stepBackButton.Enabled = hasCartridge && this.stepHistory.Count > 0;
+        this.stepButton.Enabled = hasCartridge && enableStep && !this.traceRunning;
+        this.traceButton.Enabled = hasCartridge && !this.traceRunning;
+        this.stopButton.Enabled = hasCartridge && this.traceRunning;
+        this.resetButton.Enabled = hasCartridge && !this.traceRunning;
+        this.stepBackButton.Enabled = hasCartridge && this.stepHistory.Count > 0 && !this.traceRunning;
+    }
+
+    private void StopTrace()
+    {
+        if (!this.traceRunning)
+        {
+            return;
+        }
+
+        this.traceRunning = false;
+        this.traceTimer.Stop();
+        this.UpdateButtons(enableStep: true);
     }
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -729,12 +1171,16 @@ public partial class DebuggerForm : Form
             GameboyState gameboyState,
             HashSet<ushort> recentWrites,
             HashSet<ushort> recentReads,
-            ushort stackStartPointer)
+            ushort stackStartPointer,
+            CpuStepResult? lastInteractionStep,
+            byte scanlineBeforeLastStep)
         {
             this.GameboyState = gameboyState;
             this.RecentWrites = recentWrites;
             this.RecentReads = recentReads;
             this.StackStartPointer = stackStartPointer;
+            this.LastInteractionStep = lastInteractionStep;
+            this.ScanlineBeforeLastStep = scanlineBeforeLastStep;
         }
 
         public GameboyState GameboyState { get; }
@@ -744,5 +1190,17 @@ public partial class DebuggerForm : Form
         public HashSet<ushort> RecentReads { get; }
 
         public ushort StackStartPointer { get; }
+
+        public CpuStepResult? LastInteractionStep { get; }
+
+        public byte ScanlineBeforeLastStep { get; }
+    }
+
+    private enum StepResult
+    {
+        Success,
+        NoCartridge,
+        EndOfRom,
+        Error
     }
 }

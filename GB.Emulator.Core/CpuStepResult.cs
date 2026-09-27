@@ -38,6 +38,11 @@ namespace GB.Emulator.Core
 
         private string FormatDisassembly()
         {
+            if (Instruction.Value == 0xCB)
+            {
+                return $"ROM0:{Address:X4}\t0xCB {Operand1:X2}\t{Instruction.Name}\t\t2";
+            }
+
             if (Instruction.Length <= 1)
             {
                 return $"ROM0:{Address:X4}\t0x{Instruction.Value:X2}\t{Instruction.Name}\t\t\t{Instruction.Length}";

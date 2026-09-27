@@ -44,6 +44,11 @@ namespace GB.Emulator.Core
 
     public string Disassemble()
     {
+      if (this.Value == 0xCB)
+      {
+        return $"ROM0:{Cpu.Registers.PC:X4}\t0xCB {this.P1:X2}\t{Cpu.GetCbName(this.P1)}\t\t2";
+      }
+
       if (this.Length <= 1)
       {
         return $"ROM0:{Cpu.Registers.PC:X4}\t0x{this.Value:X2}\t{this.Name}\t\t\t{this.Length}";

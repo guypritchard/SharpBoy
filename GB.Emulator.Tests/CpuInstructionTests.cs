@@ -294,7 +294,7 @@ namespace GB.Emulator.Tests
         [TestMethod]
         public void LdLFromHl_ReadsMemory()
         {
-            var gameboy = CreateGameboy(0x67);
+            var gameboy = CreateGameboy(0x6E);
             Cpu.Registers.HL = 0xC041;
             gameboy.Memory.Write8(0x44, 0xC041);
 

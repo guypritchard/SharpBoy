@@ -90,7 +90,11 @@
         public static class Registers
         {
             public static byte A;
-            public static byte F;
+            public static byte F
+            {
+                get => Flags;
+                set => Flags = value;
+            }
             public static byte B;
             public static byte C;
             public static byte D;

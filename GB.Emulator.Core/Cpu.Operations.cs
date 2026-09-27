@@ -5,6 +5,56 @@ namespace GB.Emulator.Core
 
         public static class Operations
         {
+            public static byte RotateLeftCircular(byte value)
+            {
+                byte result = (byte)((value << 1) | (value >> 7));
+
+                Cpu.Flags.Z = result == 0;
+                Cpu.Flags.N = false;
+                Cpu.Flags.H = false;
+                Cpu.Flags.C = (value & 0x80) != 0;
+
+                return result;
+            }
+
+            public static byte RotateLeft(byte value)
+            {
+                bool oldCarry = Cpu.Flags.C;
+                Cpu.Flags.C = (value & 0x80) != 0;
+                byte result = (byte)((value << 1) | (oldCarry ? 1 : 0));
+
+                Cpu.Flags.Z = result == 0;
+                Cpu.Flags.N = false;
+                Cpu.Flags.H = false;
+
+                return result;
+            }
+
+            public static byte RotateRightCircular(byte value)
+            {
+                byte result = (byte)((value >> 1) | (value << 7));
+
+                Cpu.Flags.Z = result == 0;
+                Cpu.Flags.N = false;
+                Cpu.Flags.H = false;
+                Cpu.Flags.C = (value & 0x01) != 0;
+
+                return result;
+            }
+
+            public static byte RotateRight(byte value)
+            {
+                bool oldCarry = Cpu.Flags.C;
+                Cpu.Flags.C = (value & 0x01) != 0;
+                byte result = (byte)((value >> 1) | (oldCarry ? 0x80 : 0x00));
+
+                Cpu.Flags.Z = result == 0;
+                Cpu.Flags.N = false;
+                Cpu.Flags.H = false;
+
+                return result;
+            }
+
             public static byte Decrement(byte value)
             {
                 byte local = value;

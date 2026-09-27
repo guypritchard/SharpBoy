@@ -53,6 +53,8 @@ namespace GB.Emulator.Core
 
         public MemoryMap Memory => this.memory;
 
+        public byte Scanline => this.lcd.Scanline;
+
         public Cartridge? Cartridge => this.cartridge;
 
         public void Load(Cartridge newCartridge)
@@ -60,8 +62,12 @@ namespace GB.Emulator.Core
             this.cartridge = newCartridge;
             this.romData = newCartridge.Data;
             this.memory.Reset();
+            this.lcd.Reset();
+            this.spriteTileManager.Reset();
+            this.backgroundTileManager.Reset();
             this.memory.LoadRom(this.romData);
             Cpu.Registers.Reset();
+            this.cpu.ResetExecutionState();
         }
 
         public void Execute(Cartridge newCartridge)
@@ -218,7 +224,8 @@ namespace GB.Emulator.Core
                 this.spriteTileManager.Snapshot(),
                 this.backgroundTileManager.Snapshot(),
                 this.lcd.Snapshot(),
-                this.interrupt.Snapshot());
+                this.interrupt.Snapshot(),
+                this.cpu.CaptureExecutionState());
         }
 
         public void RestoreState(GameboyState state)
@@ -250,6 +257,7 @@ namespace GB.Emulator.Core
             this.backgroundTileManager.Restore(state.BackgroundTiles);
             this.lcd.Restore(state.LcdState);
             this.interrupt.Restore(state.InterruptFlags);
+            this.cpu.RestoreExecutionState(state.CpuExecutionState);
         }
     }
 }

@@ -96,16 +96,40 @@ namespace GB.Emulator.Core
                 Cpu.Memory.Write8(Cpu.Registers.A, Cpu.Registers.HL);
                 Cpu.Registers.HL--;
             }),
+            Instr(0x3A, "LD A, (HL-)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Memory.Read8(Cpu.Registers.HL);
+                Cpu.Registers.HL--;
+            }),
             Instr(0x3E, "LD A, d8", 2, (p1, p2) =>
             {
                 Cpu.Registers.A = p1;
             }),
             Instr(0x43, "LD B, E", 1, (p1, p2) => Cpu.Registers.B = Cpu.Registers.E),
             Instr(0x44, "LD B, H", 1, (p1, p2) => Cpu.Registers.B = Cpu.Registers.H),
+            Instr(0x46, "LD B, (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.B = Cpu.Memory.Read8(Cpu.Registers.HL);
+            }),
+            Instr(0x4A, "LD C, A", 1, (p1, p2) => Cpu.Registers.C = Cpu.Registers.A),
             Instr(0x4D, "LD C, L", 1, (p1, p2) => Cpu.Registers.C = Cpu.Registers.L),
+            Instr(0x4E, "LD C, (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.C = Cpu.Memory.Read8(Cpu.Registers.HL);
+            }),
             Instr(0x54, "LD D, H", 1, (p1, p2) => Cpu.Registers.D = Cpu.Registers.H),
+            Instr(0x56, "LD D, (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.D = Cpu.Memory.Read8(Cpu.Registers.HL);
+            }),
             Instr(0x5D, "LD E, L", 1, (p1, p2) => Cpu.Registers.E = Cpu.Registers.L),
+            Instr(0x5E, "LD E, (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.E = Cpu.Memory.Read8(Cpu.Registers.HL);
+            }),
             Instr(0x5F, "LD E, A", 1, (p1, p2) => Cpu.Registers.E = Cpu.Registers.A),
+            Instr(0x60, "LD H, B", 1, (p1, p2) => Cpu.Registers.H = Cpu.Registers.B),
+            Instr(0x62, "LD H, D", 1, (p1, p2) => Cpu.Registers.H = Cpu.Registers.D),
             Instr(0x66, "LD H, (HL)", 1, (p1, p2) =>
             {
                 Cpu.Registers.H = Cpu.Memory.Read8(Cpu.Registers.HL);
@@ -116,7 +140,16 @@ namespace GB.Emulator.Core
             }),
             Instr(0x68, "LD L, B", 1, (p1, p2) => Cpu.Registers.L = Cpu.Registers.B),
             Instr(0x69, "LD L, C", 1, (p1, p2) => Cpu.Registers.L = Cpu.Registers.C),
+            Instr(0x6B, "LD L, E", 1, (p1, p2) => Cpu.Registers.L = Cpu.Registers.E),
+            Instr(0x6E, "LD L, (HL)", 1, (p1, p2) =>
+            {
+                Cpu.Registers.L = Cpu.Memory.Read8(Cpu.Registers.HL);
+            }),
             Instr(0x6F, "LD L, A", 1, (p1, p2) => Cpu.Registers.L = Cpu.Registers.A),
+            Instr(0x70, "LD (HL), B", 1, (p1, p2) =>
+            {
+                Cpu.Memory.Write8(Cpu.Registers.B, Cpu.Registers.HL);
+            }),
             Instr(0x7A, "LD A, D", 1, (p1, p2) => Cpu.Registers.A = Cpu.Registers.D),
             Instr(0x7B, "LD A, E", 1, (p1, p2) => Cpu.Registers.A = Cpu.Registers.E),
             Instr(0x7C, "LD A, H", 1, (p1, p2) => Cpu.Registers.A = Cpu.Registers.H),
@@ -140,6 +173,10 @@ namespace GB.Emulator.Core
             {
                 Cpu.Registers.A = Cpu.Memory.Read8((ushort)(0xFF00 + p1));
             }),
+            Instr(0xF8, "LD HL, SP+r8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.HL = (ushort)(Cpu.Registers.SP + (sbyte)p1);
+            }),
         };
 
         private static readonly KeyValuePair<byte, Instruction>[] NoOpLoadInstructions = new[]
@@ -155,6 +192,10 @@ namespace GB.Emulator.Core
 
         private static readonly KeyValuePair<byte, Instruction>[] AddInstructions = new[]
         {
+            Instr(0x08, "LD (a16), SP", 3, (p1, p2) =>
+            {
+                Cpu.Memory.Write16(Cpu.Registers.SP, ByteOp.Concat(p1, p2));
+            }),
             Instr(0x09, "ADD HL BC", 1, (p1, p2) =>
             {
                 Cpu.Registers.HL = (ushort)Cpu.Operations.Add(Cpu.Registers.HL, Cpu.Registers.BC);
@@ -179,6 +220,14 @@ namespace GB.Emulator.Core
             {
                 Cpu.Registers.A = Cpu.Operations.Add(Cpu.Registers.A, Cpu.Registers.A);
             }),
+            Instr(0x88, "ADC A, B", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.AddWithCarry(Cpu.Registers.A, Cpu.Registers.B);
+            }),
+            Instr(0xC6, "ADD A, d8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Add(Cpu.Registers.A, p1);
+            }),
             Instr(0xE6, "AND d8", 2, (p1, p2) =>
             {
                 Cpu.Registers.A = Cpu.Operations.And(Cpu.Registers.A, p1);
@@ -191,6 +240,26 @@ namespace GB.Emulator.Core
 
         private static readonly KeyValuePair<byte, Instruction>[] SubInstructions = new[]
         {
+            Instr(0x90, "SUB A, B", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.B);
+            }),
+            Instr(0x91, "SUB A, C", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.C);
+            }),
+            Instr(0x92, "SUB A, D", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.D);
+            }),
+            Instr(0x93, "SUB A, E", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.E);
+            }),
+            Instr(0x94, "SUB A, H", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.H);
+            }),
             Instr(0x95, "SUB A, L", 1, (p1, p2) =>
             {
                 Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.L);
@@ -198,6 +267,14 @@ namespace GB.Emulator.Core
             Instr(0x97, "SUB A, A", 1, (p1, p2) =>
             {
                 Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, Cpu.Registers.A);
+            }),
+            Instr(0xD6, "SUB A, d8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, p1);
+            }),
+            Instr(0xDE, "SUB A, d8", 2, (p1, p2) =>
+            {
+                Cpu.Registers.A = Cpu.Operations.Subtract(Cpu.Registers.A, p1);
             }),
             Instr(0x9C, "SBC A, H", 1, (p1, p2) =>
             {
@@ -277,6 +354,14 @@ namespace GB.Emulator.Core
                     return;
                 }
             }),
+            Instr(0x28, "JR Z, s8", 2, (p1, p2) =>
+            {
+                if (Cpu.Flags.Z == true)
+                {
+                    Cpu.Registers.PC += (ushort)(ByteOp.ToSignedByte(p1));
+                    return;
+                }
+            }),
             Instr(0x30, "JR NC, s8", 2, (p1, p2) =>
             {
                 if (Cpu.Flags.C == false)
@@ -345,6 +430,24 @@ namespace GB.Emulator.Core
                     Cpu.Registers.PC += 1;
                 }
             }, incrementPc: false),
+            Instr(0xD2, "JP C", 3, (p1, p2) =>
+            {
+                if (Cpu.Flags.C == true)
+                {
+                    Cpu.Registers.PC = ByteOp.Concat(p1, p2);
+                }
+                else
+                {
+                    Cpu.Registers.PC += 3;
+                }
+            }, incrementPc: false),
+            Instr(0xD5, "PUSH DE", 1, (p1, p2) =>
+            {
+                Cpu.Registers.SP -= 1;
+                Cpu.Memory.Write8(Cpu.Registers.D, Cpu.Registers.SP);
+                Cpu.Registers.SP -= 1;
+                Cpu.Memory.Write8(Cpu.Registers.E, Cpu.Registers.SP);
+            }),
             Instr(0xD8, "RET C", 1, (p1, p2) =>
             {
                 if (Cpu.Flags.C == true)
@@ -388,7 +491,8 @@ namespace GB.Emulator.Core
             }),
             Instr(0xF1, "POP AF", 1, (p1, p2) =>
             {
-                ByteOp.Split(Cpu.Memory.Read16(Cpu.Registers.SP), out Cpu.Registers.A, out Cpu.Registers.F);
+                ByteOp.Split(Cpu.Memory.Read16(Cpu.Registers.SP), out Cpu.Registers.A, out byte flags);
+                Cpu.Registers.F = flags;
                 Cpu.Registers.SP += 2;
             }),
             Instr(0xF5, "PUSH AF", 1, (p1, p2) =>
@@ -408,17 +512,28 @@ namespace GB.Emulator.Core
             Instr(0xF3, "DI", 1, (p1, p2) => { }),
         };
 
-        private Dictionary<byte, Instruction> instructions = new(
-            LdInstructions
-                .Concat(NoOpLoadInstructions)
-                .Concat(AddInstructions)
-                .Concat(SubInstructions)
-                .Concat(XorInstructions)
-                .Concat(OrInstructions)
-                .Concat(CompareInstructions)
-                .Concat(IncrementDecrementInstructions)
-                .Concat(JumpInstructions)
-                .Concat(StackInstructions)
-                .Concat(SystemInstructions));
+        private static readonly KeyValuePair<byte, Instruction>[] RotateInstructions = new[]
+        {
+            Instr(0x07, "RLCA", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Operations.RotateLeftCircular(Cpu.Registers.A);
+            }),
+            Instr(0x0F, "RRCA", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Operations.RotateRightCircular(Cpu.Registers.A);
+            }),
+            Instr(0x17, "RLA", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Operations.RotateLeft(Cpu.Registers.A);
+            }),
+            Instr(0x1F, "RRA", 1, (p1, p2) =>
+            {
+                Cpu.Registers.A = Operations.RotateRight(Cpu.Registers.A);
+            })
+        };
+
+        // The complete dispatch table is built in Cpu.OpcodeTable.cs. The
+        // earlier instruction groups above remain while the CPU is migrated.
+        private Dictionary<byte, Instruction> instructions;
     }
 }

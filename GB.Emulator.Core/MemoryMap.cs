@@ -57,6 +57,16 @@ namespace GB.Emulator.Core
                 }
 
                 this.recentWrites.Add(location);
+
+                if (location == 0xFF46)
+                {
+                    ushort source = (ushort)(value << 8);
+                    for (int offset = 0; offset < 0xA0; offset++)
+                    {
+                        byte oamValue = this.Read8((ushort)(source + offset));
+                        this.Write8(oamValue, (ushort)(0xFE00 + offset));
+                    }
+                }
             }
             catch (IndexOutOfRangeException)
             {

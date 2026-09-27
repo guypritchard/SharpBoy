@@ -31,6 +31,8 @@ partial class DebuggerForm
         this.toolbarPanel = new System.Windows.Forms.FlowLayoutPanel();
         this.loadButton = new System.Windows.Forms.Button();
         this.stepButton = new System.Windows.Forms.Button();
+        this.traceButton = new System.Windows.Forms.Button();
+        this.stopButton = new System.Windows.Forms.Button();
         this.stepBackButton = new System.Windows.Forms.Button();
         this.resetButton = new System.Windows.Forms.Button();
         this.statusLabel = new System.Windows.Forms.Label();
@@ -60,13 +62,23 @@ partial class DebuggerForm
         this.interruptIeSerialCheckBox = new System.Windows.Forms.CheckBox();
         this.interruptIfJoypadCheckBox = new System.Windows.Forms.CheckBox();
         this.interruptIeJoypadCheckBox = new System.Windows.Forms.CheckBox();
+        this.lcdTable = new System.Windows.Forms.TableLayoutPanel();
+        this.lcdScanlineLabel = new System.Windows.Forms.Label();
+        this.lcdScanlineValueLabel = new System.Windows.Forms.Label();
+        this.lcdScanlineProgressBar = new System.Windows.Forms.ProgressBar();
+        this.lcdVblankLabel = new System.Windows.Forms.Label();
+        this.lcdVblankValueLabel = new System.Windows.Forms.Label();
         this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
         this.codePanel = new System.Windows.Forms.Panel();
         this.codeListBox = new System.Windows.Forms.ListBox();
         this.codeLegendLabel = new System.Windows.Forms.Label();
+        this.rightSplitContainer = new System.Windows.Forms.SplitContainer();
         this.memoryGroupBox = new System.Windows.Forms.GroupBox();
         this.memoryLegendLabel = new System.Windows.Forms.Label();
         this.memoryListBox = new System.Windows.Forms.ListBox();
+        this.tilesGroupBox = new System.Windows.Forms.GroupBox();
+        this.tilesLegendLabel = new System.Windows.Forms.Label();
+        this.tilesPictureBox = new System.Windows.Forms.PictureBox();
         this.openRomDialog = new System.Windows.Forms.OpenFileDialog();
         this.toolbarPanel.SuspendLayout();
         this.sidebarPanel.SuspendLayout();
@@ -74,12 +86,19 @@ partial class DebuggerForm
         this.registersGroupBox.SuspendLayout();
         this.interruptsGroupBox.SuspendLayout();
         this.interruptsTable.SuspendLayout();
+        this.lcdTable.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
         this.mainSplitContainer.Panel1.SuspendLayout();
         this.mainSplitContainer.Panel2.SuspendLayout();
         this.mainSplitContainer.SuspendLayout();
         this.codePanel.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)(this.rightSplitContainer)).BeginInit();
+        this.rightSplitContainer.Panel1.SuspendLayout();
+        this.rightSplitContainer.Panel2.SuspendLayout();
+        this.rightSplitContainer.SuspendLayout();
         this.memoryGroupBox.SuspendLayout();
+        this.tilesGroupBox.SuspendLayout();
+        ((System.ComponentModel.ISupportInitialize)(this.tilesPictureBox)).BeginInit();
         this.SuspendLayout();
         // 
         // toolbarPanel
@@ -87,6 +106,8 @@ partial class DebuggerForm
         this.toolbarPanel.AutoSize = true;
         this.toolbarPanel.Controls.Add(this.loadButton);
         this.toolbarPanel.Controls.Add(this.stepButton);
+        this.toolbarPanel.Controls.Add(this.traceButton);
+        this.toolbarPanel.Controls.Add(this.stopButton);
         this.toolbarPanel.Controls.Add(this.stepBackButton);
         this.toolbarPanel.Controls.Add(this.resetButton);
         this.toolbarPanel.Controls.Add(this.statusLabel);
@@ -119,13 +140,35 @@ partial class DebuggerForm
         this.stepButton.UseVisualStyleBackColor = true;
         this.stepButton.Click += new System.EventHandler(this.OnStepClicked);
         // 
+        // traceButton
+        // 
+        this.traceButton.AutoSize = true;
+        this.traceButton.Location = new System.Drawing.Point(171, 13);
+        this.traceButton.Name = "traceButton";
+        this.traceButton.Size = new System.Drawing.Size(56, 27);
+        this.traceButton.TabIndex = 2;
+        this.traceButton.Text = "Trace";
+        this.traceButton.UseVisualStyleBackColor = true;
+        this.traceButton.Click += new System.EventHandler(this.OnTraceClicked);
+        // 
+        // stopButton
+        // 
+        this.stopButton.AutoSize = true;
+        this.stopButton.Location = new System.Drawing.Point(233, 13);
+        this.stopButton.Name = "stopButton";
+        this.stopButton.Size = new System.Drawing.Size(51, 27);
+        this.stopButton.TabIndex = 3;
+        this.stopButton.Text = "Stop";
+        this.stopButton.UseVisualStyleBackColor = true;
+        this.stopButton.Click += new System.EventHandler(this.OnStopClicked);
+        // 
         // stepBackButton
         // 
         this.stepBackButton.AutoSize = true;
-        this.stepBackButton.Location = new System.Drawing.Point(171, 13);
+        this.stepBackButton.Location = new System.Drawing.Point(290, 13);
         this.stepBackButton.Name = "stepBackButton";
         this.stepBackButton.Size = new System.Drawing.Size(89, 27);
-        this.stepBackButton.TabIndex = 2;
+        this.stepBackButton.TabIndex = 4;
         this.stepBackButton.Text = "Step Back";
         this.stepBackButton.UseVisualStyleBackColor = true;
         this.stepBackButton.Click += new System.EventHandler(this.OnStepBackClicked);
@@ -133,10 +176,10 @@ partial class DebuggerForm
         // resetButton
         // 
         this.resetButton.AutoSize = true;
-        this.resetButton.Location = new System.Drawing.Point(266, 13);
+        this.resetButton.Location = new System.Drawing.Point(385, 13);
         this.resetButton.Name = "resetButton";
         this.resetButton.Size = new System.Drawing.Size(52, 27);
-        this.resetButton.TabIndex = 3;
+        this.resetButton.TabIndex = 5;
         this.resetButton.Text = "Reset";
         this.resetButton.UseVisualStyleBackColor = true;
         this.resetButton.Click += new System.EventHandler(this.OnResetClicked);
@@ -148,7 +191,7 @@ partial class DebuggerForm
         this.statusLabel.Padding = new System.Windows.Forms.Padding(8, 4, 8, 4);
         this.statusLabel.Margin = new System.Windows.Forms.Padding(18, 6, 0, 0);
         this.statusLabel.Size = new System.Drawing.Size(156, 28);
-        this.statusLabel.TabIndex = 1;
+        this.statusLabel.TabIndex = 6;
         this.statusLabel.Text = "No cartridge loaded.";
         // 
         // sidebarPanel
@@ -412,6 +455,75 @@ partial class DebuggerForm
         this.interruptIeJoypadCheckBox.TabStop = false;
         this.interruptIeJoypadCheckBox.UseVisualStyleBackColor = true;
         // 
+        // lcdTable
+        // 
+        this.lcdTable.AutoSize = true;
+        this.lcdTable.ColumnCount = 2;
+        this.lcdTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 60F));
+        this.lcdTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 40F));
+        this.lcdTable.Controls.Add(this.lcdScanlineLabel, 0, 0);
+        this.lcdTable.Controls.Add(this.lcdScanlineValueLabel, 1, 0);
+        this.lcdTable.Controls.Add(this.lcdScanlineProgressBar, 0, 1);
+        this.lcdTable.Controls.Add(this.lcdVblankLabel, 0, 2);
+        this.lcdTable.Controls.Add(this.lcdVblankValueLabel, 1, 2);
+        this.lcdTable.Dock = System.Windows.Forms.DockStyle.Top;
+        this.lcdTable.Location = new System.Drawing.Point(12, 27);
+        this.lcdTable.Name = "lcdTable";
+        this.lcdTable.RowCount = 3;
+        this.lcdTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.lcdTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.lcdTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
+        this.lcdTable.Size = new System.Drawing.Size(252, 81);
+        this.lcdTable.TabIndex = 0;
+        this.lcdTable.SetColumnSpan(this.lcdScanlineProgressBar, 2);
+        // 
+        // lcdScanlineLabel
+        // 
+        this.lcdScanlineLabel.AutoSize = true;
+        this.lcdScanlineLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.lcdScanlineLabel.Name = "lcdScanlineLabel";
+        this.lcdScanlineLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.lcdScanlineLabel.Text = "Scanline";
+        this.lcdScanlineLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        // 
+        // lcdScanlineValueLabel
+        // 
+        this.lcdScanlineValueLabel.AutoSize = true;
+        this.lcdScanlineValueLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.lcdScanlineValueLabel.Name = "lcdScanlineValueLabel";
+        this.lcdScanlineValueLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.lcdScanlineValueLabel.Text = "0 / 153";
+        this.lcdScanlineValueLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+        // 
+        // lcdScanlineProgressBar
+        // 
+        this.lcdScanlineProgressBar.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.lcdScanlineProgressBar.Location = new System.Drawing.Point(3, 29);
+        this.lcdScanlineProgressBar.Maximum = 153;
+        this.lcdScanlineProgressBar.Name = "lcdScanlineProgressBar";
+        this.lcdScanlineProgressBar.Size = new System.Drawing.Size(246, 16);
+        this.lcdScanlineProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+        this.lcdScanlineProgressBar.TabIndex = 2;
+        this.lcdScanlineProgressBar.Value = 0;
+        // 
+        // lcdVblankLabel
+        // 
+        this.lcdVblankLabel.AutoSize = true;
+        this.lcdVblankLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.lcdVblankLabel.Name = "lcdVblankLabel";
+        this.lcdVblankLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.lcdVblankLabel.Text = "VBlank";
+        this.lcdVblankLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        // 
+        // lcdVblankValueLabel
+        // 
+        this.lcdVblankValueLabel.AutoSize = true;
+        this.lcdVblankValueLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.lcdVblankValueLabel.Name = "lcdVblankValueLabel";
+        this.lcdVblankValueLabel.Padding = new System.Windows.Forms.Padding(0, 3, 0, 3);
+        this.lcdVblankValueLabel.Text = "No";
+        this.lcdVblankValueLabel.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+        // 
         // registersGroupBox
         // 
         this.registersGroupBox.AutoSize = true;
@@ -452,7 +564,7 @@ partial class DebuggerForm
         // 
         // mainSplitContainer.Panel2
         // 
-        this.mainSplitContainer.Panel2.Controls.Add(this.memoryGroupBox);
+        this.mainSplitContainer.Panel2.Controls.Add(this.rightSplitContainer);
         this.mainSplitContainer.Size = new System.Drawing.Size(720, 522);
         this.mainSplitContainer.SplitterDistance = 420;
         this.mainSplitContainer.TabIndex = 4;
@@ -466,6 +578,24 @@ partial class DebuggerForm
         this.codePanel.Name = "codePanel";
         this.codePanel.Size = new System.Drawing.Size(420, 522);
         this.codePanel.TabIndex = 1;
+        // 
+        // rightSplitContainer
+        // 
+        this.rightSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.rightSplitContainer.Location = new System.Drawing.Point(0, 0);
+        this.rightSplitContainer.Name = "rightSplitContainer";
+        this.rightSplitContainer.Orientation = System.Windows.Forms.Orientation.Horizontal;
+        // 
+        // rightSplitContainer.Panel1
+        // 
+        this.rightSplitContainer.Panel1.Controls.Add(this.memoryGroupBox);
+        // 
+        // rightSplitContainer.Panel2
+        // 
+        this.rightSplitContainer.Panel2.Controls.Add(this.tilesGroupBox);
+        this.rightSplitContainer.Size = new System.Drawing.Size(720, 522);
+        this.rightSplitContainer.SplitterDistance = 258;
+        this.rightSplitContainer.TabIndex = 0;
         // 
         // codeListBox
         // 
@@ -530,6 +660,42 @@ partial class DebuggerForm
         this.memoryListBox.Size = new System.Drawing.Size(696, 219);
         this.memoryListBox.TabIndex = 0;
         // 
+        // tilesGroupBox
+        // 
+        this.tilesGroupBox.Controls.Add(this.tilesPictureBox);
+        this.tilesGroupBox.Controls.Add(this.tilesLegendLabel);
+        this.tilesGroupBox.Controls.Add(this.lcdTable);
+        this.tilesGroupBox.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.tilesGroupBox.Location = new System.Drawing.Point(0, 0);
+        this.tilesGroupBox.Name = "tilesGroupBox";
+        this.tilesGroupBox.Padding = new System.Windows.Forms.Padding(12);
+        this.tilesGroupBox.Size = new System.Drawing.Size(720, 260);
+        this.tilesGroupBox.TabIndex = 0;
+        this.tilesGroupBox.TabStop = false;
+        this.tilesGroupBox.Text = "Tiles";
+        // 
+        // tilesLegendLabel
+        // 
+        this.tilesLegendLabel.AutoSize = true;
+        this.tilesLegendLabel.Dock = System.Windows.Forms.DockStyle.Top;
+        this.tilesLegendLabel.ForeColor = System.Drawing.SystemColors.GrayText;
+        this.tilesLegendLabel.Location = new System.Drawing.Point(12, 27);
+        this.tilesLegendLabel.Name = "tilesLegendLabel";
+        this.tilesLegendLabel.Padding = new System.Windows.Forms.Padding(0, 0, 0, 6);
+        this.tilesLegendLabel.Size = new System.Drawing.Size(314, 26);
+        this.tilesLegendLabel.TabIndex = 1;
+        this.tilesLegendLabel.Text = "Tiles from VRAM 0x8000-0x8FFF (8x8, 2bpp).";
+        // 
+        // tilesPictureBox
+        // 
+        this.tilesPictureBox.Dock = System.Windows.Forms.DockStyle.Fill;
+        this.tilesPictureBox.Location = new System.Drawing.Point(12, 53);
+        this.tilesPictureBox.Name = "tilesPictureBox";
+        this.tilesPictureBox.Size = new System.Drawing.Size(696, 195);
+        this.tilesPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+        this.tilesPictureBox.TabIndex = 0;
+        this.tilesPictureBox.TabStop = false;
+        // 
         // openRomDialog
         // 
         this.openRomDialog.Filter = "Game Boy ROM (*.gb;*.gbc)|*.gb;*.gbc|All files (*.*)|*.*";
@@ -552,6 +718,8 @@ partial class DebuggerForm
         this.sidebarPanel.ResumeLayout(false);
         this.sidebarPanel.PerformLayout();
         this.stackGroupBox.ResumeLayout(false);
+        this.lcdTable.ResumeLayout(false);
+        this.lcdTable.PerformLayout();
         this.interruptsTable.ResumeLayout(false);
         this.interruptsTable.PerformLayout();
         this.interruptsGroupBox.ResumeLayout(false);
@@ -563,7 +731,14 @@ partial class DebuggerForm
         ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).EndInit();
         this.mainSplitContainer.ResumeLayout(false);
         this.codePanel.ResumeLayout(false);
+        this.rightSplitContainer.Panel1.ResumeLayout(false);
+        this.rightSplitContainer.Panel2.ResumeLayout(false);
+        ((System.ComponentModel.ISupportInitialize)(this.rightSplitContainer)).EndInit();
+        this.rightSplitContainer.ResumeLayout(false);
         this.memoryGroupBox.ResumeLayout(false);
+        this.tilesGroupBox.ResumeLayout(false);
+        this.tilesGroupBox.PerformLayout();
+        ((System.ComponentModel.ISupportInitialize)(this.tilesPictureBox)).EndInit();
         this.ResumeLayout(false);
         this.PerformLayout();
 
@@ -574,6 +749,8 @@ partial class DebuggerForm
     private System.Windows.Forms.FlowLayoutPanel toolbarPanel;
     private System.Windows.Forms.Button loadButton;
     private System.Windows.Forms.Button stepButton;
+    private System.Windows.Forms.Button traceButton;
+    private System.Windows.Forms.Button stopButton;
     private System.Windows.Forms.Button stepBackButton;
     private System.Windows.Forms.Button resetButton;
     private System.Windows.Forms.Label statusLabel;
@@ -600,15 +777,25 @@ partial class DebuggerForm
     private System.Windows.Forms.CheckBox interruptIeSerialCheckBox;
     private System.Windows.Forms.CheckBox interruptIfJoypadCheckBox;
     private System.Windows.Forms.CheckBox interruptIeJoypadCheckBox;
+    private System.Windows.Forms.TableLayoutPanel lcdTable;
+    private System.Windows.Forms.Label lcdScanlineLabel;
+    private System.Windows.Forms.Label lcdScanlineValueLabel;
+    private System.Windows.Forms.ProgressBar lcdScanlineProgressBar;
+    private System.Windows.Forms.Label lcdVblankLabel;
+    private System.Windows.Forms.Label lcdVblankValueLabel;
     private System.Windows.Forms.GroupBox stackGroupBox;
     private System.Windows.Forms.Label stackLegendLabel;
     private System.Windows.Forms.ListBox stackListBox;
     private System.Windows.Forms.SplitContainer mainSplitContainer;
+    private System.Windows.Forms.SplitContainer rightSplitContainer;
     private System.Windows.Forms.Panel codePanel;
     private System.Windows.Forms.ListBox codeListBox;
     private System.Windows.Forms.Label codeLegendLabel;
     private System.Windows.Forms.GroupBox memoryGroupBox;
     private System.Windows.Forms.Label memoryLegendLabel;
     private System.Windows.Forms.ListBox memoryListBox;
+    private System.Windows.Forms.GroupBox tilesGroupBox;
+    private System.Windows.Forms.Label tilesLegendLabel;
+    private System.Windows.Forms.PictureBox tilesPictureBox;
     private System.Windows.Forms.OpenFileDialog openRomDialog;
 }
