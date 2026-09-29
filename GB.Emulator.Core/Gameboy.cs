@@ -22,6 +22,7 @@ namespace GB.Emulator.Core
         private readonly Interrupt interrupt;
         private readonly Apu apu;
         private readonly Joypad joypad;
+        private readonly SerialPort serial;
         private Cartridge? cartridge;
         private byte[] romData = Array.Empty<byte>();
 
@@ -38,6 +39,7 @@ namespace GB.Emulator.Core
             this.interrupt = new Interrupt();
             this.apu = new Apu();
             this.joypad = new Joypad();
+            this.serial = new SerialPort();
 
             this.memory = new MemoryMap(
                 this.joypad,
@@ -49,10 +51,13 @@ namespace GB.Emulator.Core
                 this.ramBank3,
                 this.internalRam,
                 this.apu,
+                this.serial,
                 this.io,
                 this.interrupt);
             this.video = new Video(this.lcd);
-            this.cpu = new Cpu(this.memory, this.video);
+            this.cpu = new Cpu(this.memory, this.video, this.serial);
+            this.serial.InterruptRequested += (_, _) =>
+                this.memory.Write8((byte)(this.memory.Peek(0xFF0F) | 0x08), 0xFF0F);
             this.joypad.InterruptRequested += (_, _) =>
             {
                 this.memory.Write8((byte)(this.memory.Peek(0xFF0F) | 0x10), 0xFF0F);
@@ -74,6 +79,8 @@ namespace GB.Emulator.Core
 
         public IButtonInput Input => this.joypad;
 
+        public SerialPort Serial => this.serial;
+
         public byte Scanline => this.lcd.Scanline;
 
         public Cartridge? Cartridge => this.cartridge;
@@ -86,6 +93,7 @@ namespace GB.Emulator.Core
             this.lcd.Reset();
             this.apu.Reset();
             this.joypad.Reset();
+            this.serial.Reset();
             this.ramBank1.Reset();
             this.ramBank2.Reset();
             this.ramBank3.Reset();
@@ -252,6 +260,7 @@ namespace GB.Emulator.Core
                 this.io.Snapshot(),
                 this.apu.Snapshot(),
                 this.joypad.Snapshot(),
+                this.serial.Snapshot(),
                 this.spriteTileManager.Snapshot(),
                 this.backgroundTileManager.Snapshot(),
                 this.lcd.Snapshot(),
@@ -286,6 +295,7 @@ namespace GB.Emulator.Core
             this.io.Restore(state.Io);
             this.apu.Restore(state.SoundRegisters);
             this.joypad.Restore(state.JoypadState);
+            this.serial.Restore(state.SerialState);
             this.spriteTileManager.Restore(state.SpriteTiles);
             this.backgroundTileManager.Restore(state.BackgroundTiles);
             this.lcd.Restore(state.LcdState);

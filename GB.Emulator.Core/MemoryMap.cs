@@ -11,6 +11,7 @@ namespace GB.Emulator.Core
         private readonly byte[] memory;
         private readonly List<IMemoryRange> devices;
         private readonly Joypad joypad;
+        private readonly SerialPort serial;
         private readonly HashSet<ushort> recentWrites = new();
         private readonly HashSet<ushort> recentReads = new();
 
@@ -19,6 +20,7 @@ namespace GB.Emulator.Core
             this.memory = new byte[ushort.MaxValue + 1];
             this.devices = new List<IMemoryRange>(devices);
             this.joypad = devices.OfType<Joypad>().FirstOrDefault();
+            this.serial = devices.OfType<SerialPort>().FirstOrDefault();
         }
 
         public void AddDevice(IMemoryRange device)
@@ -151,9 +153,9 @@ namespace GB.Emulator.Core
                 throw new ArgumentOutOfRangeException(nameof(address));
             }
 
-            return address == 0xFF00 && this.joypad != null
-                ? this.joypad.Read8(address)
-                : this.memory[address];
+            if (address == 0xFF00 && this.joypad != null) return this.joypad.Read8(address);
+            if (address is 0xFF01 or 0xFF02 && this.serial != null) return this.serial.Read8(address);
+            return this.memory[address];
         }
 
         public byte[] Snapshot()
@@ -161,6 +163,11 @@ namespace GB.Emulator.Core
             var copy = new byte[this.memory.Length];
             Array.Copy(this.memory, copy, copy.Length);
             if (this.joypad != null) copy[0xFF00] = this.joypad.Read8(0xFF00);
+            if (this.serial != null)
+            {
+                copy[0xFF01] = this.serial.Read8(0xFF01);
+                copy[0xFF02] = this.serial.Read8(0xFF02);
+            }
             return copy;
         }
 

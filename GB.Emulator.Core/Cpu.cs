@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using GB.Emulator.Core.InputOutput;
 
 namespace GB.Emulator.Core
 {
@@ -12,10 +13,11 @@ namespace GB.Emulator.Core
         private bool stopped;
         private bool haltBug;
 
-        public Cpu(MemoryMap memory, Video video)
+        public Cpu(MemoryMap memory, Video video, SerialPort serial)
         {
             Cpu.memory = memory;
             this.video = video;
+            this.serial = serial;
             this.instructions = this.BuildInstructions();
             Registers.Reset();
         }
@@ -79,6 +81,7 @@ namespace GB.Emulator.Core
         }
 
         public readonly Video video;
+        private readonly SerialPort serial;
 
         internal void ResetExecutionState()
         {
@@ -123,7 +126,7 @@ namespace GB.Emulator.Core
                     Memory.Write8((byte)(Memory.Peek(0xFF0F) & ~(1 << bit)), 0xFF0F);
                     PushWord(interruptedPc);
                     Registers.PC = vector;
-                    this.AdvanceVideo(20);
+                    this.AdvanceHardware(20);
                     var interrupt = new Instruction(0, $"INT 0x{vector:X2}", (_, _) => { }, 0, false);
                     return new CpuStepResult(interrupt, interruptedPc, 0, 0,
                         memory.ConsumeRecentWrites(), memory.ConsumeRecentReads());
@@ -132,7 +135,7 @@ namespace GB.Emulator.Core
 
             if (this.halted || this.stopped)
             {
-                if (this.halted) this.AdvanceVideo();
+                if (this.halted) this.AdvanceHardware();
                 var idle = new Instruction(0, this.halted ? "HALT idle" : "STOP idle", (_, _) => { }, 0, false);
                 return new CpuStepResult(idle, Registers.PC, 0, 0,
                     memory.ConsumeRecentWrites(), memory.ConsumeRecentReads());
@@ -179,7 +182,7 @@ namespace GB.Emulator.Core
             {
                 this.enableInterruptsDelay--;
             }
-            this.AdvanceVideo(cycles);
+            this.AdvanceHardware(cycles);
 
             IReadOnlyCollection<ushort> writes = memory.ConsumeRecentWrites();
             IReadOnlyCollection<ushort> reads = memory.ConsumeRecentReads();
@@ -203,9 +206,10 @@ namespace GB.Emulator.Core
             return address < 0x8000 ? data[address] : Memory.Read8((ushort)address);
         }
 
-        private void AdvanceVideo(int cycles = 4)
+        private void AdvanceHardware(int cycles = 4)
         {
             byte interruptRequest = this.video.Step(cycles);
+            this.serial.Step(cycles);
             if (interruptRequest != 0)
             {
                 byte flags = Cpu.Memory.Peek(0xFF0F);

@@ -52,6 +52,47 @@ Other input sources can call `gameboy.Input.SetButtonState(button, pressed)`.
 The joypad device implements the active-low `FF00` button matrix and requests
 the joypad interrupt when a selected input line becomes low.
 
+## Link port web experiment
+
+`GB.Experiments` runs a small ROM in the emulator and exposes its serial reply
+as a local HTTP page. Start it with:
+
+```powershell
+dotnet run --project GB.Experiments -- --port 8765
+curl http://127.0.0.1:8765/
+```
+
+Use `--workers 8` to run eight independent Game Boy emulators. The default is
+four workers (or fewer when fewer processors are available). The listener
+accepts requests concurrently and assigns them round robin. Each worker runs
+in its own process because the current CPU registers and memory bus are static;
+that process boundary keeps their hardware state separate. One worker handles
+one request at a time. Run `dotnet run --project GB.Experiments -- --benchmark`
+to measure worker counts on your computer.
+
+The listener binds to `127.0.0.1`. `GET /` sends the byte `G` to the ROM using
+an externally clocked transfer at `FF01` (SB) and `FF02` (SC). The ROM responds
+with ASCII bytes followed by a zero byte; the adapter clocks each byte and wraps
+the result in HTTP. The built-in ROM serves `Hello from the Game Boy serial
+port!`. Supply `--rom path/to/program.gb` to try another ROM implementing the
+same protocol.
+
+The same server exposes `GET /api/primes/{n}`. For example,
+`curl http://127.0.0.1:8765/api/primes/10` returns
+`{"n":10,"prime":29}` as JSON. The adapter sends `P`, a 16-bit little-endian
+index, and a 16-bit search ceiling. For each request, the emulated ROM marks
+odd composites in work RAM, counts primes, and sends the result as two
+little-endian bytes. No prime results are stored in the cartridge. The ceiling
+is at most `min(65535, 16 * n)`, so small requests do less work. The supported
+range is **1–6542**, ending at 65521, the largest prime that fits in 16 bits.
+Invalid indices return HTTP 400. A custom ROM must implement the `P` command
+and this request and response format to support the endpoint.
+
+The core also exposes `gameboy.Serial` and `SerialLinkCable` for byte exchange
+between an internally clocked serial port and an externally clocked one. Serial completion
+clears SC bit 7 and requests interrupt bit 3. The current byte exchange is a
+functional model; individual bits are not yet shifted during the transfer.
+
 ## Debugger interaction map
 
 Open `GB.Debugger`, load a ROM, and select the **Interaction map** tab. Press
