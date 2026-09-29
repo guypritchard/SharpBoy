@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using GB.Emulator.Core;
+using GB.Emulator.Display;
 
 namespace GB.Debugger;
 
@@ -28,7 +29,7 @@ public partial class DebuggerForm : Form
     private const int TileColumns = 16;
     private const int TileScale = 2;
     private const int TraceIntervalMs = 16;
-    private const int TraceStepsPerTick = 50;
+    private const int TraceStepsPerTick = 250;
     private const string TilesLegendText = "384 tiles · VRAM 0x8000–0x97FF · raw 2bpp patterns";
     private static readonly Color[] TilePalette =
     {
@@ -39,6 +40,7 @@ public partial class DebuggerForm : Form
     };
 
     private readonly Gameboy gameboy = new();
+    private readonly DebuggerKeyboardInput keyboardInput;
     private readonly HashSet<ushort> recentWrites = new();
     private readonly HashSet<ushort> recentReads = new();
     private readonly Dictionary<string, Label> registerLabels = new(StringComparer.Ordinal);
@@ -68,10 +70,20 @@ public partial class DebuggerForm : Form
     public DebuggerForm()
     {
         InitializeComponent();
+        this.keyboardInput = new DebuggerKeyboardInput(this, this.gameboy.Input,
+            () => this.cartridge != null && this.videoTab.Visible, this.RefreshInputView);
         this.InitializeInteractionView();
+        Application.AddMessageFilter(this.keyboardInput);
+        this.Disposed += (_, _) => Application.RemoveMessageFilter(this.keyboardInput);
+        this.Deactivate += (_, _) =>
+        {
+            this.keyboardInput.ReleaseAll();
+            this.RefreshInputView();
+        };
         this.codeListBox.KeyDown += this.OnCodeListBoxKeyDown;
         this.traceTimer.Interval = TraceIntervalMs;
         this.traceTimer.Tick += this.OnTraceTick;
+        this.gameboy.Video.FrameReady += (_, _) => this.screenDirty = true;
         this.CreateRegisterLabels();
         this.RefreshDebuggerViews();
         this.UpdateButtons();
@@ -351,7 +363,7 @@ public partial class DebuggerForm : Form
             Padding = new Padding(12)
         };
         this.screenLegendLabel.Dock = DockStyle.Top;
-        this.screenLegendLabel.Height = 34;
+        this.screenLegendLabel.Height = 48;
         this.screenLegendLabel.ForeColor = SystemColors.GrayText;
         this.screenLegendLabel.Text = "Current VRAM/LCD preview (not a completed PPU frame).";
         this.screenDisplay.Dock = DockStyle.Fill;
@@ -401,6 +413,11 @@ public partial class DebuggerForm : Form
         tabs.SelectedIndexChanged += (_, _) =>
         {
             if (tabs.SelectedTab == this.videoTab) this.UpdateGraphicsView();
+            else
+            {
+                this.keyboardInput.ReleaseAll();
+                this.RefreshInputView();
+            }
         };
         this.mainSplitContainer.Panel2.Controls.Add(tabs);
     }
@@ -477,13 +494,14 @@ public partial class DebuggerForm : Form
         var lines = new List<string>
         {
             $"Executed  {this.lastInteractionStep.Disassembly.Replace('\t', ' ')}",
-            $"CPU       PC is now 0x{Cpu.Registers.PC:X4}. The opcode came from loaded ROM bytes.",
+            $"CPU       PC is now 0x{Cpu.Registers.PC:X4}. The opcode came from " +
+                (this.lastInteractionStep.Address < 0x8000 ? "cartridge ROM." : "mapped memory."),
             FormatAccesses("READ", this.recentReads),
             FormatAccesses("WRITE", this.recentWrites),
             $"VIDEO     LCD timing stepped; scanline {this.scanlineBeforeLastStep} → {scanline}. " +
                 "Green arrows show VRAM, OAM, and LCD register access.",
-            "SOUND     0xFF10–0xFF3F are sound registers; audio synthesis is not implemented.",
-            "COUNTS    Read/write counts are unique addresses. Instruction fetch uses loaded ROM bytes."
+            "SOUND     0xFF10–0xFF3F are mapped to the sound device; audio synthesis is not implemented.",
+            "COUNTS    Read/write counts are unique addresses. RAM instruction fetches appear as reads."
         };
         this.interactionDetails.Lines = lines.ToArray();
     }
@@ -738,16 +756,20 @@ public partial class DebuggerForm : Form
             return;
         }
 
-        this.screenLegendLabel.Text =
-            $"Current VRAM/LCD preview · LCD {((this.gameboy.Memory.Peek(0xFF40) & 0x80) != 0 ? "on" : "off")} " +
-            $"· SCX {this.gameboy.Memory.Peek(0xFF43)} · SCY {this.gameboy.Memory.Peek(0xFF42)}";
-        if (!this.videoTab.Visible || (!this.screenDirty && !this.tilesDirty)) return;
+        if (!this.videoTab.Visible) return;
 
-        byte[] memory = this.gameboy.Memory.Snapshot();
+        VideoState video = this.gameboy.CaptureVideoState();
+        bool lcdOn = (video.LcdControl & 0x80) != 0;
+        this.screenLegendLabel.Text = lcdOn
+            ? $"Current screen · LCD on · SCX {video.ScrollX} · SCY {video.ScrollY}"
+            : "LCD off — screen stays blank while the ROM prepares tiles. Keep tracing to see the picture.";
+        this.screenLegendLabel.Text += "\nKeys: arrows move · Z=A · X=B · Enter=Start · Space=Select";
+        if (!this.screenDirty && !this.tilesDirty) return;
+
         if (this.screenDirty)
         {
             var shades = new byte[DmgScreenRenderer.Width * DmgScreenRenderer.Height];
-            DmgScreenRenderer.RenderScreen(memory, shades);
+            DmgScreenRenderer.RenderScreen(video, shades);
             this.screenDisplay.SetFrame(CreatePixelBitmap(shades,
                 DmgScreenRenderer.Width, DmgScreenRenderer.Height, 1));
             this.screenDirty = false;
@@ -756,7 +778,7 @@ public partial class DebuggerForm : Form
         if (this.tilesDirty)
         {
             var shades = new byte[DmgScreenRenderer.TileAtlasWidth * DmgScreenRenderer.TileAtlasHeight];
-            DmgScreenRenderer.RenderTileAtlas(memory, shades);
+            DmgScreenRenderer.RenderTileAtlas(video, shades);
             this.ReplaceTileImage(CreatePixelBitmap(shades,
                 DmgScreenRenderer.TileAtlasWidth, DmgScreenRenderer.TileAtlasHeight, TileScale));
             this.tilesDirty = false;
@@ -851,7 +873,9 @@ public partial class DebuggerForm : Form
         }
 
         this.disassemblyCache = disassembly;
-        int maxWidth = 0;
+        int longestLineIndex = 0;
+        int longestLineLength = 0;
+        var lines = new object[disassembly.Count];
 
         for (int i = 0; i < disassembly.Count; i++)
         {
@@ -862,15 +886,17 @@ public partial class DebuggerForm : Form
             }
 
             string line = FormatCodeLine(entry, false);
-            this.codeListBox.Items.Add(line);
-
-            int width = TextRenderer.MeasureText(line, this.codeListBox.Font).Width;
-            if (width > maxWidth)
+            lines[i] = line;
+            if (line.Length > longestLineLength)
             {
-                maxWidth = width;
+                longestLineIndex = i;
+                longestLineLength = line.Length;
             }
         }
 
+        this.codeListBox.Items.AddRange(lines);
+        int maxWidth = TextRenderer.MeasureText(
+            (string)lines[longestLineIndex], this.codeListBox.Font).Width;
         this.codeListBox.HorizontalExtent = Math.Max(maxWidth + 8, this.codeListBox.ClientSize.Width);
         this.codeListBox.EndUpdate();
     }
@@ -960,6 +986,18 @@ public partial class DebuggerForm : Form
             this.SelectAllCodeLines();
             e.Handled = true;
         }
+    }
+
+    private void RefreshInputView()
+    {
+        this.UpdateInterruptView();
+        if (!this.memoryViewInitialized || this.memoryListBox.Items.Count != MemoryRowCount) return;
+
+        const int joypadRow = 0xFF00 / MemoryBytesPerRow;
+        this.memoryListBox.Items[joypadRow] = this.BuildMemoryRow(0xFF00,
+            joypadRow == Cpu.Registers.PC / MemoryBytesPerRow,
+            this.recentWrites.Any(write => write / MemoryBytesPerRow == joypadRow),
+            this.recentReads.Any(read => read / MemoryBytesPerRow == joypadRow));
     }
 
     private void CopySelectedCodeLines()

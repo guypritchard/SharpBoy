@@ -1,7 +1,8 @@
 using System;
 using System.Text;
+using GB.Emulator.Core;
 
-namespace GB.Emulator.Core
+namespace GB.Emulator.Display
 {
     /// <summary>Renders a 160 by 144 frame of Game Boy shade indices (0 to 3) in a true-color terminal.</summary>
     public static class ConsoleVideoRenderer
@@ -86,7 +87,8 @@ namespace GB.Emulator.Core
             }
 
             string output = Render(frame);
-            Console.OutputEncoding = Encoding.UTF8;
+            if (Console.OutputEncoding.CodePage != Encoding.UTF8.CodePage)
+                Console.OutputEncoding = Encoding.UTF8;
             Console.Write(output);
         }
     }

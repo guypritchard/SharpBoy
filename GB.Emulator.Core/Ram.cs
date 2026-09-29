@@ -1,4 +1,4 @@
-﻿using GB.Emulator.Core.InputOutput;
+using GB.Emulator.Core.InputOutput;
 using System.Diagnostics;
 
 namespace GB.Emulator.Core
@@ -24,6 +24,8 @@ namespace GB.Emulator.Core
         {
             get; private set;
         }
+
+        internal void Reset() => System.Array.Clear(this.memory);
 
         public void Write8(ushort location, byte value)
         {

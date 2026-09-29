@@ -1,6 +1,8 @@
 using GB.Emulator.Core;
+using GB.Emulator.Display;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.IO;
 
 namespace GB.Emulator.Tests
 {
@@ -20,8 +22,26 @@ namespace GB.Emulator.Tests
         private static byte[] Screen(byte[] memory)
         {
             var pixels = new byte[DmgScreenRenderer.Width * DmgScreenRenderer.Height];
-            DmgScreenRenderer.RenderScreen(memory, pixels);
+            DmgScreenRenderer.RenderScreen(new VideoState(memory), pixels);
             return pixels;
+        }
+
+        [TestMethod]
+        public void BundledSpriteRomReachesAVisibleScreenAfterHighRamDma()
+        {
+            var gameboy = new Gameboy();
+            gameboy.Load(new Cartridge { Data = File.ReadAllBytes(Roms.TestRom) });
+            int completedFrames = 0;
+            gameboy.Video.FrameReady += (_, _) => completedFrames++;
+
+            for (int i = 0; i < 100000; i++) gameboy.Step();
+
+            byte[] memory = gameboy.Memory.Snapshot();
+            byte[] screen = Screen(memory);
+            Assert.AreNotEqual(0, memory[0xFF40] & 0x80, "ROM should enable the LCD.");
+            Assert.AreNotEqual(0, completedFrames, "The video hardware should request redraws.");
+            Assert.IsTrue(Array.Exists(screen, shade => shade != screen[0]),
+                "The rendered screen should contain more than one shade.");
         }
 
         [TestMethod]
@@ -109,7 +129,7 @@ namespace GB.Emulator.Tests
             memory[0x97F0] = 0x80;
             var atlas = new byte[DmgScreenRenderer.TileAtlasWidth * DmgScreenRenderer.TileAtlasHeight];
 
-            DmgScreenRenderer.RenderTileAtlas(memory, atlas);
+            DmgScreenRenderer.RenderTileAtlas(new VideoState(memory), atlas);
 
             int lastTileX = 15 * 8;
             int lastTileY = 23 * 8;
@@ -122,10 +142,10 @@ namespace GB.Emulator.Tests
             byte[] memory = Memory(0x11);
             var screen = new byte[DmgScreenRenderer.Width * DmgScreenRenderer.Height];
             Array.Fill(screen, (byte)3);
-            DmgScreenRenderer.RenderScreen(memory, screen);
+            DmgScreenRenderer.RenderScreen(new VideoState(memory), screen);
             Assert.AreEqual(0, screen[0]);
             Assert.AreEqual(0, screen[^1]);
-            Assert.ThrowsExactly<ArgumentException>(() => DmgScreenRenderer.RenderScreen(new byte[1], screen));
+            Assert.ThrowsExactly<ArgumentException>(() => new VideoState(new byte[1]));
         }
 
         [TestMethod]

@@ -1,6 +1,7 @@
 using System;
+using GB.Emulator.Core;
 
-namespace GB.Emulator.Core
+namespace GB.Emulator.Display
 {
     /// <summary>
     /// Builds a DMG screen preview from current memory contents. This is a
@@ -15,9 +16,10 @@ namespace GB.Emulator.Core
         public const int TileAtlasWidth = TileColumns * 8;
         public const int TileAtlasHeight = TileRows * 8;
 
-        public static void RenderScreen(ReadOnlySpan<byte> memory, Span<byte> shades)
+        public static void RenderScreen(VideoState memory, Span<byte> shades)
         {
-            Validate(memory, shades, Width * Height);
+            ArgumentNullException.ThrowIfNull(memory);
+            Validate(shades, Width * Height);
             byte lcdc = memory[0xFF40];
             if ((lcdc & 0x80) == 0)
             {
@@ -110,9 +112,10 @@ namespace GB.Emulator.Core
             }
         }
 
-        public static void RenderTileAtlas(ReadOnlySpan<byte> memory, Span<byte> shades)
+        public static void RenderTileAtlas(VideoState memory, Span<byte> shades)
         {
-            Validate(memory, shades, TileAtlasWidth * TileAtlasHeight);
+            ArgumentNullException.ThrowIfNull(memory);
+            Validate(shades, TileAtlasWidth * TileAtlasHeight);
             for (int tile = 0; tile < TileColumns * TileRows; tile++)
             {
                 int tileX = (tile % TileColumns) * 8;
@@ -129,7 +132,7 @@ namespace GB.Emulator.Core
             }
         }
 
-        private static int ReadTileColor(ReadOnlySpan<byte> memory, int tileAddress, int x, int y)
+        private static int ReadTileColor(VideoState memory, int tileAddress, int x, int y)
         {
             int rowAddress = tileAddress + y * 2;
             int bit = 7 - x;
@@ -138,10 +141,8 @@ namespace GB.Emulator.Core
 
         private static int PaletteShade(byte palette, int color) => (palette >> (color * 2)) & 3;
 
-        private static void Validate(ReadOnlySpan<byte> memory, Span<byte> shades, int pixelCount)
+        private static void Validate(Span<byte> shades, int pixelCount)
         {
-            if (memory.Length < 0x10000)
-                throw new ArgumentException("A full 64 KiB memory snapshot is required.", nameof(memory));
             if (shades.Length < pixelCount)
                 throw new ArgumentException($"At least {pixelCount} output pixels are required.", nameof(shades));
         }

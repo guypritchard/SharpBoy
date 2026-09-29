@@ -21,6 +21,8 @@ public class Interrupt : IMemoryRange
 
     private byte interruptFlags = 0x00;
 
+    internal void Reset() => this.interruptFlags = 0;
+
     public void Write8(ushort location, byte value)
     {
         this.interruptFlags = value;

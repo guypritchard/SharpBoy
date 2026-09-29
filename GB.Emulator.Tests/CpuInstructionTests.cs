@@ -31,6 +31,23 @@ namespace GB.Emulator.Tests
         }
 
         [TestMethod]
+        public void InstructionsCopiedToHighRamCanUpdateVideoRegisters()
+        {
+            var gameboy = CreateGameboy(0xC3, 0x80, 0xFF); // JP FF80
+            gameboy.Memory.Write8(0x3E, 0xFF80); // LD A,E4
+            gameboy.Memory.Write8(0xE4, 0xFF81);
+            gameboy.Memory.Write8(0xE0, 0xFF82); // LDH (FF47),A
+            gameboy.Memory.Write8(0x47, 0xFF83);
+
+            gameboy.Step();
+            gameboy.Step();
+            gameboy.Step();
+
+            Assert.AreEqual(0xE4, gameboy.Memory.Peek(0xFF47));
+            Assert.AreEqual(0xFF84, Cpu.Registers.PC);
+        }
+
+        [TestMethod]
         public void LdA8A_WritesToHighRam()
         {
             byte operand = 0x12;

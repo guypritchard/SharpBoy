@@ -10,6 +10,7 @@ namespace GB.Emulator.Core
     {
         private readonly byte[] memory;
         private readonly List<IMemoryRange> devices;
+        private readonly Joypad joypad;
         private readonly HashSet<ushort> recentWrites = new();
         private readonly HashSet<ushort> recentReads = new();
 
@@ -17,6 +18,7 @@ namespace GB.Emulator.Core
         {
             this.memory = new byte[ushort.MaxValue + 1];
             this.devices = new List<IMemoryRange>(devices);
+            this.joypad = devices.OfType<Joypad>().FirstOrDefault();
         }
 
         public void AddDevice(IMemoryRange device)
@@ -149,13 +151,16 @@ namespace GB.Emulator.Core
                 throw new ArgumentOutOfRangeException(nameof(address));
             }
 
-            return this.memory[address];
+            return address == 0xFF00 && this.joypad != null
+                ? this.joypad.Read8(address)
+                : this.memory[address];
         }
 
         public byte[] Snapshot()
         {
             var copy = new byte[this.memory.Length];
             Array.Copy(this.memory, copy, copy.Length);
+            if (this.joypad != null) copy[0xFF00] = this.joypad.Read8(0xFF00);
             return copy;
         }
 

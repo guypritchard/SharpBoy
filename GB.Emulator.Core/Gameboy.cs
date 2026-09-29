@@ -20,6 +20,8 @@ namespace GB.Emulator.Core
         private readonly Ram internalRam;
         private readonly Ram io;
         private readonly Interrupt interrupt;
+        private readonly Apu apu;
+        private readonly Joypad joypad;
         private Cartridge? cartridge;
         private byte[] romData = Array.Empty<byte>();
 
@@ -34,8 +36,11 @@ namespace GB.Emulator.Core
             this.internalRam = new Ram("Internal RAM", 0xFF80, 0xFFFE);
             this.io = new Ram("I/O", 0xFF00, 0xFF4C);
             this.interrupt = new Interrupt();
+            this.apu = new Apu();
+            this.joypad = new Joypad();
 
             this.memory = new MemoryMap(
+                this.joypad,
                 this.lcd,
                 this.spriteTileManager,
                 this.backgroundTileManager,
@@ -43,15 +48,31 @@ namespace GB.Emulator.Core
                 this.ramBank2,
                 this.ramBank3,
                 this.internalRam,
+                this.apu,
                 this.io,
                 this.interrupt);
             this.video = new Video(this.lcd);
             this.cpu = new Cpu(this.memory, this.video);
+            this.joypad.InterruptRequested += (_, _) =>
+            {
+                this.memory.Write8((byte)(this.memory.Peek(0xFF0F) | 0x10), 0xFF0F);
+                this.cpu.WakeFromStop();
+            };
         }
 
         public Cpu Cpu => this.cpu;
 
         public MemoryMap Memory => this.memory;
+
+        public Video Video => this.video;
+
+        public VideoState CaptureVideoState() => this.video.CaptureState(this.memory);
+
+        public Apu Sound => this.apu;
+
+        public SoundState CaptureSoundState() => this.apu.CaptureState();
+
+        public IButtonInput Input => this.joypad;
 
         public byte Scanline => this.lcd.Scanline;
 
@@ -63,6 +84,14 @@ namespace GB.Emulator.Core
             this.romData = newCartridge.Data;
             this.memory.Reset();
             this.lcd.Reset();
+            this.apu.Reset();
+            this.joypad.Reset();
+            this.ramBank1.Reset();
+            this.ramBank2.Reset();
+            this.ramBank3.Reset();
+            this.internalRam.Reset();
+            this.io.Reset();
+            this.interrupt.Reset();
             this.spriteTileManager.Reset();
             this.backgroundTileManager.Reset();
             this.memory.LoadRom(this.romData);
@@ -221,6 +250,8 @@ namespace GB.Emulator.Core
                 this.ramBank3.Snapshot(),
                 this.internalRam.Snapshot(),
                 this.io.Snapshot(),
+                this.apu.Snapshot(),
+                this.joypad.Snapshot(),
                 this.spriteTileManager.Snapshot(),
                 this.backgroundTileManager.Snapshot(),
                 this.lcd.Snapshot(),
@@ -253,6 +284,8 @@ namespace GB.Emulator.Core
             this.ramBank3.Restore(state.RamBank3);
             this.internalRam.Restore(state.InternalRam);
             this.io.Restore(state.Io);
+            this.apu.Restore(state.SoundRegisters);
+            this.joypad.Restore(state.JoypadState);
             this.spriteTileManager.Restore(state.SpriteTiles);
             this.backgroundTileManager.Restore(state.BackgroundTiles);
             this.lcd.Restore(state.LcdState);

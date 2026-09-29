@@ -8,13 +8,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Display\GB.Emulator.Display.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="SPRITE.GB">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Tetris.gb">
+    <None Include="..\GB.Roms\SPRITE.GB" Link="SPRITE.GB">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

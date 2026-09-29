@@ -89,6 +89,8 @@ namespace GB.Emulator.Core
             this.haltBug = false;
         }
 
+        internal void WakeFromStop() => this.stopped = false;
+
         internal CpuExecutionState CaptureExecutionState() =>
             new(this.interruptMasterEnabled, this.enableInterruptsDelay, this.halted, this.stopped, this.haltBug);
 
@@ -137,12 +139,8 @@ namespace GB.Emulator.Core
             }
 
             int pc = Cpu.Registers.PC;
-            if (pc >= data.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(data), $"Program counter 0x{pc:X4} is outside the loaded cartridge.");
-            }
-
-            Instruction instruction = GetInstruction(data[pc]);
+            byte opcode = this.ReadInstructionByte(data, pc);
+            Instruction instruction = GetInstruction(opcode);
 
             byte parameter1 = 0x0;
             byte parameter2 = 0x0;
@@ -152,20 +150,20 @@ namespace GB.Emulator.Core
             if (instruction.Length > 1)
             {
                 int lastOperandAddress = pc + instruction.Length - (applyHaltBug ? 2 : 1);
-                if (lastOperandAddress >= data.Length)
+                if (lastOperandAddress > ushort.MaxValue)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(data), $"Instruction {instruction.Name} at 0x{pc:X4} requires {instruction.Length - 1} operand bytes.");
+                    throw new ArgumentOutOfRangeException(nameof(data), $"Instruction {instruction.Name} at 0x{pc:X4} crosses the end of memory.");
                 }
 
-                parameter1 = data[pc + (applyHaltBug ? 0 : 1)];
+                parameter1 = this.ReadInstructionByte(data, pc + (applyHaltBug ? 0 : 1));
                 if (instruction.Length > 2)
                 {
-                    parameter2 = data[pc + (applyHaltBug ? 1 : 2)];
+                    parameter2 = this.ReadInstructionByte(data, pc + (applyHaltBug ? 1 : 2));
                 }
             }
 
             if (applyHaltBug) Registers.PC = (ushort)(pc - 1);
-            int cycles = GetCycles(data[pc], parameter1);
+            int cycles = GetCycles(opcode, parameter1);
             bool enableInterruptsNow = this.enableInterruptsDelay == 1;
             instruction.Execute(parameter1, parameter2);
             if (enableInterruptsNow && instruction.Value != 0xF3)
@@ -190,6 +188,19 @@ namespace GB.Emulator.Core
                 ? new Instruction(0xCB, GetCbName(parameter1), (_, _) => { }, 2)
                 : instruction;
             return new CpuStepResult(resultInstruction, (ushort)pc, parameter1, parameter2, writes, reads);
+        }
+
+        private byte ReadInstructionByte(byte[] data, int address)
+        {
+            if (address < 0 || address > ushort.MaxValue ||
+                (address < 0x8000 && address >= data.Length))
+            {
+                throw new ArgumentOutOfRangeException(nameof(data), $"Program counter 0x{address:X4} is outside the loaded cartridge.");
+            }
+
+            // Cartridge instructions come from ROM; code copied into work or high RAM
+            // must be fetched through the memory map (for example, DMA routines).
+            return address < 0x8000 ? data[address] : Memory.Read8((ushort)address);
         }
 
         private void AdvanceVideo(int cycles = 4)
@@ -219,9 +230,10 @@ namespace GB.Emulator.Core
         private void HandleExecutionFailure(byte[] data, Exception exception)
         {
             Instruction instruction;
-            if (!TryGetInstruction(data[Cpu.Registers.PC], out instruction))
+            byte opcode = this.ReadInstructionByte(data, Cpu.Registers.PC);
+            if (!TryGetInstruction(opcode, out instruction))
             {
-                instruction = new Instruction(data[Cpu.Registers.PC], $"NOTIMPL 0x{data[Cpu.Registers.PC]:X2}", (p1, p2) => { }, 1);
+                instruction = new Instruction(opcode, $"NOTIMPL 0x{opcode:X2}", (p1, p2) => { }, 1);
             }
             Trace.WriteLine(instruction.Disassemble());
             Trace.WriteLine(Cpu.Registers.Dump());

@@ -12,6 +12,8 @@ namespace GB.Emulator.Core
             byte[] ramBank3,
             byte[] internalRam,
             byte[] io,
+            byte[] soundRegisters,
+            Joypad.JoypadState joypadState,
             byte[] spriteTiles,
             byte[] backgroundTiles,
             Lcd.LcdState lcdState,
@@ -25,6 +27,8 @@ namespace GB.Emulator.Core
             this.RamBank3 = ramBank3;
             this.InternalRam = internalRam;
             this.Io = io;
+            this.SoundRegisters = soundRegisters;
+            this.JoypadState = joypadState;
             this.SpriteTiles = spriteTiles;
             this.BackgroundTiles = backgroundTiles;
             this.LcdState = lcdState;
@@ -45,6 +49,10 @@ namespace GB.Emulator.Core
         internal byte[] InternalRam { get; }
 
         internal byte[] Io { get; }
+
+        internal byte[] SoundRegisters { get; }
+
+        internal Joypad.JoypadState JoypadState { get; }
 
         internal byte[] SpriteTiles { get; }
 

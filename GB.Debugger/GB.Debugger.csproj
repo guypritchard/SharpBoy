@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Display\GB.Emulator.Display.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -3,6 +3,17 @@
 
 A basic Gameboy emulator.
 
+## Architecture
+
+`GB.Emulator.Core` owns the hardware: CPU execution, the memory bus, LCD timing,
+VRAM/OAM state, the joypad, and the sound register device. `Gameboy` coordinates those
+devices and exposes immutable video and sound snapshots. `GB.Emulator.Display`
+turns a video snapshot into shade pixels and provides the Unicode terminal
+renderer. `GB.Emulator` and `GB.Debugger` control the hardware and present it
+through their own user interfaces. The core does not depend on drawing or
+terminal APIs. Audio synthesis and a cycle-accurate pixel pipeline are still
+future hardware work.
+
 The CPU executes all 245 documented unprefixed opcodes and all 256 `CB`
 bit/rotate opcodes. The 11 undefined opcodes raise an error. Instruction cycle
 counts drive LCD timing, and interrupt entry, delayed `EI`, `RETI`, and the HALT
@@ -25,8 +36,21 @@ byte[] frame = new byte[Video.Width * Video.Height];
 ConsoleVideoRenderer.Draw(frame);
 ```
 
-The LCD and tile logic does not currently produce complete video frames, so
-ROM execution does not yet call this renderer automatically.
+`GB.Emulator` redraws the current video state when the LCD reaches VBlank.
+Press **R** to repaint the terminal, or **Ctrl+C** to stop. If the terminal is
+resized, the next frame clears and redraws it. The debugger uses the same
+display layer for its screen and tile views, and repaints its frame when the
+view is resized.
+
+## Input
+
+Both the console and the debugger's Video tab use **arrow keys** for the D-pad,
+**Z** for A, **X** for B, **Enter** for Start, and **Space** for Select. The
+console holds each key briefly and extends the hold on key repeat; the debugger
+uses key-down and key-up events and releases all buttons when it loses focus.
+Other input sources can call `gameboy.Input.SetButtonState(button, pressed)`.
+The joypad device implements the active-low `FF00` button matrix and requests
+the joypad interrupt when a selected input line becomes low.
 
 ## Debugger interaction map
 

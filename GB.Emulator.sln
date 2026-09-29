@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GB.Roms", "GB.Roms", "{2BB1
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Debugger", "GB.Debugger\GB.Debugger.csproj", "{467EC08B-56C9-4BA0-8F73-1DB54F9E1C0D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Emulator.Display", "GB.Emulator.Display\GB.Emulator.Display.csproj", "{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,6 +87,18 @@ Global
 		{467EC08B-56C9-4BA0-8F73-1DB54F9E1C0D}.Release|x64.Build.0 = Release|Any CPU
 		{467EC08B-56C9-4BA0-8F73-1DB54F9E1C0D}.Release|x86.ActiveCfg = Release|Any CPU
 		{467EC08B-56C9-4BA0-8F73-1DB54F9E1C0D}.Release|x86.Build.0 = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|x64.Build.0 = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|x86.Build.0 = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|x64.ActiveCfg = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|x64.Build.0 = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|x86.ActiveCfg = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

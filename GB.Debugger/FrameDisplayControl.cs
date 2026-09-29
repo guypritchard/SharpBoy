@@ -9,6 +9,7 @@ internal sealed class FrameDisplayControl : Control
     public FrameDisplayControl()
     {
         this.DoubleBuffered = true;
+        this.ResizeRedraw = true;
         this.BackColor = Color.FromArgb(226, 232, 240);
     }
 
