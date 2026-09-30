@@ -115,6 +115,7 @@ public partial class DebuggerForm : Form
             this.BuildDisassemblyCache();
             this.stepHistory.Clear();
             this.lastInteractionStep = null;
+            this.interactionDiagram.ClearHistory();
             this.screenDirty = this.tilesDirty = true;
 
             this.recentWrites.Clear();
@@ -151,6 +152,7 @@ public partial class DebuggerForm : Form
         this.gameboy.Load(this.cartridge);
         this.stepHistory.Clear();
         this.lastInteractionStep = null;
+        this.interactionDiagram.ClearHistory();
         this.screenDirty = this.tilesDirty = true;
         this.recentWrites.Clear();
         this.recentReads.Clear();
@@ -245,6 +247,9 @@ public partial class DebuggerForm : Form
             {
                 break;
             }
+            if (this.lastInteractionStep != null)
+                this.interactionDiagram.RecordTraceStep(
+                    this.lastInteractionStep, this.recentReads, this.recentWrites);
         }
 
         this.RefreshDebuggerViews();
@@ -393,25 +398,69 @@ public partial class DebuggerForm : Form
         this.rightSplitContainer.SplitterDistance = 390;
         this.videoTab.Controls.Add(this.rightSplitContainer);
 
-        this.interactionDetails.Dock = DockStyle.Bottom;
-        this.interactionDetails.Height = 180;
+        var interactionLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            BackColor = Color.FromArgb(20, 53, 44),
+            Margin = Padding.Empty,
+            Padding = Padding.Empty
+        };
+        interactionLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        interactionLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        interactionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 190));
+        var boardViewport = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            BackColor = Color.FromArgb(20, 53, 44),
+            Margin = Padding.Empty
+        };
+        boardViewport.Controls.Add(this.interactionDiagram);
+        boardViewport.Resize += (_, _) =>
+        {
+            this.interactionDiagram.Location = new Point(
+                Math.Max(0, (boardViewport.ClientSize.Width - this.interactionDiagram.Width) / 2),
+                Math.Max(0, (boardViewport.ClientSize.Height - this.interactionDiagram.Height) / 2));
+        };
+        var detailsPanel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(15, 37, 33),
+            Padding = new Padding(12, 8, 12, 8),
+            Margin = Padding.Empty
+        };
+        var detailsHeading = new Label
+        {
+            Dock = DockStyle.Top,
+            Height = 25,
+            Text = "BUS LOG  /  LAST INSTRUCTION",
+            Font = new Font("Consolas", 9F, FontStyle.Bold),
+            ForeColor = Color.FromArgb(134, 214, 139)
+        };
+        this.interactionDetails.Dock = DockStyle.Fill;
         this.interactionDetails.Multiline = true;
         this.interactionDetails.ReadOnly = true;
-        this.interactionDetails.ScrollBars = ScrollBars.Vertical;
-        this.interactionDetails.BackColor = Color.FromArgb(248, 250, 252);
-        this.interactionDetails.ForeColor = Color.FromArgb(30, 41, 59);
-        this.interactionDetails.Font = new Font("Consolas", 10F);
+        this.interactionDetails.WordWrap = false;
+        this.interactionDetails.ScrollBars = ScrollBars.Both;
+        this.interactionDetails.BackColor = Color.FromArgb(15, 37, 33);
+        this.interactionDetails.ForeColor = Color.FromArgb(230, 236, 211);
+        this.interactionDetails.Font = new Font("Consolas", 9F);
         this.interactionDetails.BorderStyle = BorderStyle.None;
-        this.interactionDetails.Margin = new Padding(8);
-        this.interactionDiagram.Dock = DockStyle.Fill;
-        interactionTab.Controls.Add(this.interactionDiagram);
-        interactionTab.Controls.Add(this.interactionDetails);
+        this.interactionDetails.Margin = Padding.Empty;
+        detailsPanel.Controls.Add(this.interactionDetails);
+        detailsPanel.Controls.Add(detailsHeading);
+        interactionLayout.Controls.Add(boardViewport, 0, 0);
+        interactionLayout.Controls.Add(detailsPanel, 0, 1);
+        interactionTab.Controls.Add(interactionLayout);
 
         tabs.TabPages.Add(this.videoTab);
         tabs.TabPages.Add(interactionTab);
         tabs.TabPages.Add(memoryTab);
         tabs.SelectedIndexChanged += (_, _) =>
         {
+            this.mainSplitContainer.Panel1Collapsed = tabs.SelectedTab == interactionTab;
             if (tabs.SelectedTab == this.videoTab) this.UpdateGraphicsView();
             else
             {
@@ -475,7 +524,8 @@ public partial class DebuggerForm : Form
             this.lastInteractionStep == null ? scanline : this.scanlineBeforeLastStep,
             this.cartridge != null,
             this.recentReads,
-            this.recentWrites);
+            this.recentWrites,
+            this.traceRunning);
 
         if (this.cartridge == null)
         {
@@ -498,10 +548,10 @@ public partial class DebuggerForm : Form
                 (this.lastInteractionStep.Address < 0x8000 ? "cartridge ROM." : "mapped memory."),
             FormatAccesses("READ", this.recentReads),
             FormatAccesses("WRITE", this.recentWrites),
-            $"VIDEO     LCD timing stepped; scanline {this.scanlineBeforeLastStep} → {scanline}. " +
-                "Green arrows show VRAM, OAM, and LCD register access.",
-            "SOUND     0xFF10–0xFF3F are mapped to the sound device; audio synthesis is not implemented.",
-            "COUNTS    Read/write counts are unique addresses. RAM instruction fetches appear as reads."
+            $"LCD       Clock advanced; scanline {this.scanlineBeforeLastStep} → {scanline}.",
+            "APU       FF10–FF3F maps to sound registers; synthesis is not implemented.",
+            "BOARD     Cyan = read/fetch, amber = write, violet = both. Recent activity fades over time.",
+            "COUNTS    Read/write counts are unique addresses. Opcode fetch is highlighted separately."
         };
         this.interactionDetails.Lines = lines.ToArray();
     }
@@ -519,10 +569,17 @@ public partial class DebuggerForm : Form
         >= 0x0000 and <= 0x7FFF => "ROM",
         >= 0x8000 and <= 0x9FFF => "video RAM",
         >= 0xA000 and <= 0xBFFF => "cartridge RAM",
-        >= 0xC000 and <= 0xDFFF => "work RAM",
+        >= 0xC000 and <= 0xCFFF => "work RAM 0",
+        >= 0xD000 and <= 0xDFFF => "work RAM 1",
+        >= 0xE000 and <= 0xFDFF => "echo range",
         >= 0xFE00 and <= 0xFE9F => "sprite OAM",
-        >= 0xFF10 and <= 0xFF3F => "sound register",
-        >= 0xFF40 and <= 0xFF4B => "LCD register",
+        0xFF00 => "joypad",
+        0xFF01 or 0xFF02 => "serial link",
+        >= 0xFF04 and <= 0xFF07 => "timer I/O",
+        0xFF0F => "interrupt request",
+        >= 0xFF10 and <= 0xFF3F => "APU register",
+        0xFF46 => "OAM DMA",
+        >= 0xFF40 and <= 0xFF4B => "LCD/PPU register",
         0xFFFF => "interrupt enable",
         >= 0xFF00 and <= 0xFF7F => "I/O",
         >= 0xFF80 and <= 0xFFFE => "high RAM",
@@ -1091,6 +1148,7 @@ public partial class DebuggerForm : Form
         this.recentReads.UnionWith(snapshot.RecentReads);
         this.stackStartPointer = snapshot.StackStartPointer;
         this.lastInteractionStep = snapshot.LastInteractionStep;
+        this.interactionDiagram.ClearHistory();
         this.scanlineBeforeLastStep = snapshot.ScanlineBeforeLastStep;
 
         this.ResetMemoryViewState();
