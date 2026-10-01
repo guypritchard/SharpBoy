@@ -10,10 +10,11 @@ namespace GB.Emulator.Core
     {
         private readonly byte[] memory;
         private readonly List<IMemoryRange> devices;
+        private readonly IMemoryRange[] deviceByAddress = new IMemoryRange[ushort.MaxValue + 1];
         private readonly Joypad joypad;
         private readonly SerialPort serial;
-        private readonly HashSet<ushort> recentWrites = new();
-        private readonly HashSet<ushort> recentReads = new();
+        private readonly Apu apu;
+        private IMemoryAccessRecorder accessRecorder = new RecordingMemoryAccessRecorder();
 
         public MemoryMap(params IMemoryRange[] devices)
         {
@@ -21,11 +22,14 @@ namespace GB.Emulator.Core
             this.devices = new List<IMemoryRange>(devices);
             this.joypad = devices.OfType<Joypad>().FirstOrDefault();
             this.serial = devices.OfType<SerialPort>().FirstOrDefault();
+            this.apu = devices.OfType<Apu>().FirstOrDefault();
+            this.RebuildDeviceMap();
         }
 
         public void AddDevice(IMemoryRange device)
         {
             this.devices.Add(device);
+            this.RebuildDeviceMap();
         }
 
         public void LoadRom(byte[] romData)
@@ -38,6 +42,7 @@ namespace GB.Emulator.Core
 
             // Insert at the front so reads hit ROM before any overlapping devices.
             this.devices.Insert(0, new Rom("ROM0", romData));
+            this.RebuildDeviceMap();
         }
 
         public void Write8(byte value, ushort location)
@@ -46,7 +51,7 @@ namespace GB.Emulator.Core
             {
                 this.memory[location] = value;
 
-                var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
+                var device = this.deviceByAddress[location];
                 if (device != null)
                 {
                     try
@@ -60,7 +65,7 @@ namespace GB.Emulator.Core
                     }
                 }
 
-                this.recentWrites.Add(location);
+                this.accessRecorder.RecordWrite(location);
 
                 if (location == 0xFF46)
                 {
@@ -113,8 +118,8 @@ namespace GB.Emulator.Core
         {
             try
             {
-                var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
-                this.recentReads.Add(location);
+                var device = this.deviceByAddress[location];
+                this.accessRecorder.RecordRead(location);
                 if (device != null)
                 {
                     try
@@ -142,8 +147,26 @@ namespace GB.Emulator.Core
         public void Reset()
         {
             Array.Clear(this.memory, 0, this.memory.Length);
-            this.recentWrites.Clear();
-            this.recentReads.Clear();
+            this.accessRecorder.Reset();
+        }
+
+        internal void UseAccessRecorder(IMemoryAccessRecorder recorder)
+        {
+            if (ReferenceEquals(this.accessRecorder, recorder)) return;
+            recorder.Reset();
+            this.accessRecorder = recorder;
+        }
+
+        private void RebuildDeviceMap()
+        {
+            Array.Clear(this.deviceByAddress);
+            // Earlier devices take priority when ranges overlap (ROM is inserted first).
+            for (int i = this.devices.Count - 1; i >= 0; i--)
+            {
+                IMemoryRange device = this.devices[i];
+                for (int address = device.Start; address <= device.End; address++)
+                    this.deviceByAddress[address] = device;
+            }
         }
 
         public byte Peek(ushort address)
@@ -155,6 +178,7 @@ namespace GB.Emulator.Core
 
             if (address == 0xFF00 && this.joypad != null) return this.joypad.Read8(address);
             if (address is 0xFF01 or 0xFF02 && this.serial != null) return this.serial.Read8(address);
+            if (address is >= 0xFF10 and <= 0xFF3F && this.apu != null) return this.apu.Read8(address);
             return this.memory[address];
         }
 
@@ -168,6 +192,9 @@ namespace GB.Emulator.Core
                 copy[0xFF01] = this.serial.Read8(0xFF01);
                 copy[0xFF02] = this.serial.Read8(0xFF02);
             }
+            if (this.apu != null)
+                for (ushort address = 0xFF10; address <= 0xFF3F; address++)
+                    copy[address] = this.apu.Read8(address);
             return copy;
         }
 
@@ -184,32 +211,11 @@ namespace GB.Emulator.Core
             }
 
             Array.Copy(snapshot, this.memory, this.memory.Length);
-            this.recentWrites.Clear();
-            this.recentReads.Clear();
+            this.accessRecorder.Reset();
         }
 
-        internal IReadOnlyCollection<ushort> ConsumeRecentWrites()
-        {
-            if (this.recentWrites.Count == 0)
-            {
-                return Array.Empty<ushort>();
-            }
+        internal IReadOnlyCollection<ushort> ConsumeRecentWrites() => this.accessRecorder.ConsumeWrites();
 
-            ushort[] snapshot = this.recentWrites.ToArray();
-            this.recentWrites.Clear();
-            return snapshot;
-        }
-
-        internal IReadOnlyCollection<ushort> ConsumeRecentReads()
-        {
-            if (this.recentReads.Count == 0)
-            {
-                return Array.Empty<ushort>();
-            }
-
-            ushort[] snapshot = this.recentReads.ToArray();
-            this.recentReads.Clear();
-            return snapshot;
-        }
+        internal IReadOnlyCollection<ushort> ConsumeRecentReads() => this.accessRecorder.ConsumeReads();
     }
 }

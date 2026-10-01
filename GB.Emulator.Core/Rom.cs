@@ -1,6 +1,5 @@
 using GB.Emulator.Core.InputOutput;
 using System;
-using System.Diagnostics;
 
 namespace GB.Emulator.Core
 {
@@ -35,7 +34,6 @@ namespace GB.Emulator.Core
         public byte Read8(ushort location)
         {
             var value = this.memory[location - this.Start];
-            Trace.WriteLine($"{this.Name}: {value}<-0x{location:X2}");
             return value;
         }
     }

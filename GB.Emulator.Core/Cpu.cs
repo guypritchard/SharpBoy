@@ -7,17 +7,21 @@ namespace GB.Emulator.Core
 {
     public partial class Cpu
     {
+        private static readonly Instruction HaltIdleInstruction = new(0, "HALT idle", (_, _) => { }, 0, false);
+        private static readonly Instruction StopIdleInstruction = new(0, "STOP idle", (_, _) => { }, 0, false);
         private bool interruptMasterEnabled;
         private int enableInterruptsDelay;
         private bool halted;
         private bool stopped;
         private bool haltBug;
+        private long totalCycles;
 
-        public Cpu(MemoryMap memory, Video video, SerialPort serial)
+        public Cpu(MemoryMap memory, Video video, SerialPort serial, Apu apu)
         {
             Cpu.memory = memory;
             this.video = video;
             this.serial = serial;
+            this.apu = apu;
             this.instructions = this.BuildInstructions();
             Registers.Reset();
         }
@@ -51,7 +55,7 @@ namespace GB.Emulator.Core
         {
             try
             {
-                return this.ExecuteInstruction(data);
+                return this.BuildStepResult(this.ExecuteInstruction(data));
             }
             catch (ArgumentOutOfRangeException aore)
             {
@@ -64,6 +68,10 @@ namespace GB.Emulator.Core
                 throw;
             }
         }
+
+        internal void ExecuteNextInstructionFast(byte[] data) => this.ExecuteInstruction(data);
+
+        internal bool IsStopped => this.stopped;
 
         private Instruction GetInstruction(byte instruction)
         {
@@ -82,6 +90,8 @@ namespace GB.Emulator.Core
 
         public readonly Video video;
         private readonly SerialPort serial;
+        private readonly Apu apu;
+        public long TotalCycles => this.totalCycles;
 
         internal void ResetExecutionState()
         {
@@ -90,12 +100,14 @@ namespace GB.Emulator.Core
             this.halted = false;
             this.stopped = false;
             this.haltBug = false;
+            this.totalCycles = 0;
         }
 
         internal void WakeFromStop() => this.stopped = false;
 
         internal CpuExecutionState CaptureExecutionState() =>
-            new(this.interruptMasterEnabled, this.enableInterruptsDelay, this.halted, this.stopped, this.haltBug);
+            new(this.interruptMasterEnabled, this.enableInterruptsDelay, this.halted, this.stopped, this.haltBug,
+                this.totalCycles);
 
         internal void RestoreExecutionState(CpuExecutionState state)
         {
@@ -104,12 +116,13 @@ namespace GB.Emulator.Core
             this.halted = state.Halted;
             this.stopped = state.Stopped;
             this.haltBug = state.HaltBug;
+            this.totalCycles = state.TotalCycles;
         }
 
         private byte PendingInterrupts =>
             (byte)(Memory.Peek(0xFF0F) & Memory.Peek(0xFFFF) & 0x1F);
 
-        private CpuStepResult ExecuteInstruction(byte[] data)
+        private InstructionExecution ExecuteInstruction(byte[] data)
         {
             byte pending = this.PendingInterrupts;
             if (pending != 0)
@@ -128,17 +141,15 @@ namespace GB.Emulator.Core
                     Registers.PC = vector;
                     this.AdvanceHardware(20);
                     var interrupt = new Instruction(0, $"INT 0x{vector:X2}", (_, _) => { }, 0, false);
-                    return new CpuStepResult(interrupt, interruptedPc, 0, 0,
-                        memory.ConsumeRecentWrites(), memory.ConsumeRecentReads());
+                    return new InstructionExecution(interrupt, interruptedPc, 0, 0);
                 }
             }
 
             if (this.halted || this.stopped)
             {
                 if (this.halted) this.AdvanceHardware();
-                var idle = new Instruction(0, this.halted ? "HALT idle" : "STOP idle", (_, _) => { }, 0, false);
-                return new CpuStepResult(idle, Registers.PC, 0, 0,
-                    memory.ConsumeRecentWrites(), memory.ConsumeRecentReads());
+                return new InstructionExecution(this.halted ? HaltIdleInstruction : StopIdleInstruction,
+                    Registers.PC, 0, 0);
             }
 
             int pc = Cpu.Registers.PC;
@@ -184,14 +195,20 @@ namespace GB.Emulator.Core
             }
             this.AdvanceHardware(cycles);
 
-            IReadOnlyCollection<ushort> writes = memory.ConsumeRecentWrites();
-            IReadOnlyCollection<ushort> reads = memory.ConsumeRecentReads();
-
-            Instruction resultInstruction = instruction.Value == 0xCB
-                ? new Instruction(0xCB, GetCbName(parameter1), (_, _) => { }, 2)
-                : instruction;
-            return new CpuStepResult(resultInstruction, (ushort)pc, parameter1, parameter2, writes, reads);
+            return new InstructionExecution(instruction, (ushort)pc, parameter1, parameter2);
         }
+
+        private CpuStepResult BuildStepResult(InstructionExecution execution)
+        {
+            Instruction resultInstruction = execution.Instruction.Value == 0xCB
+                ? new Instruction(0xCB, GetCbName(execution.Operand1), (_, _) => { }, 2)
+                : execution.Instruction;
+            return new CpuStepResult(resultInstruction, execution.Address, execution.Operand1, execution.Operand2,
+                memory.ConsumeRecentWrites(), memory.ConsumeRecentReads());
+        }
+
+        private readonly record struct InstructionExecution(Instruction Instruction, ushort Address,
+            byte Operand1, byte Operand2);
 
         private byte ReadInstructionByte(byte[] data, int address)
         {
@@ -210,6 +227,8 @@ namespace GB.Emulator.Core
         {
             byte interruptRequest = this.video.Step(cycles);
             this.serial.Step(cycles);
+            this.apu.Step(cycles);
+            this.totalCycles += cycles;
             if (interruptRequest != 0)
             {
                 byte flags = Cpu.Memory.Peek(0xFF0F);
@@ -222,7 +241,8 @@ namespace GB.Emulator.Core
             int EnableInterruptsDelay,
             bool Halted,
             bool Stopped,
-            bool HaltBug);
+            bool HaltBug,
+            long TotalCycles);
 
         private void HandleExecutionFailure(ArgumentOutOfRangeException exception)
         {

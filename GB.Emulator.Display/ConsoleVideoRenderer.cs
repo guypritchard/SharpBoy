@@ -29,24 +29,62 @@ namespace GB.Emulator.Display
 
         public static string Render(ReadOnlySpan<byte> frame)
         {
-            if (frame.Length != Video.Width * Video.Height)
-            {
-                throw new ArgumentException($"A frame must contain exactly {Video.Width * Video.Height} pixels.", nameof(frame));
-            }
+            ValidateFrame(frame, nameof(frame));
+            return RenderRows(frame, default, false);
+        }
 
+        /// <summary>Draws only terminal rows whose pixels differ from the previous frame.</summary>
+        public static string RenderChanges(ReadOnlySpan<byte> frame, ReadOnlySpan<byte> previousFrame)
+        {
+            ValidateFrame(frame, nameof(frame));
+            ValidateFrame(previousFrame, nameof(previousFrame));
+            return RenderRows(frame, previousFrame, true);
+        }
+
+        private static string RenderRows(ReadOnlySpan<byte> frame, ReadOnlySpan<byte> previousFrame, bool changedOnly)
+        {
             var output = new StringBuilder();
             int lastForeground = -1;
             int lastBackground = -1;
 
             for (int row = 0; row < Rows; row++)
             {
+                int upperStart = row * 2 * Columns;
+                int lowerStart = upperStart + Columns;
+                int changedCells = 0;
+                if (changedOnly)
+                {
+                    for (int column = 0; column < Columns; column++)
+                        if (frame[upperStart + column] != previousFrame[upperStart + column] ||
+                            frame[lowerStart + column] != previousFrame[lowerStart + column])
+                            changedCells++;
+                    if (changedCells == 0) continue;
+                }
+
                 // Address each row directly: a newline after column 160 could
                 // advance twice in terminals that wrap at the right edge.
-                output.Append("\x1b[").Append(row + 1).Append(";1H");
+                bool sparse = changedOnly && changedCells < 32;
+                if (!sparse) output.Append("\x1b[").Append(row + 1).Append(";1H");
+                bool inRun = false;
                 for (int column = 0; column < Columns; column++)
                 {
-                    int upper = frame[(row * 2 * Columns) + column];
-                    int lower = frame[((row * 2 + 1) * Columns) + column];
+                    int upper = frame[upperStart + column];
+                    int lower = frame[lowerStart + column];
+                    if (sparse)
+                    {
+                        bool changed = upper != previousFrame[upperStart + column] ||
+                            lower != previousFrame[lowerStart + column];
+                        if (!changed)
+                        {
+                            inRun = false;
+                            continue;
+                        }
+                        if (!inRun)
+                        {
+                            output.Append("\x1b[").Append(row + 1).Append(';').Append(column + 1).Append('H');
+                            inRun = true;
+                        }
+                    }
                     if (upper > 3 || lower > 3)
                     {
                         throw new ArgumentOutOfRangeException(nameof(frame), "Pixel shades must be between 0 and 3.");
@@ -70,26 +108,36 @@ namespace GB.Emulator.Display
 
             }
 
-            output.Append("\x1b[0m");
+            if (output.Length > 0) output.Append("\x1b[0m");
             return output.ToString();
         }
 
         public static void Draw(ReadOnlySpan<byte> frame)
         {
+            DrawText(Render(frame));
+        }
+
+        public static void DrawChanges(ReadOnlySpan<byte> frame, ReadOnlySpan<byte> previousFrame)
+        {
+            DrawText(RenderChanges(frame, previousFrame));
+        }
+
+        private static void DrawText(string output)
+        {
             if (Console.IsOutputRedirected)
-            {
                 throw new InvalidOperationException("Console video requires an interactive terminal.");
-            }
-
             if (Console.WindowWidth < Columns || Console.WindowHeight < Rows + 1)
-            {
                 throw new InvalidOperationException($"Console video requires at least {Columns} columns and {Rows + 1} rows.");
-            }
-
-            string output = Render(frame);
+            if (output.Length == 0) return;
             if (Console.OutputEncoding.CodePage != Encoding.UTF8.CodePage)
                 Console.OutputEncoding = Encoding.UTF8;
             Console.Write(output);
+        }
+
+        private static void ValidateFrame(ReadOnlySpan<byte> frame, string parameterName)
+        {
+            if (frame.Length != Video.Width * Video.Height)
+                throw new ArgumentException($"A frame must contain exactly {Video.Width * Video.Height} pixels.", parameterName);
         }
     }
 }

@@ -46,6 +46,7 @@ namespace GB.Emulator.Tests
         {
             var gameboy = new Gameboy();
             gameboy.Load(new Cartridge { Data = new byte[0x200] });
+            gameboy.Memory.Write8(0x80, 0xFF26);
             gameboy.Memory.Write8(0x7A, 0xFF12);
             SoundState sound = gameboy.CaptureSoundState();
             GameboyState saved = gameboy.CaptureState();
@@ -64,6 +65,7 @@ namespace GB.Emulator.Tests
             var gameboy = new Gameboy();
             var cartridge = new Cartridge { Data = new byte[0x200] };
             gameboy.Load(cartridge);
+            gameboy.Memory.Write8(0x80, 0xFF26);
             gameboy.Memory.Write8(0x7A, 0xFF12);
             gameboy.Memory.Write8(0x55, 0xC000);
             gameboy.Memory.Write8(0x1F, 0xFFFF);

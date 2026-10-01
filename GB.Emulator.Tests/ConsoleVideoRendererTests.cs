@@ -40,5 +40,20 @@ namespace GB.Emulator.Tests
             frame[0] = 4;
             Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => ConsoleVideoRenderer.Render(frame));
         }
+
+        [TestMethod]
+        public void RenderChanges_WritesOnlyChangedTerminalRows()
+        {
+            var previous = new byte[Video.Width * Video.Height];
+            var current = (byte[])previous.Clone();
+            current[Video.Width * 5 + 3] = 2;
+
+            string output = ConsoleVideoRenderer.RenderChanges(current, previous);
+
+            Assert.HasCount(1, Regex.Matches(output, "\x1b\\[[0-9]+;[0-9]+H"));
+            StringAssert.StartsWith(output, "\x1b[3;4H");
+            Assert.HasCount(1, Regex.Matches(output, "[█▀]"));
+            Assert.AreEqual(string.Empty, ConsoleVideoRenderer.RenderChanges(current, current));
+        }
     }
 }

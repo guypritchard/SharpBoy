@@ -50,6 +50,7 @@ public partial class DebuggerForm : Form
     private readonly InteractionDiagramControl interactionDiagram = new();
     private readonly TextBox interactionDetails = new();
     private readonly FrameDisplayControl screenDisplay = new();
+    private WindowsAudioOutput? audioOutput;
     private readonly Label screenLegendLabel = new();
     private readonly Panel tilesViewport = new();
     private readonly TabPage videoTab = new("Video");
@@ -71,10 +72,14 @@ public partial class DebuggerForm : Form
     {
         InitializeComponent();
         this.keyboardInput = new DebuggerKeyboardInput(this, this.gameboy.Input,
-            () => this.cartridge != null && this.videoTab.Visible, this.RefreshInputView);
+            () => this.cartridge != null, this.RefreshInputView);
         this.InitializeInteractionView();
         Application.AddMessageFilter(this.keyboardInput);
-        this.Disposed += (_, _) => Application.RemoveMessageFilter(this.keyboardInput);
+        this.Disposed += (_, _) =>
+        {
+            Application.RemoveMessageFilter(this.keyboardInput);
+            this.audioOutput?.Dispose();
+        };
         this.Deactivate += (_, _) =>
         {
             this.keyboardInput.ReleaseAll();
@@ -110,6 +115,7 @@ public partial class DebuggerForm : Form
         {
             var loadedCartridge = await CartridgeLoader.Load(this.openRomDialog.FileName);
             this.gameboy.Load(loadedCartridge);
+            this.audioOutput ??= WindowsAudioOutput.TryCreate(this.gameboy.Sound);
             this.cartridge = loadedCartridge;
             this.romPath = this.openRomDialog.FileName;
             this.BuildDisassemblyCache();
@@ -402,28 +408,55 @@ public partial class DebuggerForm : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 2,
-            BackColor = Color.FromArgb(20, 53, 44),
+            RowCount = 3,
+            BackColor = InteractionDiagramControl.PosterBackground,
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
         interactionLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        interactionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
         interactionLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         interactionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 190));
         var boardViewport = new Panel
         {
             Dock = DockStyle.Fill,
             AutoScroll = true,
-            BackColor = Color.FromArgb(20, 53, 44),
+            BackColor = InteractionDiagramControl.PosterBackground,
             Margin = Padding.Empty
         };
         boardViewport.Controls.Add(this.interactionDiagram);
-        boardViewport.Resize += (_, _) =>
+        bool fitPoster = true;
+        void LayoutPoster()
         {
+            if (fitPoster)
+                this.interactionDiagram.SetZoom(Math.Min(
+                    (boardViewport.ClientSize.Width - 8f) / InteractionDiagramControl.BoardSize.Width,
+                    (boardViewport.ClientSize.Height - 8f) / InteractionDiagramControl.BoardSize.Height));
             this.interactionDiagram.Location = new Point(
                 Math.Max(0, (boardViewport.ClientSize.Width - this.interactionDiagram.Width) / 2),
                 Math.Max(0, (boardViewport.ClientSize.Height - this.interactionDiagram.Height) / 2));
+        }
+        boardViewport.Resize += (_, _) => LayoutPoster();
+        var posterToolbar = new FlowLayoutPanel { Dock = DockStyle.Fill, Margin = Padding.Empty };
+        var fitButton = new Button { Text = "Fit poster", AutoSize = true };
+        var actualSizeButton = new Button { Text = "100% / read labels", AutoSize = true };
+        foreach (Button button in new[] { fitButton, actualSizeButton })
+        {
+            button.FlatStyle = FlatStyle.Flat;
+            button.BackColor = Color.FromArgb(38, 50, 76);
+            button.ForeColor = Color.FromArgb(235, 241, 250);
+            button.FlatAppearance.BorderColor = Color.FromArgb(90, 117, 152);
+        }
+        fitButton.Click += (_, _) => { fitPoster = true; boardViewport.AutoScrollPosition = Point.Empty; LayoutPoster(); };
+        actualSizeButton.Click += (_, _) =>
+        {
+            fitPoster = false;
+            boardViewport.AutoScrollPosition = Point.Empty;
+            this.interactionDiagram.SetZoom(1);
+            LayoutPoster();
         };
+        posterToolbar.Controls.Add(fitButton);
+        posterToolbar.Controls.Add(actualSizeButton);
         var detailsPanel = new Panel
         {
             Dock = DockStyle.Fill,
@@ -451,8 +484,9 @@ public partial class DebuggerForm : Form
         this.interactionDetails.Margin = Padding.Empty;
         detailsPanel.Controls.Add(this.interactionDetails);
         detailsPanel.Controls.Add(detailsHeading);
-        interactionLayout.Controls.Add(boardViewport, 0, 0);
-        interactionLayout.Controls.Add(detailsPanel, 0, 1);
+        interactionLayout.Controls.Add(posterToolbar, 0, 0);
+        interactionLayout.Controls.Add(boardViewport, 0, 1);
+        interactionLayout.Controls.Add(detailsPanel, 0, 2);
         interactionTab.Controls.Add(interactionLayout);
 
         tabs.TabPages.Add(this.videoTab);
@@ -462,11 +496,6 @@ public partial class DebuggerForm : Form
         {
             this.mainSplitContainer.Panel1Collapsed = tabs.SelectedTab == interactionTab;
             if (tabs.SelectedTab == this.videoTab) this.UpdateGraphicsView();
-            else
-            {
-                this.keyboardInput.ReleaseAll();
-                this.RefreshInputView();
-            }
         };
         this.mainSplitContainer.Panel2.Controls.Add(tabs);
     }
@@ -516,6 +545,7 @@ public partial class DebuggerForm : Form
 
     private void UpdateInteractionView()
     {
+        this.interactionDiagram.ShowButtons(this.gameboy.Input);
         byte scanline = this.gameboy.Scanline;
         this.interactionDiagram.ShowStep(
             this.lastInteractionStep,
@@ -549,7 +579,7 @@ public partial class DebuggerForm : Form
             FormatAccesses("READ", this.recentReads),
             FormatAccesses("WRITE", this.recentWrites),
             $"LCD       Clock advanced; scanline {this.scanlineBeforeLastStep} → {scanline}.",
-            "APU       FF10–FF3F maps to sound registers; synthesis is not implemented.",
+            "APU       FF10–FF3F controls four sound channels and stereo routing.",
             "BOARD     Cyan = read/fetch, amber = write, violet = both. Recent activity fades over time.",
             "COUNTS    Read/write counts are unique addresses. Opcode fetch is highlighted separately."
         };
@@ -1047,6 +1077,7 @@ public partial class DebuggerForm : Form
 
     private void RefreshInputView()
     {
+        this.interactionDiagram.ShowButtons(this.gameboy.Input);
         this.UpdateInterruptView();
         if (!this.memoryViewInitialized || this.memoryListBox.Items.Count != MemoryRowCount) return;
 

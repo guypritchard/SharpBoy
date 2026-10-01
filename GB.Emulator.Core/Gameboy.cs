@@ -23,6 +23,7 @@ namespace GB.Emulator.Core
         private readonly Apu apu;
         private readonly Joypad joypad;
         private readonly SerialPort serial;
+        private readonly RecordingMemoryAccessRecorder debuggerAccesses = new();
         private Cartridge? cartridge;
         private byte[] romData = Array.Empty<byte>();
 
@@ -55,7 +56,7 @@ namespace GB.Emulator.Core
                 this.io,
                 this.interrupt);
             this.video = new Video(this.lcd);
-            this.cpu = new Cpu(this.memory, this.video, this.serial);
+            this.cpu = new Cpu(this.memory, this.video, this.serial, this.apu);
             this.serial.InterruptRequested += (_, _) =>
                 this.memory.Write8((byte)(this.memory.Peek(0xFF0F) | 0x08), 0xFF0F);
             this.joypad.InterruptRequested += (_, _) =>
@@ -80,6 +81,7 @@ namespace GB.Emulator.Core
         public IButtonInput Input => this.joypad;
 
         public SerialPort Serial => this.serial;
+        public long EmulatedCycles => this.cpu.TotalCycles;
 
         public byte Scanline => this.lcd.Scanline;
 
@@ -130,7 +132,18 @@ namespace GB.Emulator.Core
                 throw new InvalidOperationException("A cartridge must be loaded before stepping.");
             }
 
+            this.memory.UseAccessRecorder(this.debuggerAccesses);
             return this.cpu.ExecuteNextInstruction(this.romData);
+        }
+
+        /// <summary>Runs one instruction without collecting debugger access traces.</summary>
+        public bool RunStep()
+        {
+            if (this.romData.Length == 0)
+                throw new InvalidOperationException("A cartridge must be loaded before running.");
+            this.memory.UseAccessRecorder(SilentMemoryAccessRecorder.Instance);
+            this.cpu.ExecuteNextInstructionFast(this.romData);
+            return this.cpu.IsStopped;
         }
 
         public IReadOnlyList<CpuStepResult> GetInstructionWindow(int instructionsBefore, int instructionsAfter)
@@ -293,7 +306,7 @@ namespace GB.Emulator.Core
             this.ramBank3.Restore(state.RamBank3);
             this.internalRam.Restore(state.InternalRam);
             this.io.Restore(state.Io);
-            this.apu.Restore(state.SoundRegisters);
+            this.apu.Restore(state.SoundState);
             this.joypad.Restore(state.JoypadState);
             this.serial.Restore(state.SerialState);
             this.spriteTileManager.Restore(state.SpriteTiles);

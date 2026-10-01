@@ -12,7 +12,7 @@ namespace GB.Emulator.Core
             byte[] ramBank3,
             byte[] internalRam,
             byte[] io,
-            byte[] soundRegisters,
+            Apu.ApuState soundState,
             Joypad.JoypadState joypadState,
             SerialPort.SerialPortState serialState,
             byte[] spriteTiles,
@@ -28,7 +28,7 @@ namespace GB.Emulator.Core
             this.RamBank3 = ramBank3;
             this.InternalRam = internalRam;
             this.Io = io;
-            this.SoundRegisters = soundRegisters;
+            this.SoundState = soundState;
             this.JoypadState = joypadState;
             this.SerialState = serialState;
             this.SpriteTiles = spriteTiles;
@@ -52,7 +52,7 @@ namespace GB.Emulator.Core
 
         internal byte[] Io { get; }
 
-        internal byte[] SoundRegisters { get; }
+        internal Apu.ApuState SoundState { get; }
 
         internal Joypad.JoypadState JoypadState { get; }
         internal SerialPort.SerialPortState SerialState { get; }

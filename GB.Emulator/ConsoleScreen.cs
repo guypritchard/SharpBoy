@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Diagnostics;
-using System.Threading;
 using GB.Emulator.Core;
 using GB.Emulator.Display;
 
@@ -12,9 +11,14 @@ namespace GB.Emulator
     {
         private readonly Gameboy gameboy;
         private readonly byte[] shades = new byte[DmgScreenRenderer.Width * DmgScreenRenderer.Height];
+        private readonly byte[] previousShades = new byte[DmgScreenRenderer.Width * DmgScreenRenderer.Height];
         private readonly Stopwatch clock = Stopwatch.StartNew();
-        private readonly long frameDuration = Stopwatch.Frequency / 60;
-        private long nextFrame;
+        private long fpsWindowStart;
+        private int framesInWindow;
+        private double fps;
+        private bool fpsAvailable;
+        private bool hasDrawnFrame;
+        private string? lastStatus;
         private int lastWidth;
         private int lastHeight;
         private bool hasFrame;
@@ -32,18 +36,33 @@ namespace GB.Emulator
             if (width < ConsoleVideoRenderer.Columns || height < ConsoleVideoRenderer.Rows + 1)
                 return;
 
-            if (clear || width != this.lastWidth || height != this.lastHeight)
+            bool fullRedraw = clear || width != this.lastWidth || height != this.lastHeight || !this.hasDrawnFrame;
+            if (fullRedraw)
+            {
                 Console.Clear();
+                this.lastStatus = null;
+            }
             this.lastWidth = width;
             this.lastHeight = height;
 
             DmgScreenRenderer.RenderScreen(this.gameboy.CaptureVideoState(), this.shades);
-            ConsoleVideoRenderer.Draw(this.shades);
-            Console.SetCursorPosition(0, ConsoleVideoRenderer.Rows);
-            string status = this.hasFrame
+            if (fullRedraw) ConsoleVideoRenderer.Draw(this.shades);
+            else ConsoleVideoRenderer.DrawChanges(this.shades, this.previousShades);
+            this.shades.CopyTo(this.previousShades, 0);
+            this.hasDrawnFrame = true;
+            this.DrawStatus();
+        }
+
+        private void DrawStatus()
+        {
+            string controls = this.hasFrame
                 ? "Arrows move · Z A · X B · Enter Start · Space Select · R redraw · Ctrl+C stop"
                 : "Loading screen... Arrows/Z/X/Enter/Space · R redraw · Ctrl+C stop";
+            string status = $"FPS: {(this.fpsAvailable ? this.fps.ToString("F1") : "--")}  {controls}";
+            if (status == this.lastStatus) return;
+            Console.SetCursorPosition(0, ConsoleVideoRenderer.Rows);
             Console.Write(status.PadRight(ConsoleVideoRenderer.Columns - 1));
+            this.lastStatus = status;
         }
 
         public void Dispose() => this.gameboy.Video.FrameReady -= this.OnFrameReady;
@@ -52,13 +71,16 @@ namespace GB.Emulator
         {
             this.hasFrame = true;
             this.Redraw();
-
-            this.nextFrame += this.frameDuration;
-            long remaining = this.nextFrame - this.clock.ElapsedTicks;
-            if (remaining > 0)
-                Thread.Sleep(TimeSpan.FromSeconds((double)remaining / Stopwatch.Frequency));
-            else
-                this.nextFrame = this.clock.ElapsedTicks;
+            this.framesInWindow++;
+            long now = this.clock.ElapsedTicks;
+            if (this.fpsWindowStart == 0) this.fpsWindowStart = now;
+            long elapsed = now - this.fpsWindowStart;
+            if (elapsed < Stopwatch.Frequency) return;
+            this.fps = this.framesInWindow * (double)Stopwatch.Frequency / elapsed;
+            this.fpsAvailable = true;
+            this.framesInWindow = 0;
+            this.fpsWindowStart = now;
+            this.DrawStatus();
         }
     }
 }

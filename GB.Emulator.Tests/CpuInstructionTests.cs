@@ -1,4 +1,5 @@
 using GB.Emulator.Core;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace GB.Emulator.Tests
@@ -31,6 +32,21 @@ namespace GB.Emulator.Tests
         }
 
         [TestMethod]
+        public void FastRunPreservesCpuResultsAndStepRestoresDebuggerTracing()
+        {
+            var gameboy = CreateGameboy(0x3E, 0x5A, 0xE0, 0x80, 0x3E, 0x77, 0xE0, 0x81);
+
+            gameboy.RunStep();
+            gameboy.RunStep();
+            Assert.AreEqual(0x5A, gameboy.Memory.Peek(0xFF80));
+
+            gameboy.Step();
+            CpuStepResult traced = gameboy.Step();
+            Assert.AreEqual(0x77, gameboy.Memory.Peek(0xFF81));
+            Assert.IsTrue(traced.WrittenAddresses.Contains((ushort)0xFF81));
+        }
+
+        [TestMethod]
         public void InstructionsCopiedToHighRamCanUpdateVideoRegisters()
         {
             var gameboy = CreateGameboy(0xC3, 0x80, 0xFF); // JP FF80
@@ -50,7 +66,7 @@ namespace GB.Emulator.Tests
         [TestMethod]
         public void LdA8A_WritesToHighRam()
         {
-            byte operand = 0x12;
+            byte operand = 0x80;
             byte value = 0x5A;
             var gameboy = CreateGameboy(0xE0, operand);
             Cpu.Registers.A = value;
@@ -348,12 +364,12 @@ namespace GB.Emulator.Tests
         public void LdCA_WritesToHighRamOffsetByC()
         {
             var gameboy = CreateGameboy(0xE2);
-            Cpu.Registers.C = 0x20;
+            Cpu.Registers.C = 0x80;
             Cpu.Registers.A = 0xAB;
 
             gameboy.Step();
 
-            Assert.AreEqual(0xAB, gameboy.Memory.Peek(0xFF20));
+            Assert.AreEqual(0xAB, gameboy.Memory.Peek(0xFF80));
         }
 
         [TestMethod]
@@ -370,8 +386,8 @@ namespace GB.Emulator.Tests
         [TestMethod]
         public void LdA8_ReadsFromHighRam()
         {
-            var gameboy = CreateGameboy(0xF0, 0x10);
-            gameboy.Memory.Write8(0x7F, 0xFF10);
+            var gameboy = CreateGameboy(0xF0, 0x80);
+            gameboy.Memory.Write8(0x7F, 0xFF80);
 
             gameboy.Step();
 

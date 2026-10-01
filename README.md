@@ -6,19 +6,21 @@ A basic Gameboy emulator.
 ## Architecture
 
 `GB.Emulator.Core` owns the hardware: CPU execution, the memory bus, LCD timing,
-VRAM/OAM state, the joypad, and the sound register device. `Gameboy` coordinates those
+VRAM/OAM state, the joypad, and the APU. `Gameboy` coordinates those
 devices and exposes immutable video and sound snapshots. `GB.Emulator.Display`
 turns a video snapshot into shade pixels and provides the Unicode terminal
 renderer. `GB.Emulator` and `GB.Debugger` control the hardware and present it
 through their own user interfaces. The core does not depend on drawing or
-terminal APIs. Audio synthesis and a cycle-accurate pixel pipeline are still
-future hardware work.
+terminal APIs. The APU generates stereo PCM; a cycle-accurate pixel pipeline is
+still future hardware work.
+The memory bus uses separate silent and recording access observers for continuous
+play and debugger stepping. Both modes execute instructions through the same CPU path.
 
 The CPU executes all 245 documented unprefixed opcodes and all 256 `CB`
 bit/rotate opcodes. The 11 undefined opcodes raise an error. Instruction cycle
 counts drive LCD timing, and interrupt entry, delayed `EI`, `RETI`, and the HALT
 bug are handled. The wider emulator is still in progress; STOP wake-up and
-complete audio/video hardware are not implemented.
+complete audio/video hardware accuracy is still in progress.
 
 ## Console video
 
@@ -37,6 +39,7 @@ ConsoleVideoRenderer.Draw(frame);
 ```
 
 `GB.Emulator` redraws the current video state when the LCD reaches VBlank.
+The bottom row shows rendered frames per second, averaged over the last second.
 Press **R** to repaint the terminal, or **Ctrl+C** to stop. If the terminal is
 resized, the next frame clears and redraws it. The debugger uses the same
 display layer for its screen and tile views, and repaints its frame when the
@@ -44,7 +47,7 @@ view is resized.
 
 ## Input
 
-Both the console and the debugger's Video tab use **arrow keys** for the D-pad,
+Both the console and every debugger tab use **arrow keys** for the D-pad,
 **Z** for A, **X** for B, **Enter** for Start, and **Space** for Select. The
 console holds each key briefly and extends the hold on key repeat; the debugger
 uses key-down and key-up events and releases all buttons when it loses focus.
@@ -96,12 +99,24 @@ functional model; individual bits are not yet shifted during the transfer.
 ## Debugger interaction map
 
 Open `GB.Debugger`, load a ROM, and select the **Interaction map** tab. Press
-**Step** or F10 to follow a single instruction through CPU,
-memory, video address space, and sound registers. Colored arrows show the
-addresses accessed by that instruction; the details pane lists them. **Step
-Back** or Shift+F10 restores the previous diagram. **Trace** updates it while
-running. Sound register access is visible, but audio synthesis is not yet
-implemented.
+**Step** or F10 to follow a single instruction through the CPU and mapped
+hardware on an exploded Game Boy poster. The cartridge lifts above the console,
+video components sit in the screen, input sits with the controls, and the APU
+sits with the exploded speaker. **Fit poster** shows the whole assembly;
+**100% / read labels** provides a scrollable view at full size.
+The diagram shows cartridge ROM and RAM, work
+RAM banks, video RAM, sprite OAM, LCD/PPU, APU, joypad, serial link, timer/I/O,
+interrupt registers, high RAM, and OAM DMA. Cyan traces mark reads and fetches,
+amber marks writes, and violet marks both. **Trace** accumulates activity from
+every instruction in a batch; brighter traces indicate more accesses. The
+transparent glow fades within about a second after activity stops.
+Scroll the board to inspect the lower components; the separate bus log lists
+the latest instruction's exact addresses. **Step Back** or Shift+F10 restores
+the previous instruction and its diagram.
+Sound register access lights the APU on the map. The DMG APU generates two pulse
+channels, programmable wave audio, and noise, with stereo routing and volume.
+On Windows the console and debugger play the resulting PCM through the system
+audio device; the console paces emulation to the Game Boy clock when it runs ahead.
 
 The debugger's **Video** tab shows a 160 × 144 screen preview alongside a
 scrollable atlas of all 384 VRAM tiles. The preview combines the current
