@@ -14,6 +14,7 @@ namespace GB.Emulator.Core
         private readonly Joypad joypad;
         private readonly SerialPort serial;
         private readonly Apu apu;
+        private readonly Timer timer;
         private IMemoryAccessRecorder accessRecorder = new RecordingMemoryAccessRecorder();
 
         public MemoryMap(params IMemoryRange[] devices)
@@ -23,6 +24,7 @@ namespace GB.Emulator.Core
             this.joypad = devices.OfType<Joypad>().FirstOrDefault();
             this.serial = devices.OfType<SerialPort>().FirstOrDefault();
             this.apu = devices.OfType<Apu>().FirstOrDefault();
+            this.timer = devices.OfType<Timer>().FirstOrDefault();
             this.RebuildDeviceMap();
         }
 
@@ -179,6 +181,7 @@ namespace GB.Emulator.Core
             if (address == 0xFF00 && this.joypad != null) return this.joypad.Read8(address);
             if (address is 0xFF01 or 0xFF02 && this.serial != null) return this.serial.Read8(address);
             if (address is >= 0xFF10 and <= 0xFF3F && this.apu != null) return this.apu.Read8(address);
+            if (address is >= 0xFF04 and <= 0xFF07 && this.timer != null) return this.timer.Read8(address);
             return this.memory[address];
         }
 
@@ -195,6 +198,9 @@ namespace GB.Emulator.Core
             if (this.apu != null)
                 for (ushort address = 0xFF10; address <= 0xFF3F; address++)
                     copy[address] = this.apu.Read8(address);
+            if (this.timer != null)
+                for (ushort address = 0xFF04; address <= 0xFF07; address++)
+                    copy[address] = this.timer.Read8(address);
             return copy;
         }
 

@@ -16,12 +16,13 @@ namespace GB.Emulator.Core
         private bool haltBug;
         private long totalCycles;
 
-        public Cpu(MemoryMap memory, Video video, SerialPort serial, Apu apu)
+        public Cpu(MemoryMap memory, Video video, SerialPort serial, Apu apu, Timer timer)
         {
             Cpu.memory = memory;
             this.video = video;
             this.serial = serial;
             this.apu = apu;
+            this.timer = timer;
             this.instructions = this.BuildInstructions();
             Registers.Reset();
         }
@@ -91,6 +92,7 @@ namespace GB.Emulator.Core
         public readonly Video video;
         private readonly SerialPort serial;
         private readonly Apu apu;
+        private readonly Timer timer;
         public long TotalCycles => this.totalCycles;
 
         internal void ResetExecutionState()
@@ -225,7 +227,8 @@ namespace GB.Emulator.Core
 
         private void AdvanceHardware(int cycles = 4)
         {
-            byte interruptRequest = this.video.Step(cycles);
+            byte interruptRequest = this.timer.Step(cycles);
+            interruptRequest |= this.video.Step(cycles);
             this.serial.Step(cycles);
             this.apu.Step(cycles);
             this.totalCycles += cycles;

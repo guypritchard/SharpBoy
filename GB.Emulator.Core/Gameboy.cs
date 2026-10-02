@@ -21,6 +21,7 @@ namespace GB.Emulator.Core
         private readonly Ram io;
         private readonly Interrupt interrupt;
         private readonly Apu apu;
+        private readonly Timer timer;
         private readonly Joypad joypad;
         private readonly SerialPort serial;
         private readonly RecordingMemoryAccessRecorder debuggerAccesses = new();
@@ -39,6 +40,7 @@ namespace GB.Emulator.Core
             this.io = new Ram("I/O", 0xFF00, 0xFF4C);
             this.interrupt = new Interrupt();
             this.apu = new Apu();
+            this.timer = new Timer();
             this.joypad = new Joypad();
             this.serial = new SerialPort();
 
@@ -51,12 +53,13 @@ namespace GB.Emulator.Core
                 this.ramBank2,
                 this.ramBank3,
                 this.internalRam,
+                this.timer,
                 this.apu,
                 this.serial,
                 this.io,
                 this.interrupt);
             this.video = new Video(this.lcd);
-            this.cpu = new Cpu(this.memory, this.video, this.serial, this.apu);
+            this.cpu = new Cpu(this.memory, this.video, this.serial, this.apu, this.timer);
             this.serial.InterruptRequested += (_, _) =>
                 this.memory.Write8((byte)(this.memory.Peek(0xFF0F) | 0x08), 0xFF0F);
             this.joypad.InterruptRequested += (_, _) =>
@@ -76,6 +79,8 @@ namespace GB.Emulator.Core
 
         public Apu Sound => this.apu;
 
+        public Timer Timer => this.timer;
+
         public SoundState CaptureSoundState() => this.apu.CaptureState();
 
         public IButtonInput Input => this.joypad;
@@ -94,6 +99,7 @@ namespace GB.Emulator.Core
             this.memory.Reset();
             this.lcd.Reset();
             this.apu.Reset();
+            this.timer.Reset();
             this.joypad.Reset();
             this.serial.Reset();
             this.ramBank1.Reset();
@@ -271,6 +277,7 @@ namespace GB.Emulator.Core
                 this.ramBank3.Snapshot(),
                 this.internalRam.Snapshot(),
                 this.io.Snapshot(),
+                this.timer.Snapshot(),
                 this.apu.Snapshot(),
                 this.joypad.Snapshot(),
                 this.serial.Snapshot(),
@@ -306,6 +313,7 @@ namespace GB.Emulator.Core
             this.ramBank3.Restore(state.RamBank3);
             this.internalRam.Restore(state.InternalRam);
             this.io.Restore(state.Io);
+            this.timer.Restore(state.TimerState);
             this.apu.Restore(state.SoundState);
             this.joypad.Restore(state.JoypadState);
             this.serial.Restore(state.SerialState);
