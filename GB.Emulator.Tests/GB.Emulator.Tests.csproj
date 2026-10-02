@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
     <ProjectReference Include="..\GB.Emulator.Display\GB.Emulator.Display.csproj" />
+    <ProjectReference Include="..\GB.Emulator\GB.Emulator.csproj" />
     <ProjectReference Include="..\GB.Experiments\GB.Experiments.csproj" />
   </ItemGroup>
 

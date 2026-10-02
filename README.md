@@ -39,6 +39,10 @@ ConsoleVideoRenderer.Draw(frame);
 ```
 
 `GB.Emulator` redraws the current video state when the LCD reaches VBlank.
+When `GB.Roms.Private/Tetris (World).gb` is present, the console runs it by
+default. The private ROM is copied into the local build output but excluded from
+publish output. Without it, the bundled sprite ROM is used; a command-line ROM
+path always takes precedence.
 The bottom row shows rendered frames per second, averaged over the last second.
 Press **R** to repaint the terminal, or **Ctrl+C** to stop. If the terminal is
 resized, the next frame clears and redraws it. The debugger uses the same
@@ -49,8 +53,10 @@ view is resized.
 
 Both the console and every debugger tab use **arrow keys** for the D-pad,
 **Z** for A, **X** for B, **Enter** for Start, and **Space** for Select. The
-console holds each key briefly and extends the hold on key repeat; the debugger
-uses key-down and key-up events and releases all buttons when it loses focus.
+console uses the physical key state on Windows, so buttons stay pressed until
+release; quick taps last at least 30 ms. On other terminals, key repeat extends
+a short timed hold. The debugger uses key-down and key-up events and releases
+all buttons when it loses focus.
 Other input sources can call `gameboy.Input.SetButtonState(button, pressed)`.
 The joypad device implements the active-low `FF00` button matrix and requests
 the joypad interrupt when a selected input line becomes low.

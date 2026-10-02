@@ -12,8 +12,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="GB.Emulator.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\GB.Roms\SPRITE.GB" Link="SPRITE.GB">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\GB.Roms.Private\Tetris (World).gb"
+          Link="Tetris (World).gb"
+          Condition="Exists('..\GB.Roms.Private\Tetris (World).gb')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 

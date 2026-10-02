@@ -28,10 +28,18 @@ internal sealed class ConsoleEmulator : IDisposable
     {
         string romPath = args.Length > 0
             ? Path.GetFullPath(args[0])
-            : Path.Combine(AppContext.BaseDirectory, "SPRITE.GB");
+            : DefaultRomPath();
         var gameboy = new Gameboy();
         gameboy.Load(await CartridgeLoader.Load(romPath));
         return new ConsoleEmulator(gameboy);
+    }
+
+    private static string DefaultRomPath()
+    {
+        string tetris = Path.Combine(AppContext.BaseDirectory, "Tetris (World).gb");
+        return File.Exists(tetris)
+            ? tetris
+            : Path.Combine(AppContext.BaseDirectory, "SPRITE.GB");
     }
 
     public void Run(CancellationToken stopping)
