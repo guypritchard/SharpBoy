@@ -48,6 +48,8 @@ public partial class DebuggerForm : Form
     private readonly List<DebuggerSnapshot> stepHistory = new();
     private readonly System.Windows.Forms.Timer traceTimer = new();
     private readonly InteractionDiagramControl interactionDiagram = new();
+    private readonly MemoryMapControl memoryMapDiagram = new();
+    private readonly CartridgeInfoControl cartridgeInfo = new();
     private readonly TextBox interactionDetails = new();
     private readonly FrameDisplayControl screenDisplay = new();
     private WindowsAudioOutput? audioOutput;
@@ -118,10 +120,12 @@ public partial class DebuggerForm : Form
             this.audioOutput ??= WindowsAudioOutput.TryCreate(this.gameboy.Sound);
             this.cartridge = loadedCartridge;
             this.romPath = this.openRomDialog.FileName;
+            this.cartridgeInfo.SetCartridge(loadedCartridge, this.romPath);
             this.BuildDisassemblyCache();
             this.stepHistory.Clear();
             this.lastInteractionStep = null;
             this.interactionDiagram.ClearHistory();
+            this.memoryMapDiagram.ClearHistory();
             this.screenDirty = this.tilesDirty = true;
 
             this.recentWrites.Clear();
@@ -134,7 +138,8 @@ public partial class DebuggerForm : Form
             string title = string.IsNullOrWhiteSpace(loadedCartridge.Header.Title)
                 ? Path.GetFileName(this.romPath)
                 : loadedCartridge.Header.Title.Trim();
-            this.statusLabel.Text = $"Loaded {Path.GetFileName(this.romPath)} ({title})";
+            CartridgeSupport support = CartridgeSupport.Assess(loadedCartridge);
+            this.statusLabel.Text = $"Loaded {title} · {support.MapperName} · {support.Level}";
         }
         catch (Exception ex)
         {
@@ -159,6 +164,7 @@ public partial class DebuggerForm : Form
         this.stepHistory.Clear();
         this.lastInteractionStep = null;
         this.interactionDiagram.ClearHistory();
+        this.memoryMapDiagram.ClearHistory();
         this.screenDirty = this.tilesDirty = true;
         this.recentWrites.Clear();
         this.recentReads.Clear();
@@ -254,8 +260,12 @@ public partial class DebuggerForm : Form
                 break;
             }
             if (this.lastInteractionStep != null)
+            {
                 this.interactionDiagram.RecordTraceStep(
                     this.lastInteractionStep, this.recentReads, this.recentWrites);
+                this.memoryMapDiagram.RecordTraceStep(
+                    this.lastInteractionStep, this.recentReads, this.recentWrites);
+            }
         }
 
         this.RefreshDebuggerViews();
@@ -362,6 +372,8 @@ public partial class DebuggerForm : Form
         var tabs = new TabControl { Dock = DockStyle.Fill };
         var memoryTab = new TabPage("Memory");
         var interactionTab = new TabPage("Interaction map");
+        var memoryMapTab = new TabPage("Address map");
+        var cartridgeTab = new TabPage("Cartridge");
         this.mainSplitContainer.Panel2.Controls.Remove(this.rightSplitContainer);
         this.rightSplitContainer.Dock = DockStyle.Fill;
         this.rightSplitContainer.Panel1.Controls.Remove(this.memoryGroupBox);
@@ -489,13 +501,35 @@ public partial class DebuggerForm : Form
         interactionLayout.Controls.Add(detailsPanel, 0, 2);
         interactionTab.Controls.Add(interactionLayout);
 
+        var mapViewport = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            BackColor = Color.FromArgb(17, 26, 43)
+        };
+        mapViewport.Controls.Add(this.memoryMapDiagram);
+        void LayoutMemoryMap()
+        {
+            this.memoryMapDiagram.SetZoom(Math.Min(1f,
+                (mapViewport.ClientSize.Width - 8f) / MemoryMapControl.MapSize.Width));
+            this.memoryMapDiagram.Location = new Point(
+                Math.Max(0, (mapViewport.ClientSize.Width - this.memoryMapDiagram.Width) / 2), 0);
+        }
+        mapViewport.Resize += (_, _) => LayoutMemoryMap();
+        memoryMapTab.Controls.Add(mapViewport);
+        cartridgeTab.Controls.Add(this.cartridgeInfo);
+
         tabs.TabPages.Add(this.videoTab);
         tabs.TabPages.Add(interactionTab);
+        tabs.TabPages.Add(memoryMapTab);
+        tabs.TabPages.Add(cartridgeTab);
         tabs.TabPages.Add(memoryTab);
         tabs.SelectedIndexChanged += (_, _) =>
         {
-            this.mainSplitContainer.Panel1Collapsed = tabs.SelectedTab == interactionTab;
+            this.mainSplitContainer.Panel1Collapsed = tabs.SelectedTab == interactionTab ||
+                tabs.SelectedTab == memoryMapTab || tabs.SelectedTab == cartridgeTab;
             if (tabs.SelectedTab == this.videoTab) this.UpdateGraphicsView();
+            if (tabs.SelectedTab == memoryMapTab) LayoutMemoryMap();
         };
         this.mainSplitContainer.Panel2.Controls.Add(tabs);
     }
@@ -545,6 +579,10 @@ public partial class DebuggerForm : Form
 
     private void UpdateInteractionView()
     {
+        this.cartridgeInfo.ShowBanks(this.gameboy.Memory);
+        this.memoryMapDiagram.ShowStep(this.lastInteractionStep, Cpu.Registers.PC,
+            this.cartridge != null, this.recentReads, this.recentWrites, this.traceRunning,
+            this.gameboy.Memory.SelectedRomBank, this.gameboy.Memory.SelectedCartridgeRamBank);
         this.interactionDiagram.ShowButtons(this.gameboy.Input);
         byte scanline = this.gameboy.Scanline;
         this.interactionDiagram.ShowStep(
@@ -1180,6 +1218,7 @@ public partial class DebuggerForm : Form
         this.stackStartPointer = snapshot.StackStartPointer;
         this.lastInteractionStep = snapshot.LastInteractionStep;
         this.interactionDiagram.ClearHistory();
+        this.memoryMapDiagram.ClearHistory();
         this.scanlineBeforeLastStep = snapshot.ScanlineBeforeLastStep;
 
         this.ResetMemoryViewState();

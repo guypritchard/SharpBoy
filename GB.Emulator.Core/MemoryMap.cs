@@ -15,6 +15,7 @@ namespace GB.Emulator.Core
         private readonly SerialPort serial;
         private readonly Apu apu;
         private readonly Timer timer;
+        private Mbc3 mbc3;
         private IMemoryAccessRecorder accessRecorder = new RecordingMemoryAccessRecorder();
 
         public MemoryMap(params IMemoryRange[] devices)
@@ -37,14 +38,37 @@ namespace GB.Emulator.Core
         public void LoadRom(byte[] romData)
         {
             // Drop any previously loaded ROM device so the new one wins for 0x0000.
-            this.devices.RemoveAll(d => d is Rom);
+            IMemoryRange oldMbcRom = this.mbc3?.Rom;
+            IMemoryRange oldMbcRam = this.mbc3?.Ram;
+            this.devices.RemoveAll(d => d is Rom || ReferenceEquals(d, oldMbcRom) ||
+                ReferenceEquals(d, oldMbcRam));
+            this.mbc3 = null;
 
             int copyLength = Math.Min(romData.Length, this.memory.Length);
             Array.Copy(romData, 0, this.memory, 0, copyLength);
 
-            // Insert at the front so reads hit ROM before any overlapping devices.
-            this.devices.Insert(0, new Rom("ROM0", romData));
+            // Insert cartridge windows first so they win over the generic address-space backing.
+            byte type = romData.Length > 0x149 ? romData[0x147] : (byte)0;
+            if (type is >= 0x11 and <= 0x13)
+            {
+                int ramSize = romData[0x149] switch { 2 => 0x2000, 3 => 0x8000, _ => 0 };
+                this.mbc3 = new Mbc3(romData, ramSize);
+                this.devices.Insert(0, this.mbc3.Ram);
+                this.devices.Insert(0, this.mbc3.Rom);
+            }
+            else this.devices.Insert(0, new Rom("ROM0", romData));
             this.RebuildDeviceMap();
+        }
+
+        internal Mbc3.State? CaptureCartridgeState() => this.mbc3?.Snapshot();
+
+        public int SelectedRomBank => this.mbc3?.SelectedRomBank ?? 1;
+
+        public int? SelectedCartridgeRamBank => this.mbc3?.SelectedRamBank;
+
+        internal void RestoreCartridgeState(Mbc3.State? state)
+        {
+            if (state.HasValue) this.mbc3?.Restore(state.Value);
         }
 
         public void Write8(byte value, ushort location)
@@ -182,6 +206,8 @@ namespace GB.Emulator.Core
             if (address is 0xFF01 or 0xFF02 && this.serial != null) return this.serial.Read8(address);
             if (address is >= 0xFF10 and <= 0xFF3F && this.apu != null) return this.apu.Read8(address);
             if (address is >= 0xFF04 and <= 0xFF07 && this.timer != null) return this.timer.Read8(address);
+            if (this.mbc3 != null && (address <= 0x7FFF || address is >= 0xA000 and <= 0xBFFF))
+                return this.deviceByAddress[address].Read8(address);
             return this.memory[address];
         }
 

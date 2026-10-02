@@ -163,7 +163,7 @@ namespace GB.Emulator.Core
             int address = 0;
             CpuStepResult? current = null;
 
-            while (address < this.romData.Length)
+            while (address < Math.Min(this.romData.Length, 0x8000))
             {
                 CpuStepResult decoded = this.cpu.DecodeInstruction(this.romData, (ushort)address);
                 queue.Enqueue(decoded);
@@ -202,7 +202,7 @@ namespace GB.Emulator.Core
 
             int nextAddress = current.Address + nextLength;
 
-            for (int i = 0; i < instructionsAfter && nextAddress < this.romData.Length; i++)
+            for (int i = 0; i < instructionsAfter && nextAddress < Math.Min(this.romData.Length, 0x8000); i++)
             {
                 CpuStepResult next = this.cpu.DecodeInstruction(this.romData, (ushort)nextAddress);
                 window.Add(next);
@@ -228,7 +228,7 @@ namespace GB.Emulator.Core
             var results = new List<CpuStepResult>();
             int address = 0;
 
-            while (address < this.romData.Length)
+            while (address < Math.Min(this.romData.Length, 0x8000))
             {
                 CpuStepResult decoded;
                 try
@@ -277,6 +277,7 @@ namespace GB.Emulator.Core
                 this.ramBank3.Snapshot(),
                 this.internalRam.Snapshot(),
                 this.io.Snapshot(),
+                this.memory.CaptureCartridgeState(),
                 this.timer.Snapshot(),
                 this.apu.Snapshot(),
                 this.joypad.Snapshot(),
@@ -313,6 +314,7 @@ namespace GB.Emulator.Core
             this.ramBank3.Restore(state.RamBank3);
             this.internalRam.Restore(state.InternalRam);
             this.io.Restore(state.Io);
+            this.memory.RestoreCartridgeState(state.CartridgeState);
             this.timer.Restore(state.TimerState);
             this.apu.Restore(state.SoundState);
             this.joypad.Restore(state.JoypadState);

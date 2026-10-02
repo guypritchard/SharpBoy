@@ -222,7 +222,7 @@ namespace GB.Emulator.Core
 
             // Cartridge instructions come from ROM; code copied into work or high RAM
             // must be fetched through the memory map (for example, DMA routines).
-            return address < 0x8000 ? data[address] : Memory.Read8((ushort)address);
+            return Memory.Read8((ushort)address);
         }
 
         private void AdvanceHardware(int cycles = 4)

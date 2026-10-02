@@ -119,6 +119,17 @@ transparent glow fades within about a second after activity stops.
 Scroll the board to inspect the lower components; the separate bus log lists
 the latest instruction's exact addresses. **Step Back** or Shift+F10 restores
 the previous instruction and its diagram.
+The **Address map** tab lays out every address from `0000` through `FFFF` as
+coloured hardware blocks. Cyan and amber bars show where reads and writes land
+inside each range; the cream marker shows the latest instruction fetch. Activity
+accumulates during Trace and fades after it stops. Hover over a block for the
+exact addresses touched by the latest instruction. Cartridge blocks show the
+selected ROM and RAM banks when the cartridge has a mapper.
+The **Cartridge** tab reads the ROM header and shows its mapper, declared ROM and
+RAM sizes, display modes, active banks, and hardware requirements. Its support
+status distinguishes implemented features from missing ones; Pokémon Red is
+marked partial because battery saves and Super Game Boy enhancements are not
+yet implemented.
 Sound register access lights the APU on the map. The DMG APU generates two pulse
 channels, programmable wave audio, and noise, with stereo routing and volume.
 On Windows the console and debugger play the resulting PCM through the system
@@ -132,6 +143,11 @@ refreshes after relevant writes while stepping or tracing;
 Step Back and Reset restore the view. It is reconstructed from the current
 memory snapshot, so it cannot show mid-frame effects until the emulator has a
 full pixel pipeline.
+
+MBC3 cartridges, including Pokémon Red, can switch ROM and cartridge RAM banks.
+The CPU fetches banked instructions through the memory bus, so Pokémon Red can
+reach its title screen and introduction. Battery RAM currently lasts only for
+the running emulator session; persistent save files are not yet implemented.
 
 > This is an early work in progress.  
 
