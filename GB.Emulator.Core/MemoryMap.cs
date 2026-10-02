@@ -9,36 +9,99 @@ namespace GB.Emulator.Core
     public class MemoryMap
     {
         private readonly byte[] memory;
-        private readonly IMemoryRange[] devices;
-        private readonly HashSet<ushort> recentWrites = new();
+        private readonly List<IMemoryRange> devices;
+        private readonly IMemoryRange[] deviceByAddress = new IMemoryRange[ushort.MaxValue + 1];
+        private readonly Joypad joypad;
+        private readonly SerialPort serial;
+        private readonly Apu apu;
+        private readonly Timer timer;
+        private Mbc3 mbc3;
+        private IMemoryAccessRecorder accessRecorder = new RecordingMemoryAccessRecorder();
 
         public MemoryMap(params IMemoryRange[] devices)
         {
-            this.memory = new byte[ushort.MaxValue];
-            this.devices = devices;
+            this.memory = new byte[ushort.MaxValue + 1];
+            this.devices = new List<IMemoryRange>(devices);
+            this.joypad = devices.OfType<Joypad>().FirstOrDefault();
+            this.serial = devices.OfType<SerialPort>().FirstOrDefault();
+            this.apu = devices.OfType<Apu>().FirstOrDefault();
+            this.timer = devices.OfType<Timer>().FirstOrDefault();
+            this.RebuildDeviceMap();
+        }
+
+        public void AddDevice(IMemoryRange device)
+        {
+            this.devices.Add(device);
+            this.RebuildDeviceMap();
+        }
+
+        public void LoadRom(byte[] romData)
+        {
+            // Drop any previously loaded ROM device so the new one wins for 0x0000.
+            IMemoryRange oldMbcRom = this.mbc3?.Rom;
+            IMemoryRange oldMbcRam = this.mbc3?.Ram;
+            this.devices.RemoveAll(d => d is Rom || ReferenceEquals(d, oldMbcRom) ||
+                ReferenceEquals(d, oldMbcRam));
+            this.mbc3 = null;
+
+            int copyLength = Math.Min(romData.Length, this.memory.Length);
+            Array.Copy(romData, 0, this.memory, 0, copyLength);
+
+            // Insert cartridge windows first so they win over the generic address-space backing.
+            byte type = romData.Length > 0x149 ? romData[0x147] : (byte)0;
+            if (type is >= 0x11 and <= 0x13)
+            {
+                int ramSize = romData[0x149] switch { 2 => 0x2000, 3 => 0x8000, _ => 0 };
+                this.mbc3 = new Mbc3(romData, ramSize);
+                this.devices.Insert(0, this.mbc3.Ram);
+                this.devices.Insert(0, this.mbc3.Rom);
+            }
+            else this.devices.Insert(0, new Rom("ROM0", romData));
+            this.RebuildDeviceMap();
+        }
+
+        internal Mbc3.State? CaptureCartridgeState() => this.mbc3?.Snapshot();
+
+        public int SelectedRomBank => this.mbc3?.SelectedRomBank ?? 1;
+
+        public int? SelectedCartridgeRamBank => this.mbc3?.SelectedRamBank;
+
+        internal void RestoreCartridgeState(Mbc3.State? state)
+        {
+            if (state.HasValue) this.mbc3?.Restore(state.Value);
         }
 
         public void Write8(byte value, ushort location)
         {
             try
             {
-                var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
-                if (device == null)
+                this.memory[location] = value;
+
+                var device = this.deviceByAddress[location];
+                if (device != null)
                 {
-                    throw new NotImplementedException($"Aint nobody handling 0x{location:X2} for writing.");
-                }
-                
-                try
-                {
-                    device.Write8(location, value);
-                }
-                catch (NotImplementedException)
-                {
-                    // The device doesn't support writing yet...
-                    this.memory[location] = value;
+                    try
+                    {
+                        device.Write8(location, value);
+                    }
+                    catch (NotImplementedException)
+                    {
+                        // The device doesn't support writing yet...
+                        this.memory[location] = value;
+                    }
                 }
 
-                this.recentWrites.Add(location);
+                this.accessRecorder.RecordWrite(location);
+
+                if (location == 0xFF46)
+                {
+                    ushort source = (ushort)(value << 8);
+                    for (int offset = 0; offset < 0xA0; offset++)
+                    {
+                        byte oamValue = this.Read8((ushort)(source + offset));
+                        this.Write8(oamValue, (ushort)(0xFE00 + offset));
+                    }
+                }
             }
             catch (IndexOutOfRangeException)
             {
@@ -51,18 +114,9 @@ namespace GB.Emulator.Core
         {
             try
             {
-                ByteOp.Split(value, out byte low, out byte high);
-                this.memory[location] = low;
-                this.memory[location + 1] = high;
-                this.recentWrites.Add(location);
-                this.recentWrites.Add((ushort)(location + 1));
-
-                var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
-                if (device != null)
-                {
-                    device.Write8(location, low);
-                    device.Write8((ushort)(location + 1), high);
-                }
+                ByteOp.Split(value, out byte high, out byte low);
+                this.Write8(low, location);
+                this.Write8(high, (ushort)(location + 1));
             }
             catch (IndexOutOfRangeException)
             {
@@ -75,8 +129,9 @@ namespace GB.Emulator.Core
         {
             try
             {
-                var b2 = ByteOp.Concat(this.memory[location + 1], this.memory[location]);
-                return b2;
+                byte low = this.Read8(location);
+                byte high = this.Read8((ushort)(location + 1));
+                return ByteOp.Concat(low, high);
             }
             catch (IndexOutOfRangeException)
             {
@@ -85,16 +140,19 @@ namespace GB.Emulator.Core
             }
         }
 
-        public byte Read8(byte location)
+        public byte Read8(ushort location)
         {
             try
             {
-                var device = this.devices.FirstOrDefault(d => location >= d.Start && location <= d.End);
+                var device = this.deviceByAddress[location];
+                this.accessRecorder.RecordRead(location);
                 if (device != null)
                 {
                     try
                     {
-                        return device.Read8(location);
+                        byte value = device.Read8(location);
+                        this.memory[location] = value;
+                        return value;
                     }
                     catch (NotImplementedException)
                     {
@@ -103,7 +161,7 @@ namespace GB.Emulator.Core
                     }
                 }
 
-                throw new NotImplementedException("Aint nobody handling this memory location for reading.");
+                return this.memory[location];
             }
             catch (IndexOutOfRangeException)
             {
@@ -115,7 +173,26 @@ namespace GB.Emulator.Core
         public void Reset()
         {
             Array.Clear(this.memory, 0, this.memory.Length);
-            this.recentWrites.Clear();
+            this.accessRecorder.Reset();
+        }
+
+        internal void UseAccessRecorder(IMemoryAccessRecorder recorder)
+        {
+            if (ReferenceEquals(this.accessRecorder, recorder)) return;
+            recorder.Reset();
+            this.accessRecorder = recorder;
+        }
+
+        private void RebuildDeviceMap()
+        {
+            Array.Clear(this.deviceByAddress);
+            // Earlier devices take priority when ranges overlap (ROM is inserted first).
+            for (int i = this.devices.Count - 1; i >= 0; i--)
+            {
+                IMemoryRange device = this.devices[i];
+                for (int address = device.Start; address <= device.End; address++)
+                    this.deviceByAddress[address] = device;
+            }
         }
 
         public byte Peek(ushort address)
@@ -125,6 +202,12 @@ namespace GB.Emulator.Core
                 throw new ArgumentOutOfRangeException(nameof(address));
             }
 
+            if (address == 0xFF00 && this.joypad != null) return this.joypad.Read8(address);
+            if (address is 0xFF01 or 0xFF02 && this.serial != null) return this.serial.Read8(address);
+            if (address is >= 0xFF10 and <= 0xFF3F && this.apu != null) return this.apu.Read8(address);
+            if (address is >= 0xFF04 and <= 0xFF07 && this.timer != null) return this.timer.Read8(address);
+            if (this.mbc3 != null && (address <= 0x7FFF || address is >= 0xA000 and <= 0xBFFF))
+                return this.deviceByAddress[address].Read8(address);
             return this.memory[address];
         }
 
@@ -132,19 +215,39 @@ namespace GB.Emulator.Core
         {
             var copy = new byte[this.memory.Length];
             Array.Copy(this.memory, copy, copy.Length);
+            if (this.joypad != null) copy[0xFF00] = this.joypad.Read8(0xFF00);
+            if (this.serial != null)
+            {
+                copy[0xFF01] = this.serial.Read8(0xFF01);
+                copy[0xFF02] = this.serial.Read8(0xFF02);
+            }
+            if (this.apu != null)
+                for (ushort address = 0xFF10; address <= 0xFF3F; address++)
+                    copy[address] = this.apu.Read8(address);
+            if (this.timer != null)
+                for (ushort address = 0xFF04; address <= 0xFF07; address++)
+                    copy[address] = this.timer.Read8(address);
             return copy;
         }
 
-        internal IReadOnlyCollection<ushort> ConsumeRecentWrites()
+        public void RestoreSnapshot(byte[] snapshot)
         {
-            if (this.recentWrites.Count == 0)
+            if (snapshot == null)
             {
-                return Array.Empty<ushort>();
+                throw new ArgumentNullException(nameof(snapshot));
             }
 
-            ushort[] snapshot = this.recentWrites.ToArray();
-            this.recentWrites.Clear();
-            return snapshot;
+            if (snapshot.Length != this.memory.Length)
+            {
+                throw new ArgumentException("Snapshot size does not match memory size.", nameof(snapshot));
+            }
+
+            Array.Copy(snapshot, this.memory, this.memory.Length);
+            this.accessRecorder.Reset();
         }
+
+        internal IReadOnlyCollection<ushort> ConsumeRecentWrites() => this.accessRecorder.ConsumeWrites();
+
+        internal IReadOnlyCollection<ushort> ConsumeRecentReads() => this.accessRecorder.ConsumeReads();
     }
 }

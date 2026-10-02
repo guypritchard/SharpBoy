@@ -1,5 +1,4 @@
-﻿using GB.Emulator.Core.InputOutput;
-using System.Diagnostics;
+using GB.Emulator.Core.InputOutput;
 
 namespace GB.Emulator.Core
 {
@@ -25,17 +24,39 @@ namespace GB.Emulator.Core
             get; private set;
         }
 
+        internal void Reset() => System.Array.Clear(this.memory);
+
         public void Write8(ushort location, byte value)
         {
-            Trace.WriteLine($"{this.Name}: {value}->0x{location:X2}");
             this.memory[location - this.Start] = value;
         }
 
-        public byte Read8(ushort location)
-        {
-            var value = this.memory[location - this.Start];
-            Trace.WriteLine($"{this.Name}: {value}<-0x{location:X2}");
-            return value;
-        }
+    public byte Read8(ushort location)
+    {
+        var value = this.memory[location - this.Start];
+        return value;
     }
+
+    internal byte[] Snapshot()
+    {
+        var copy = new byte[this.memory.Length];
+        System.Array.Copy(this.memory, copy, copy.Length);
+        return copy;
+    }
+
+    internal void Restore(byte[] snapshot)
+    {
+        if (snapshot == null)
+        {
+            throw new System.ArgumentNullException(nameof(snapshot));
+        }
+
+        if (snapshot.Length != this.memory.Length)
+        {
+            throw new System.ArgumentException("Snapshot size does not match memory size.", nameof(snapshot));
+        }
+
+        System.Array.Copy(snapshot, this.memory, this.memory.Length);
+    }
+}
 }

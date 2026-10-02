@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator", "GB.Emulator\GB.Emulator.csproj", "{6685661C-B856-4DF8-9F66-96F8CF1171A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator.Console", "GB.Emulator.Console\GB.Emulator.Console.csproj", "{6685661C-B856-4DF8-9F66-96F8CF1171A3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator.Core", "GB.Emulator.Core\GB.Emulator.Core.csproj", "{A41885EE-5422-461B-9152-12EB44C40D85}"
 EndProject
@@ -26,6 +26,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GB.Roms", "GB.Roms", "{2BB1
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Debugger", "GB.Debugger\GB.Debugger.csproj", "{467EC08B-56C9-4BA0-8F73-1DB54F9E1C0D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Emulator.Display", "GB.Emulator.Display\GB.Emulator.Display.csproj", "{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Experiments", "GB.Experiments\GB.Experiments.csproj", "{EA8C1932-75CA-4816-850B-A36AEB7F29AC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,6 +89,30 @@ Global
 		{467EC08B-56C9-4BA0-8F73-1DB54F9E1C0D}.Release|x64.Build.0 = Release|Any CPU
 		{467EC08B-56C9-4BA0-8F73-1DB54F9E1C0D}.Release|x86.ActiveCfg = Release|Any CPU
 		{467EC08B-56C9-4BA0-8F73-1DB54F9E1C0D}.Release|x86.Build.0 = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|x64.Build.0 = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Debug|x86.Build.0 = Debug|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|x64.ActiveCfg = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|x64.Build.0 = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|x86.ActiveCfg = Release|Any CPU
+		{BAF3B598-5DCB-4EDE-9E30-8C8A378B0DFD}.Release|x86.Build.0 = Release|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Debug|x64.Build.0 = Debug|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Debug|x86.Build.0 = Debug|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|x64.ActiveCfg = Release|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|x64.Build.0 = Release|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|x86.ActiveCfg = Release|Any CPU
+		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

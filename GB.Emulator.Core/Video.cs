@@ -1,47 +1,35 @@
-using GB.Emulator.Core.InputOutput;
+#nullable enable
 using System;
-using System.Drawing;
+using GB.Emulator.Core.InputOutput;
 
 namespace GB.Emulator.Core
 {
-    public class Video
+    /// <summary>The LCD clock and video memory as seen by the Game Boy hardware.</summary>
+    public sealed class Video
     {
+        public const int Width = 160;
+        public const int Height = 144;
+
+        private readonly Lcd lcd;
+
+        public event EventHandler? FrameReady;
+
         public Video(Lcd lcd)
         {
-            if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1))
-            {
-                throw new PlatformNotSupportedException("Video rendering requires Windows 7 or later.");
-            }
-
             this.lcd = lcd;
-            this.frame = new Bitmap(Video.Width, Video.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
         }
 
-        private const int Width = 160;
-        private const int Height = 144;
-        private readonly Lcd lcd;
-        private readonly byte[] memory = new byte[Video.Width * Video.Height];
-        private readonly Bitmap frame;
-
-        public void Step()
+        public byte Step(int cycles = 4)
         {
-            this.lcd.Step();
-        }
-
-        public void BitBlt(byte[] incomingFrame)
-        {
-            if (incomingFrame.Length > Video.Width * Video.Height)
+            byte interrupts = this.lcd.Step(cycles);
+            if ((interrupts & 0x01) != 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(incomingFrame));
+                this.FrameReady?.Invoke(this, EventArgs.Empty);
             }
 
-            Array.Copy(incomingFrame, this.memory, incomingFrame.Length);
+            return interrupts;
         }
 
-        public Bitmap Render()
-        {
-            // TODO: Create a new copy of the current frame on Render
-            return this.frame;
-        }
+        internal VideoState CaptureState(MemoryMap memory) => new(memory.Snapshot());
     }
 }

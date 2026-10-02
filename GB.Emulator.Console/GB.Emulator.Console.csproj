@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Display\GB.Emulator.Display.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GB.Emulator.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\GB.Roms\SPRITE.GB" Link="SPRITE.GB">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\GB.Roms.Private\Tetris (World).gb"
+          Link="Tetris (World).gb"
+          Condition="Exists('..\GB.Roms.Private\Tetris (World).gb')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
