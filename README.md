@@ -9,7 +9,7 @@ A basic Gameboy emulator.
 VRAM/OAM state, the joypad, and the APU. `Gameboy` coordinates those
 devices and exposes immutable video and sound snapshots. `GB.Emulator.Display`
 turns a video snapshot into shade pixels and provides the Unicode terminal
-renderer. `GB.Emulator` and `GB.Debugger` control the hardware and present it
+renderer. `GB.Emulator.Console` and `GB.Debugger` control the hardware and present it
 through their own user interfaces. The core does not depend on drawing or
 terminal APIs. The APU generates stereo PCM; a cycle-accurate pixel pipeline is
 still future hardware work.
@@ -38,7 +38,7 @@ byte[] frame = new byte[Video.Width * Video.Height];
 ConsoleVideoRenderer.Draw(frame);
 ```
 
-`GB.Emulator` redraws the current video state when the LCD reaches VBlank.
+`GB.Emulator.Console` redraws the current video state when the LCD reaches VBlank.
 When `GB.Roms.Private/Tetris (World).gb` is present, the console runs it by
 default. The private ROM is copied into the local build output but excluded from
 publish output. Without it, the bundled sprite ROM is used; a command-line ROM

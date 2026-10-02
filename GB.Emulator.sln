@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator", "GB.Emulator\GB.Emulator.csproj", "{6685661C-B856-4DF8-9F66-96F8CF1171A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator.Console", "GB.Emulator.Console\GB.Emulator.Console.csproj", "{6685661C-B856-4DF8-9F66-96F8CF1171A3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GB.Emulator.Core", "GB.Emulator.Core\GB.Emulator.Core.csproj", "{A41885EE-5422-461B-9152-12EB44C40D85}"
 EndProject
