@@ -8,7 +8,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
-    <ProjectReference Include="..\GB.Emulator.Display\GB.Emulator.Display.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\WindowsAudioOutput.cs" Link="Audio\WindowsAudioOutput.cs" />
   </ItemGroup>
 
   <ItemGroup>

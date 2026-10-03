@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using GB.Emulator.Core;
 
-namespace GB.Emulator.Display
+namespace GB.Emulator
 {
     /// <summary>Renders a 160 by 144 frame of Game Boy shade indices (0 to 3) in a true-color terminal.</summary>
     public static class ConsoleVideoRenderer

@@ -14,6 +14,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.semVer }}
     steps:
       - name: Checkout full history for GitVersion
         uses: actions/checkout@v4
@@ -94,3 +96,49 @@ jobs:
           name: debugger-${{ steps.version.outputs.semVer }}-windows
           path: artifacts/debugger/
           if-no-files-found: error
+
+  release:
+    name: Release Windows applications
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download console emulator
+        uses: actions/download-artifact@v4
+        with:
+          name: console-${{ needs.build.outputs.version }}-windows
+          path: artifacts/console/
+
+      - name: Download debugger
+        uses: actions/download-artifact@v4
+        with:
+          name: debugger-${{ needs.build.outputs.version }}-windows
+          path: artifacts/debugger/
+
+      - name: Package release assets
+        shell: pwsh
+        env:
+          BUILD_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          New-Item -ItemType Directory -Path release-assets -Force | Out-Null
+          foreach ($app in @('console', 'debugger')) {
+            foreach ($runtime in @('win-x64', 'win-arm64')) {
+              Compress-Archive -Path "artifacts/$app/$runtime/*" -DestinationPath "release-assets/$app-$env:BUILD_VERSION-$runtime.zip"
+            }
+          }
+
+      - name: Create GitHub release from commit message
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_VERSION: ${{ needs.build.outputs.version }}
+          RELEASE_COMMIT: ${{ github.sha }}
+          RELEASE_NOTES: ${{ github.event.head_commit.message }}
+        run: |
+          $env:RELEASE_NOTES | Set-Content -Path release-notes.md -Encoding utf8
+          $assets = Get-ChildItem -Path release-assets/*.zip | ForEach-Object { $_.FullName }
+          gh release create "v$env:BUILD_VERSION" @assets --target $env:RELEASE_COMMIT --title "v$env:BUILD_VERSION" --notes-file release-notes.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -142,6 +142,24 @@
               return $"PC:{PC:X4}\tSP:{SP:X4}\tHL:{HL:X4}\tA:{A:X2}\tB:{B:X2}\tC:{C:X2}\tD:{D:X2}";
             }
 
+            internal static CpuRegistersState CaptureState() =>
+                new(A, F, B, C, D, E, H, L, Flags, SP, PC);
+
+            internal static void RestoreState(CpuRegistersState state)
+            {
+                A = state.A;
+                F = state.F;
+                B = state.B;
+                C = state.C;
+                D = state.D;
+                E = state.E;
+                H = state.H;
+                L = state.L;
+                Flags = state.Flags;
+                SP = state.SP;
+                PC = state.PC;
+            }
+
             public static void Reset()
             {
                 A = 0x00;

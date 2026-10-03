@@ -18,18 +18,38 @@ later versions are calculated from Git history. Tag a release commit with
 request a larger increment with `+semver: minor` or `+semver: major`.
 The calculated version is applied to the .NET assemblies and artifact names.
 
+After a merge or push to `master`, a successful build and test run automatically
+creates a GitHub release tagged `v<calculated version>` at the built commit.
+The release notes contain that commit's full message (the merge commit message
+for a merge, or the squash commit message for a squash merge). Each release
+includes separate ZIP downloads for the console emulator and debugger on
+`win-x64` and `win-arm64`. Pull requests, tag pushes, and manual builds upload
+build artifacts without creating a release.
+
 ## Architecture
 
 `GB.Emulator.Core` owns the hardware: CPU execution, the memory bus, LCD timing,
 VRAM/OAM state, the joypad, and the APU. `Gameboy` coordinates those
-devices and exposes immutable video and sound snapshots. `GB.Emulator.Display`
-turns a video snapshot into shade pixels and provides the Unicode terminal
-renderer. `GB.Emulator.Console` and `GB.Debugger` control the hardware and present it
+devices and exposes immutable video and sound snapshots. Its `Rendering` folder
+turns a video snapshot into shade pixels. `GB.Emulator.Console` owns the Unicode
+terminal renderer. The console app and `GB.Debugger` control the hardware and present it
 through their own user interfaces. The core does not depend on drawing or
 terminal APIs. The APU generates stereo PCM; a cycle-accurate pixel pipeline is
-still future hardware work.
+still future hardware work. Both front ends compile the Windows audio adapter
+from `Shared/WindowsAudioOutput.cs`; platform audio stays outside the core
+without requiring another assembly.
 The memory bus uses separate silent and recording access observers for continuous
 play and debugger stepping. Both modes execute instructions through the same CPU path.
+
+Within the core, `Gameboy` creates and resets the devices, wires their interrupts,
+and coordinates save and restore. `RomDisassembler` builds debugger instruction
+windows without executing code. The CPU handles interrupt entry, operand fetch,
+instruction execution, and delayed interrupt enablement in separate methods;
+its registers own their snapshot and restore logic. `MemoryMap` routes bus
+accesses, selects cartridge devices, and copies OAM DMA through normal bus reads
+and writes so debugger traces include the transfer. These boundaries keep
+hardware behavior separate from debugger views. CPU registers and the CPU memory
+reference are still static, so multiple emulators require process isolation.
 
 The CPU executes all 245 documented unprefixed opcodes and all 256 `CB`
 bit/rotate opcodes. The 11 undefined opcodes raise an error. Instruction cycle
@@ -61,7 +81,7 @@ path always takes precedence.
 The bottom row shows rendered frames per second, averaged over the last second.
 Press **R** to repaint the terminal, or **Ctrl+C** to stop. If the terminal is
 resized, the next frame clears and redraws it. The debugger uses the same
-display layer for its screen and tile views, and repaints its frame when the
+core renderer for its screen and tile views, and repaints its frame when the
 view is resized.
 
 ## Input

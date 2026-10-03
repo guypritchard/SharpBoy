@@ -126,68 +126,116 @@ namespace GB.Emulator.Core
 
         private InstructionExecution ExecuteInstruction(byte[] data)
         {
-            byte pending = this.PendingInterrupts;
-            if (pending != 0)
+            if (this.TryServiceInterrupt(out InstructionExecution interruptExecution))
             {
-                this.halted = false;
-                if (this.interruptMasterEnabled)
-                {
-                    int bit = 0;
-                    while ((pending & (1 << bit)) == 0) bit++;
-                    ushort vector = (ushort)(0x40 + bit * 8);
-                    ushort interruptedPc = Registers.PC;
-                    this.interruptMasterEnabled = false;
-                    this.stopped = false;
-                    Memory.Write8((byte)(Memory.Peek(0xFF0F) & ~(1 << bit)), 0xFF0F);
-                    PushWord(interruptedPc);
-                    Registers.PC = vector;
-                    this.AdvanceHardware(20);
-                    var interrupt = new Instruction(0, $"INT 0x{vector:X2}", (_, _) => { }, 0, false);
-                    return new InstructionExecution(interrupt, interruptedPc, 0, 0);
-                }
+                return interruptExecution;
             }
 
             if (this.halted || this.stopped)
             {
-                if (this.halted) this.AdvanceHardware();
-                return new InstructionExecution(this.halted ? HaltIdleInstruction : StopIdleInstruction,
-                    Registers.PC, 0, 0);
+                if (this.halted)
+                {
+                    this.AdvanceHardware();
+                }
+
+                Instruction idleInstruction = this.halted ? HaltIdleInstruction : StopIdleInstruction;
+                return new InstructionExecution(idleInstruction, Registers.PC, 0, 0);
             }
 
-            int pc = Cpu.Registers.PC;
-            byte opcode = this.ReadInstructionByte(data, pc);
-            Instruction instruction = GetInstruction(opcode);
+            ushort address = Registers.PC;
+            byte opcode = this.ReadInstructionByte(data, address);
+            Instruction instruction = this.GetInstruction(opcode);
+            InstructionExecution execution = this.ReadOperands(data, address, instruction);
+            int cycles = GetCycles(opcode, execution.Operand1);
+            bool enableInterruptsNow = this.enableInterruptsDelay == 1;
 
-            byte parameter1 = 0x0;
-            byte parameter2 = 0x0;
+            instruction.Execute(execution.Operand1, execution.Operand2);
+            this.UpdateDelayedInterruptEnable(opcode, enableInterruptsNow);
+            this.AdvanceHardware(cycles);
 
+            return execution;
+        }
+
+        private bool TryServiceInterrupt(out InstructionExecution execution)
+        {
+            execution = default;
+            byte pending = this.PendingInterrupts;
+            if (pending == 0)
+            {
+                return false;
+            }
+
+            // An enabled interrupt wakes HALT even when the CPU cannot service it yet.
+            this.halted = false;
+            if (!this.interruptMasterEnabled)
+            {
+                return false;
+            }
+
+            int interruptBit = 0;
+            while ((pending & (1 << interruptBit)) == 0)
+            {
+                interruptBit++;
+            }
+
+            ushort vector = (ushort)(0x40 + interruptBit * 8);
+            ushort interruptedAddress = Registers.PC;
+            this.interruptMasterEnabled = false;
+            this.stopped = false;
+            Memory.Write8((byte)(Memory.Peek(0xFF0F) & ~(1 << interruptBit)), 0xFF0F);
+            PushWord(interruptedAddress);
+            Registers.PC = vector;
+            this.AdvanceHardware(20);
+
+            var interrupt = new Instruction(0, $"INT 0x{vector:X2}", (_, _) => { }, 0, false);
+            execution = new InstructionExecution(interrupt, interruptedAddress, 0, 0);
+            return true;
+        }
+
+        private InstructionExecution ReadOperands(byte[] data, ushort address, Instruction instruction)
+        {
+            byte operand1 = 0;
+            byte operand2 = 0;
             bool applyHaltBug = this.haltBug;
             this.haltBug = false;
+
+            // The HALT bug repeats the opcode byte as the first operand and suppresses
+            // one program-counter increment for this instruction.
+            int operandOffset = applyHaltBug ? 0 : 1;
             if (instruction.Length > 1)
             {
-                int lastOperandAddress = pc + instruction.Length - (applyHaltBug ? 2 : 1);
+                int lastOperandAddress = address + instruction.Length - (applyHaltBug ? 2 : 1);
                 if (lastOperandAddress > ushort.MaxValue)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(data), $"Instruction {instruction.Name} at 0x{pc:X4} crosses the end of memory.");
+                    throw new ArgumentOutOfRangeException(nameof(data), $"Instruction {instruction.Name} at 0x{address:X4} crosses the end of memory.");
                 }
 
-                parameter1 = this.ReadInstructionByte(data, pc + (applyHaltBug ? 0 : 1));
+                operand1 = this.ReadInstructionByte(data, address + operandOffset);
                 if (instruction.Length > 2)
                 {
-                    parameter2 = this.ReadInstructionByte(data, pc + (applyHaltBug ? 1 : 2));
+                    operand2 = this.ReadInstructionByte(data, address + operandOffset + 1);
                 }
             }
 
-            if (applyHaltBug) Registers.PC = (ushort)(pc - 1);
-            int cycles = GetCycles(opcode, parameter1);
-            bool enableInterruptsNow = this.enableInterruptsDelay == 1;
-            instruction.Execute(parameter1, parameter2);
-            if (enableInterruptsNow && instruction.Value != 0xF3)
+            if (applyHaltBug)
+            {
+                Registers.PC = (ushort)(address - 1);
+            }
+
+            return new InstructionExecution(instruction, address, operand1, operand2);
+        }
+
+        private void UpdateDelayedInterruptEnable(byte opcode, bool enableInterruptsNow)
+        {
+            const byte disableInterruptsOpcode = 0xF3;
+            const byte enableInterruptsOpcode = 0xFB;
+
+            if (enableInterruptsNow && opcode != disableInterruptsOpcode)
             {
                 this.interruptMasterEnabled = true;
                 this.enableInterruptsDelay = 0;
             }
-            else if (instruction.Value == 0xFB)
+            else if (opcode == enableInterruptsOpcode)
             {
                 this.enableInterruptsDelay = 1;
             }
@@ -195,9 +243,6 @@ namespace GB.Emulator.Core
             {
                 this.enableInterruptsDelay--;
             }
-            this.AdvanceHardware(cycles);
-
-            return new InstructionExecution(instruction, (ushort)pc, parameter1, parameter2);
         }
 
         private CpuStepResult BuildStepResult(InstructionExecution execution)

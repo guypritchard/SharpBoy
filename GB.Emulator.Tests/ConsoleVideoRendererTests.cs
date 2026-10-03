@@ -1,5 +1,4 @@
 using GB.Emulator.Core;
-using GB.Emulator.Display;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Text.RegularExpressions;

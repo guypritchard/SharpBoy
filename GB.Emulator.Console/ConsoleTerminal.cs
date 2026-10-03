@@ -2,7 +2,6 @@
 using System;
 using System.Text;
 using System.Threading;
-using GB.Emulator.Display;
 
 namespace GB.Emulator;
 

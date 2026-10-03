@@ -1,5 +1,5 @@
 using GB.Emulator.Core;
-using GB.Emulator.Display;
+using GB.Emulator.Core.Rendering;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;

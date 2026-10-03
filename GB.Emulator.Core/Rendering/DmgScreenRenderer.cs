@@ -1,7 +1,7 @@
 using System;
 using GB.Emulator.Core;
 
-namespace GB.Emulator.Display
+namespace GB.Emulator.Core.Rendering
 {
     /// <summary>
     /// Builds a DMG screen preview from current memory contents. This is a

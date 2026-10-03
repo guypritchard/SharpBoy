@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using GB.Emulator.Core.InputOutput;
 
 namespace GB.Emulator.Core
@@ -9,15 +8,16 @@ namespace GB.Emulator.Core
     public class Gameboy
     {
         private readonly Cpu cpu;
+        private readonly RomDisassembler disassembler;
         private readonly MemoryMap memory;
         private readonly Video video;
         private readonly Lcd lcd;
         private readonly SpriteTileManager spriteTileManager;
         private readonly BackgroundTileManager backgroundTileManager;
-        private readonly Ram ramBank1;
-        private readonly Ram ramBank2;
-        private readonly Ram ramBank3;
-        private readonly Ram internalRam;
+        private readonly Ram cartridgeRam;
+        private readonly Ram workRamBank0;
+        private readonly Ram workRamBank1;
+        private readonly Ram highRam;
         private readonly Ram io;
         private readonly Interrupt interrupt;
         private readonly Apu apu;
@@ -33,10 +33,10 @@ namespace GB.Emulator.Core
             this.lcd = new Lcd();
             this.spriteTileManager = new SpriteTileManager();
             this.backgroundTileManager = new BackgroundTileManager();
-            this.ramBank1 = new Ram("RAM0", 0xA000, 0xBFFF);
-            this.ramBank2 = new Ram("RAM1", 0xC000, 0xCFFF);
-            this.ramBank3 = new Ram("RAM2", 0xD000, 0xDFFF);
-            this.internalRam = new Ram("Internal RAM", 0xFF80, 0xFFFE);
+            this.cartridgeRam = new Ram("RAM0", 0xA000, 0xBFFF);
+            this.workRamBank0 = new Ram("RAM1", 0xC000, 0xCFFF);
+            this.workRamBank1 = new Ram("RAM2", 0xD000, 0xDFFF);
+            this.highRam = new Ram("Internal RAM", 0xFF80, 0xFFFE);
             this.io = new Ram("I/O", 0xFF00, 0xFF4C);
             this.interrupt = new Interrupt();
             this.apu = new Apu();
@@ -49,10 +49,10 @@ namespace GB.Emulator.Core
                 this.lcd,
                 this.spriteTileManager,
                 this.backgroundTileManager,
-                this.ramBank1,
-                this.ramBank2,
-                this.ramBank3,
-                this.internalRam,
+                this.cartridgeRam,
+                this.workRamBank0,
+                this.workRamBank1,
+                this.highRam,
                 this.timer,
                 this.apu,
                 this.serial,
@@ -60,13 +60,9 @@ namespace GB.Emulator.Core
                 this.interrupt);
             this.video = new Video(this.lcd);
             this.cpu = new Cpu(this.memory, this.video, this.serial, this.apu, this.timer);
-            this.serial.InterruptRequested += (_, _) =>
-                this.memory.Write8((byte)(this.memory.Peek(0xFF0F) | 0x08), 0xFF0F);
-            this.joypad.InterruptRequested += (_, _) =>
-            {
-                this.memory.Write8((byte)(this.memory.Peek(0xFF0F) | 0x10), 0xFF0F);
-                this.cpu.WakeFromStop();
-            };
+            this.disassembler = new RomDisassembler(this.cpu);
+            this.serial.InterruptRequested += this.OnSerialInterruptRequested;
+            this.joypad.InterruptRequested += this.OnJoypadInterruptRequested;
         }
 
         public Cpu Cpu => this.cpu;
@@ -96,23 +92,28 @@ namespace GB.Emulator.Core
         {
             this.cartridge = newCartridge;
             this.romData = newCartridge.Data;
+            this.ResetHardware();
+            this.memory.LoadRom(this.romData);
+            Cpu.Registers.Reset();
+            this.cpu.ResetExecutionState();
+        }
+
+        private void ResetHardware()
+        {
             this.memory.Reset();
             this.lcd.Reset();
             this.apu.Reset();
             this.timer.Reset();
             this.joypad.Reset();
             this.serial.Reset();
-            this.ramBank1.Reset();
-            this.ramBank2.Reset();
-            this.ramBank3.Reset();
-            this.internalRam.Reset();
+            this.cartridgeRam.Reset();
+            this.workRamBank0.Reset();
+            this.workRamBank1.Reset();
+            this.highRam.Reset();
             this.io.Reset();
             this.interrupt.Reset();
             this.spriteTileManager.Reset();
             this.backgroundTileManager.Reset();
-            this.memory.LoadRom(this.romData);
-            Cpu.Registers.Reset();
-            this.cpu.ResetExecutionState();
         }
 
         public void Execute(Cartridge newCartridge)
@@ -123,20 +124,14 @@ namespace GB.Emulator.Core
 
         public void ExecuteLoadedRom()
         {
-            if (this.romData.Length == 0)
-            {
-                throw new InvalidOperationException("A cartridge must be loaded before executing.");
-            }
+            this.EnsureCartridgeLoaded("executing");
 
             this.cpu.Execute(this.romData);
         }
 
         public CpuStepResult Step()
         {
-            if (this.romData.Length == 0)
-            {
-                throw new InvalidOperationException("A cartridge must be loaded before stepping.");
-            }
+            this.EnsureCartridgeLoaded("stepping");
 
             this.memory.UseAccessRecorder(this.debuggerAccesses);
             return this.cpu.ExecuteNextInstruction(this.romData);
@@ -145,137 +140,51 @@ namespace GB.Emulator.Core
         /// <summary>Runs one instruction without collecting debugger access traces.</summary>
         public bool RunStep()
         {
-            if (this.romData.Length == 0)
-                throw new InvalidOperationException("A cartridge must be loaded before running.");
+            this.EnsureCartridgeLoaded("running");
             this.memory.UseAccessRecorder(SilentMemoryAccessRecorder.Instance);
             this.cpu.ExecuteNextInstructionFast(this.romData);
             return this.cpu.IsStopped;
         }
 
-        public IReadOnlyList<CpuStepResult> GetInstructionWindow(int instructionsBefore, int instructionsAfter)
+        public IReadOnlyList<CpuStepResult> GetInstructionWindow(int instructionsBefore, int instructionsAfter) =>
+            this.disassembler.GetInstructionWindow(this.romData, Cpu.Registers.PC, instructionsBefore, instructionsAfter);
+
+        public IReadOnlyList<CpuStepResult> GetDisassembly() =>
+            this.disassembler.GetDisassembly(this.romData);
+
+        private void EnsureCartridgeLoaded(string operation)
         {
             if (this.romData.Length == 0)
             {
-                return Array.Empty<CpuStepResult>();
+                throw new InvalidOperationException($"A cartridge must be loaded before {operation}.");
             }
-
-            var queue = new Queue<CpuStepResult>();
-            int address = 0;
-            CpuStepResult? current = null;
-
-            while (address < Math.Min(this.romData.Length, 0x8000))
-            {
-                CpuStepResult decoded = this.cpu.DecodeInstruction(this.romData, (ushort)address);
-                queue.Enqueue(decoded);
-                if (queue.Count > instructionsBefore + 1)
-                {
-                    queue.Dequeue();
-                }
-
-                int length = decoded.Instruction.Length;
-                if (length <= 0)
-                {
-                    length = 1;
-                }
-
-                address += length;
-
-                if (decoded.Address == Cpu.Registers.PC)
-                {
-                    current = decoded;
-                    break;
-                }
-            }
-
-            if (current == null)
-            {
-                return Array.Empty<CpuStepResult>();
-            }
-
-            var window = queue.ToList();
-
-            int nextLength = current.Instruction.Length;
-            if (nextLength <= 0)
-            {
-                nextLength = 1;
-            }
-
-            int nextAddress = current.Address + nextLength;
-
-            for (int i = 0; i < instructionsAfter && nextAddress < Math.Min(this.romData.Length, 0x8000); i++)
-            {
-                CpuStepResult next = this.cpu.DecodeInstruction(this.romData, (ushort)nextAddress);
-                window.Add(next);
-                int length = next.Instruction.Length;
-                if (length <= 0)
-                {
-                    length = 1;
-                }
-
-                nextAddress += length;
-            }
-
-            return window;
         }
 
-        public IReadOnlyList<CpuStepResult> GetDisassembly()
+        private void OnSerialInterruptRequested(object? sender, EventArgs e) =>
+            this.RequestInterrupt(0x08);
+
+        private void OnJoypadInterruptRequested(object? sender, EventArgs e)
         {
-            if (this.romData.Length == 0)
-            {
-                return Array.Empty<CpuStepResult>();
-            }
+            this.RequestInterrupt(0x10);
+            this.cpu.WakeFromStop();
+        }
 
-            var results = new List<CpuStepResult>();
-            int address = 0;
-
-            while (address < Math.Min(this.romData.Length, 0x8000))
-            {
-                CpuStepResult decoded;
-                try
-                {
-                    decoded = this.cpu.DecodeInstruction(this.romData, (ushort)address);
-                }
-                catch (ArgumentOutOfRangeException)
-                {
-                    break;
-                }
-
-                results.Add(decoded);
-
-                int length = decoded.Instruction.Length;
-                if (length <= 0)
-                {
-                    length = 1;
-                }
-
-                address += length;
-            }
-
-            return results;
+        private void RequestInterrupt(byte interruptMask)
+        {
+            const ushort interruptRequestAddress = 0xFF0F;
+            byte pending = this.memory.Peek(interruptRequestAddress);
+            this.memory.Write8((byte)(pending | interruptMask), interruptRequestAddress);
         }
 
         public GameboyState CaptureState()
         {
-            var registers = new CpuRegistersState(
-                Cpu.Registers.A,
-                Cpu.Registers.F,
-                Cpu.Registers.B,
-                Cpu.Registers.C,
-                Cpu.Registers.D,
-                Cpu.Registers.E,
-                Cpu.Registers.H,
-                Cpu.Registers.L,
-                Cpu.Registers.Flags,
-                Cpu.Registers.SP,
-                Cpu.Registers.PC);
-
             return new GameboyState(
-                registers,
+                Cpu.Registers.CaptureState(),
                 this.memory.Snapshot(),
-                this.ramBank1.Snapshot(),
-                this.ramBank2.Snapshot(),
-                this.ramBank3.Snapshot(),
-                this.internalRam.Snapshot(),
+                this.cartridgeRam.Snapshot(),
+                this.workRamBank0.Snapshot(),
+                this.workRamBank1.Snapshot(),
+                this.highRam.Snapshot(),
                 this.io.Snapshot(),
                 this.memory.CaptureCartridgeState(),
                 this.timer.Snapshot(),
@@ -296,23 +205,13 @@ namespace GB.Emulator.Core
                 throw new ArgumentNullException(nameof(state));
             }
 
-            Cpu.Registers.A = state.Registers.A;
-            Cpu.Registers.F = state.Registers.F;
-            Cpu.Registers.B = state.Registers.B;
-            Cpu.Registers.C = state.Registers.C;
-            Cpu.Registers.D = state.Registers.D;
-            Cpu.Registers.E = state.Registers.E;
-            Cpu.Registers.H = state.Registers.H;
-            Cpu.Registers.L = state.Registers.L;
-            Cpu.Registers.Flags = state.Registers.Flags;
-            Cpu.Registers.SP = state.Registers.SP;
-            Cpu.Registers.PC = state.Registers.PC;
+            Cpu.Registers.RestoreState(state.Registers);
 
             this.memory.RestoreSnapshot(state.Memory);
-            this.ramBank1.Restore(state.RamBank1);
-            this.ramBank2.Restore(state.RamBank2);
-            this.ramBank3.Restore(state.RamBank3);
-            this.internalRam.Restore(state.InternalRam);
+            this.cartridgeRam.Restore(state.RamBank1);
+            this.workRamBank0.Restore(state.RamBank2);
+            this.workRamBank1.Restore(state.RamBank3);
+            this.highRam.Restore(state.InternalRam);
             this.io.Restore(state.Io);
             this.memory.RestoreCartridgeState(state.CartridgeState);
             this.timer.Restore(state.TimerState);

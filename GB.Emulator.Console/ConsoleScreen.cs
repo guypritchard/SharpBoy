@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 using GB.Emulator.Core;
-using GB.Emulator.Display;
+using GB.Emulator.Core.Rendering;
 
 namespace GB.Emulator
 {

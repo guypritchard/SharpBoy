@@ -8,6 +8,9 @@ namespace GB.Emulator.Core
 {
     public class MemoryMap
     {
+        private const ushort OamDmaAddress = 0xFF46;
+        private const ushort OamStartAddress = 0xFE00;
+        private const int OamLength = 0xA0;
         private readonly byte[] memory;
         private readonly List<IMemoryRange> devices;
         private readonly IMemoryRange[] deviceByAddress = new IMemoryRange[ushort.MaxValue + 1];
@@ -37,27 +40,43 @@ namespace GB.Emulator.Core
 
         public void LoadRom(byte[] romData)
         {
-            // Drop any previously loaded ROM device so the new one wins for 0x0000.
+            this.RemoveCartridgeDevices();
+
+            int copyLength = Math.Min(romData.Length, this.memory.Length);
+            Array.Copy(romData, 0, this.memory, 0, copyLength);
+            this.AddCartridgeDevices(romData);
+            this.RebuildDeviceMap();
+        }
+
+        private void RemoveCartridgeDevices()
+        {
             IMemoryRange oldMbcRom = this.mbc3?.Rom;
             IMemoryRange oldMbcRam = this.mbc3?.Ram;
             this.devices.RemoveAll(d => d is Rom || ReferenceEquals(d, oldMbcRom) ||
                 ReferenceEquals(d, oldMbcRam));
             this.mbc3 = null;
+        }
 
-            int copyLength = Math.Min(romData.Length, this.memory.Length);
-            Array.Copy(romData, 0, this.memory, 0, copyLength);
-
+        private void AddCartridgeDevices(byte[] romData)
+        {
             // Insert cartridge windows first so they win over the generic address-space backing.
             byte type = romData.Length > 0x149 ? romData[0x147] : (byte)0;
             if (type is >= 0x11 and <= 0x13)
             {
-                int ramSize = romData[0x149] switch { 2 => 0x2000, 3 => 0x8000, _ => 0 };
+                int ramSize = romData[0x149] switch
+                {
+                    2 => 0x2000,
+                    3 => 0x8000,
+                    _ => 0
+                };
                 this.mbc3 = new Mbc3(romData, ramSize);
                 this.devices.Insert(0, this.mbc3.Ram);
                 this.devices.Insert(0, this.mbc3.Rom);
             }
-            else this.devices.Insert(0, new Rom("ROM0", romData));
-            this.RebuildDeviceMap();
+            else
+            {
+                this.devices.Insert(0, new Rom("ROM0", romData));
+            }
         }
 
         internal Mbc3.State? CaptureCartridgeState() => this.mbc3?.Snapshot();
@@ -68,7 +87,10 @@ namespace GB.Emulator.Core
 
         internal void RestoreCartridgeState(Mbc3.State? state)
         {
-            if (state.HasValue) this.mbc3?.Restore(state.Value);
+            if (state.HasValue)
+            {
+                this.mbc3?.Restore(state.Value);
+            }
         }
 
         public void Write8(byte value, ushort location)
@@ -76,37 +98,47 @@ namespace GB.Emulator.Core
             try
             {
                 this.memory[location] = value;
-
-                var device = this.deviceByAddress[location];
-                if (device != null)
-                {
-                    try
-                    {
-                        device.Write8(location, value);
-                    }
-                    catch (NotImplementedException)
-                    {
-                        // The device doesn't support writing yet...
-                        this.memory[location] = value;
-                    }
-                }
-
+                this.WriteMappedDevice(location, value);
                 this.accessRecorder.RecordWrite(location);
 
-                if (location == 0xFF46)
+                if (location == OamDmaAddress)
                 {
-                    ushort source = (ushort)(value << 8);
-                    for (int offset = 0; offset < 0xA0; offset++)
-                    {
-                        byte oamValue = this.Read8((ushort)(source + offset));
-                        this.Write8(oamValue, (ushort)(0xFE00 + offset));
-                    }
+                    this.TransferOam(value);
                 }
             }
             catch (IndexOutOfRangeException)
             {
                 Trace.WriteLine($"Error writing {location:X2}:{value}");
                 throw;
+            }
+        }
+
+        private void WriteMappedDevice(ushort address, byte value)
+        {
+            IMemoryRange device = this.deviceByAddress[address];
+            if (device == null)
+            {
+                return;
+            }
+
+            try
+            {
+                device.Write8(address, value);
+            }
+            catch (NotImplementedException)
+            {
+                // Incomplete devices retain writes in the backing memory.
+                this.memory[address] = value;
+            }
+        }
+
+        private void TransferOam(byte sourcePage)
+        {
+            ushort sourceAddress = (ushort)(sourcePage << 8);
+            for (int offset = 0; offset < OamLength; offset++)
+            {
+                byte value = this.Read8((ushort)(sourceAddress + offset));
+                this.Write8(value, (ushort)(OamStartAddress + offset));
             }
         }
 
@@ -144,29 +176,34 @@ namespace GB.Emulator.Core
         {
             try
             {
-                var device = this.deviceByAddress[location];
                 this.accessRecorder.RecordRead(location);
-                if (device != null)
-                {
-                    try
-                    {
-                        byte value = device.Read8(location);
-                        this.memory[location] = value;
-                        return value;
-                    }
-                    catch (NotImplementedException)
-                    {
-                        // The device doesn't support reading `yet...
-                        return this.memory[location];
-                    }
-                }
-
-                return this.memory[location];
+                return this.ReadMappedDevice(location);
             }
             catch (IndexOutOfRangeException)
             {
                 Trace.WriteLine($"Error reading {location:X2}");
                 throw;
+            }
+        }
+
+        private byte ReadMappedDevice(ushort address)
+        {
+            IMemoryRange device = this.deviceByAddress[address];
+            if (device == null)
+            {
+                return this.memory[address];
+            }
+
+            try
+            {
+                byte value = device.Read8(address);
+                this.memory[address] = value;
+                return value;
+            }
+            catch (NotImplementedException)
+            {
+                // Incomplete devices read from the backing memory.
+                return this.memory[address];
             }
         }
 
@@ -178,7 +215,10 @@ namespace GB.Emulator.Core
 
         internal void UseAccessRecorder(IMemoryAccessRecorder recorder)
         {
-            if (ReferenceEquals(this.accessRecorder, recorder)) return;
+            if (ReferenceEquals(this.accessRecorder, recorder))
+            {
+                return;
+            }
             recorder.Reset();
             this.accessRecorder = recorder;
         }
@@ -191,7 +231,9 @@ namespace GB.Emulator.Core
             {
                 IMemoryRange device = this.devices[i];
                 for (int address = device.Start; address <= device.End; address++)
+                {
                     this.deviceByAddress[address] = device;
+                }
             }
         }
 
@@ -202,12 +244,33 @@ namespace GB.Emulator.Core
                 throw new ArgumentOutOfRangeException(nameof(address));
             }
 
-            if (address == 0xFF00 && this.joypad != null) return this.joypad.Read8(address);
-            if (address is 0xFF01 or 0xFF02 && this.serial != null) return this.serial.Read8(address);
-            if (address is >= 0xFF10 and <= 0xFF3F && this.apu != null) return this.apu.Read8(address);
-            if (address is >= 0xFF04 and <= 0xFF07 && this.timer != null) return this.timer.Read8(address);
+            // Live registers may change between bus accesses. Inspect them without
+            // updating the backing memory or recording debugger activity.
+            if (address == 0xFF00 && this.joypad != null)
+            {
+                return this.joypad.Read8(address);
+            }
+
+            if (address is 0xFF01 or 0xFF02 && this.serial != null)
+            {
+                return this.serial.Read8(address);
+            }
+
+            if (address is >= 0xFF10 and <= 0xFF3F && this.apu != null)
+            {
+                return this.apu.Read8(address);
+            }
+
+            if (address is >= 0xFF04 and <= 0xFF07 && this.timer != null)
+            {
+                return this.timer.Read8(address);
+            }
+
             if (this.mbc3 != null && (address <= 0x7FFF || address is >= 0xA000 and <= 0xBFFF))
+            {
                 return this.deviceByAddress[address].Read8(address);
+            }
+
             return this.memory[address];
         }
 
@@ -215,19 +278,24 @@ namespace GB.Emulator.Core
         {
             var copy = new byte[this.memory.Length];
             Array.Copy(this.memory, copy, copy.Length);
-            if (this.joypad != null) copy[0xFF00] = this.joypad.Read8(0xFF00);
-            if (this.serial != null)
-            {
-                copy[0xFF01] = this.serial.Read8(0xFF01);
-                copy[0xFF02] = this.serial.Read8(0xFF02);
-            }
-            if (this.apu != null)
-                for (ushort address = 0xFF10; address <= 0xFF3F; address++)
-                    copy[address] = this.apu.Read8(address);
-            if (this.timer != null)
-                for (ushort address = 0xFF04; address <= 0xFF07; address++)
-                    copy[address] = this.timer.Read8(address);
+            this.CopyDeviceRegisters(this.joypad, copy);
+            this.CopyDeviceRegisters(this.serial, copy);
+            this.CopyDeviceRegisters(this.apu, copy);
+            this.CopyDeviceRegisters(this.timer, copy);
             return copy;
+        }
+
+        private void CopyDeviceRegisters(IMemoryRange device, byte[] snapshot)
+        {
+            if (device == null)
+            {
+                return;
+            }
+
+            for (int address = device.Start; address <= device.End; address++)
+            {
+                snapshot[address] = device.Read8((ushort)address);
+            }
         }
 
         public void RestoreSnapshot(byte[] snapshot)
