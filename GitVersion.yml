@@ -1,0 +1,4 @@
+workflow: GitHubFlow/v1
+
+# The initial release is anchored by the v0.5.1 Git tag. Subsequent patch,
+# minor, and major versions follow GitVersion's branch and commit rules.

@@ -1,28 +1,96 @@
-name: .NET
+name: Windows emulator build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [master]
+    tags: ['v*']
   pull_request:
-    branches: [ "master" ]
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
-      with:
-        persist-credentials: false
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v2
-      with:
-        dotnet-version: 10.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name: Checkout full history for GitVersion
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v4.7.0
+        with:
+          versionSpec: 6.8.x
+
+      - name: Calculate version
+        id: version
+        uses: gittools/actions/gitversion/execute@v4.7.0
+
+      - name: Build and test
+        shell: pwsh
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.semVer }}
+          ASSEMBLY_VERSION: ${{ steps.version.outputs.assemblySemVer }}
+          FILE_VERSION: ${{ steps.version.outputs.assemblySemFileVer }}
+          INFORMATIONAL_VERSION: ${{ steps.version.outputs.informationalVersion }}
+        run: |
+          $versionArgs = @(
+            "-p:Version=$env:BUILD_VERSION"
+            "-p:AssemblyVersion=$env:ASSEMBLY_VERSION"
+            "-p:FileVersion=$env:FILE_VERSION"
+            "-p:InformationalVersion=$env:INFORMATIONAL_VERSION"
+            '-p:IncludeSourceRevisionInInformationalVersion=false'
+          )
+          dotnet restore GB.Emulator.sln
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build GB.Emulator.Console/GB.Emulator.Console.csproj -c Release --no-restore @versionArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build GB.Debugger/GB.Debugger.csproj -c Release --no-restore @versionArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet test GB.Emulator.Tests/GB.Emulator.Tests.csproj -c Release --no-restore @versionArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Publish Windows applications
+        shell: pwsh
+        env:
+          BUILD_VERSION: ${{ steps.version.outputs.semVer }}
+          ASSEMBLY_VERSION: ${{ steps.version.outputs.assemblySemVer }}
+          FILE_VERSION: ${{ steps.version.outputs.assemblySemFileVer }}
+          INFORMATIONAL_VERSION: ${{ steps.version.outputs.informationalVersion }}
+        run: |
+          $versionArgs = @(
+            "-p:Version=$env:BUILD_VERSION"
+            "-p:AssemblyVersion=$env:ASSEMBLY_VERSION"
+            "-p:FileVersion=$env:FILE_VERSION"
+            "-p:InformationalVersion=$env:INFORMATIONAL_VERSION"
+            '-p:IncludeSourceRevisionInInformationalVersion=false'
+          )
+          foreach ($runtime in @('win-x64', 'win-arm64')) {
+            dotnet publish GB.Emulator.Console/GB.Emulator.Console.csproj -c Release -r $runtime --self-contained true -o "artifacts/console/$runtime" @versionArgs
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            dotnet publish GB.Debugger/GB.Debugger.csproj -c Release -r $runtime --self-contained true -o "artifacts/debugger/$runtime" @versionArgs
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      - name: Upload console emulator
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-${{ steps.version.outputs.semVer }}-windows
+          path: artifacts/console/
+          if-no-files-found: error
+
+      - name: Upload debugger
+        uses: actions/upload-artifact@v4
+        with:
+          name: debugger-${{ steps.version.outputs.semVer }}-windows
+          path: artifacts/debugger/
+          if-no-files-found: error

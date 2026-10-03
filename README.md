@@ -3,6 +3,21 @@
 
 A basic Gameboy emulator.
 
+## Windows builds and versioning
+
+The [Windows build](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml)
+runs on pushes and pull requests to `master`, on version tags, and on manual
+dispatch. It builds the console emulator and WinForms debugger, runs the tests,
+and uploads self-contained `win-x64` and `win-arm64` builds of each app as
+separate artifacts. Download an artifact and run `GB.Emulator.Console.exe` or
+`GB.Debugger.exe` from the folder for your processor architecture.
+
+GitVersion uses GitHub Flow. The `v0.5.1` tag marks the initial version;
+later versions are calculated from Git history. Tag a release commit with
+`v<major>.<minor>.<patch>` to fix its release version. Commit messages can
+request a larger increment with `+semver: minor` or `+semver: major`.
+The calculated version is applied to the .NET assemblies and artifact names.
+
 ## Architecture
 
 `GB.Emulator.Core` owns the hardware: CPU execution, the memory bus, LCD timing,
