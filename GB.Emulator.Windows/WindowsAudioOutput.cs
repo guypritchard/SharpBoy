@@ -3,7 +3,7 @@ using System;
 using System.Runtime.InteropServices;
 using GB.Emulator.Core.InputOutput;
 
-namespace GB.Emulator.Audio;
+namespace GB.Emulator.Windows;
 
 /// <summary>Small bounded waveOut queue for the APU's signed 16-bit stereo PCM.</summary>
 public sealed class WindowsAudioOutput : IDisposable

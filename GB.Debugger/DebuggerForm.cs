@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using GB.Emulator.Core;
-using GB.Emulator.Audio;
+using GB.Emulator.Windows;
 using GB.Emulator.Core.Rendering;
 
 namespace GB.Debugger;

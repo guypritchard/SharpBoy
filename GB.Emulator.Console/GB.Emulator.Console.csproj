@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Shared\WindowsAudioOutput.cs" Link="Audio\WindowsAudioOutput.cs" />
+    <ProjectReference Include="..\GB.Emulator.Windows\GB.Emulator.Windows.csproj" />
   </ItemGroup>
 
   <ItemGroup>

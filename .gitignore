@@ -332,3 +332,6 @@ ASALocalRun/
 #Roms
 *.gb
 !GB.Roms/*.gb
+
+# Generated architecture impact reports are PR attachments, not repository docs.
+/[Dd]ocs/architecture-impact/
