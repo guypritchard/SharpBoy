@@ -25,15 +25,31 @@ public class CartridgeSupportTests
     }
 
     [TestMethod]
-    public void RomOnlyCartridgeIsSupportedAndMbc1IsReportedUnsupported()
+    public void RomOnlyAndMbc1CartridgesAreSupported()
     {
         Cartridge plain = CreateCartridge(0, 0, 0, 32768);
         Assert.AreEqual(CartridgeSupportLevel.Supported, CartridgeSupport.Assess(plain).Level);
 
         Cartridge mbc1 = CreateCartridge(1, 1, 0, 65536);
         CartridgeSupport support = CartridgeSupport.Assess(mbc1);
-        Assert.AreEqual(CartridgeSupportLevel.Unsupported, support.Level);
-        Assert.IsTrue(support.Missing.Any(item => item.Contains("MBC1")));
+        Assert.AreEqual(CartridgeSupportLevel.Supported, support.Level);
+        Assert.IsTrue(support.Available.Contains("MBC1 ROM bank switching"));
+        Assert.IsFalse(support.Missing.Any(item => item.Contains("MBC1")));
+    }
+
+    [TestMethod]
+    public void Mbc1BatterySavesArePartialAndUnsupportedSizesAreReported()
+    {
+        CartridgeSupport battery = CartridgeSupport.Assess(CreateCartridge(3, 4, 3, 0x80000));
+        Assert.AreEqual(CartridgeSupportLevel.Partial, battery.Level);
+        Assert.IsTrue(battery.Available.Contains("MBC1 RAM bank switching"));
+        Assert.IsTrue(battery.Missing.Any(item => item.Contains("save files")));
+        Assert.AreEqual(CartridgeSupportLevel.Unsupported,
+            CartridgeSupport.Assess(CreateCartridge(2, 6, 3, 0x200000)).Level);
+        Assert.AreEqual(CartridgeSupportLevel.Unsupported,
+            CartridgeSupport.Assess(CreateCartridge(1, 7, 0, 0x400000)).Level);
+        Assert.AreEqual(CartridgeSupportLevel.Unsupported,
+            CartridgeSupport.Assess(CreateCartridge(2, 4, 4, 0x80000)).Level);
     }
 
     [TestMethod]

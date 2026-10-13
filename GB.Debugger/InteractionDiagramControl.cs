@@ -23,6 +23,34 @@ internal sealed partial class InteractionDiagramControl : Control
     private byte scanline;
     private byte previousScanline;
     private bool hasRom;
+    private Cartridge? diagramCartridge;
+    private CartridgeSupport? cartridgeSupport;
+    private int lowerRomBank;
+    private int upperRomBank = 1;
+    private int? ramBank;
+    private bool ramEnabled;
+    private string bankingMode = "Fixed ROM";
+
+    public void ShowCartridge(Cartridge? cartridge, MemoryMap memory)
+    {
+        if (!ReferenceEquals(this.diagramCartridge, cartridge))
+        {
+            this.diagramCartridge = cartridge;
+            this.cartridgeSupport = cartridge == null ? null : CartridgeSupport.Assess(cartridge);
+            this.ClearHistory();
+        }
+        this.lowerRomBank = memory.SelectedLowerRomBank;
+        this.upperRomBank = memory.SelectedRomBank;
+        this.ramBank = memory.SelectedCartridgeRamBank;
+        this.ramEnabled = memory.CartridgeRamEnabled;
+        this.bankingMode = memory.CartridgeBankingMode;
+        this.Invalidate();
+    }
+
+    private bool HasBankController => this.cartridgeSupport is { MapperName: not "None" };
+    private bool HasActiveMapper => this.HasBankController && this.ramBank.HasValue;
+    private HardwareNode ClassifyWrite(ushort address) => address <= 0x7FFF && this.HasBankController
+        ? HardwareNode.CartridgeMapper : Classify(address);
 
     public InteractionDiagramControl()
     {
@@ -54,7 +82,7 @@ internal sealed partial class InteractionDiagramControl : Control
         this.hasRom = romLoaded;
         foreach (Traffic traffic in this.activity) traffic.Clear();
         foreach (ushort address in readAddresses) this.activity[(int)Classify(address)].Reads++;
-        foreach (ushort address in writtenAddresses) this.activity[(int)Classify(address)].Writes++;
+        foreach (ushort address in writtenAddresses) this.activity[(int)this.ClassifyWrite(address)].Writes++;
         if (result != null) this.activity[(int)Classify(result.Address)].Fetches++;
         if (!tracing && result != null) this.RecordActivity(result, readAddresses, writtenAddresses, StepAccessPulse);
         this.Invalidate();
@@ -81,7 +109,7 @@ internal sealed partial class InteractionDiagramControl : Control
         }
         foreach (ushort address in writes)
         {
-            Heat node = this.heat[(int)Classify(address)];
+            Heat node = this.heat[(int)this.ClassifyWrite(address)];
             node.Write = Math.Min(1, node.Write + amount);
         }
         Heat fetch = this.heat[(int)Classify(result.Address)];
@@ -171,7 +199,7 @@ internal sealed partial class InteractionDiagramControl : Control
 
     private enum HardwareNode
     {
-        CartridgeRom, CartridgeRam, WorkRam0, WorkRam1, VideoRam, Oam, Lcd, Apu,
+        CartridgeRom, CartridgeRam, CartridgeMapper, WorkRam0, WorkRam1, VideoRam, Oam, Lcd, Apu,
         Joypad, Serial, Io, HighRam, Interrupt, Other
     }
 

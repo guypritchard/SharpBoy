@@ -23,8 +23,9 @@ internal sealed partial class InteractionDiagramControl
 
     private static readonly ChipSpec[] Chips =
     {
-        new(HardwareNode.CartridgeRom, "GAME ROM", "0000–7FFF", "Code + game data", new(425, 183, 145, 86), Coral),
-        new(HardwareNode.CartridgeRam, "SAVE RAM", "A000–BFFF", "Cartridge memory", new(585, 183, 145, 86), Coral),
+        new(HardwareNode.CartridgeRom, "GAME ROM", "0000–7FFF", "Code + game data", new(425, 183, 145, 72), Coral),
+        new(HardwareNode.CartridgeRam, "SAVE RAM", "A000–BFFF", "Cartridge memory", new(585, 183, 145, 72), Coral),
+        new(HardwareNode.CartridgeMapper, "MAPPER", "0000–7FFF writes", "Bank controls", new(425, 269, 305, 58), Violet),
         new(HardwareNode.WorkRam0, "WORK RAM 0", "C000–CFFF", "Working data", new(75, 526, 235, 68), Violet),
         new(HardwareNode.WorkRam1, "WORK RAM 1", "D000–DFFF", "More working data", new(75, 608, 235, 68), Violet),
         new(HardwareNode.HighRam, "HIGH RAM", "FF80–FFFE", "Small, fast workspace", new(75, 690, 235, 68), Violet),
@@ -73,13 +74,18 @@ internal sealed partial class InteractionDiagramControl
         g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
         DrawPoster(g);
         this.DrawConnections(g);
-        foreach (ChipSpec chip in Chips) this.DrawChip(g, chip);
+        foreach (ChipSpec chip in Chips)
+        {
+            if (chip.Node == HardwareNode.CartridgeMapper) this.DrawMapper(g, chip.Bounds);
+            else this.DrawChip(g, chip);
+        }
+        this.DrawCartridgeProfile(g);
         this.DrawCpu(g);
         DrawLabel(g, this.hasRom ? $"PC  {this.pc:X4}   •   LY  {this.scanline:000}" : "LOAD A CARTRIDGE TO BEGIN",
             13, ReadColor, new(785, 65, 295, 24), true);
     }
 
-    private static void DrawPoster(Graphics g)
+    private void DrawPoster(Graphics g)
     {
         DrawLabel(g, "INSIDE A GAME BOY", 38, Silk, new(38, 20, 720, 48), true);
         DrawLabel(g, "An exploded journey from cartridge to pixels, buttons and sound.",
@@ -96,14 +102,17 @@ internal sealed partial class InteractionDiagramControl
         }
 
         // Cartridge shell lifted away from its board, with exposed gold contacts.
-        Round(g, new(382, 119, 350, 161), Color.FromArgb(83, 87, 107), Color.FromArgb(113, 120, 141), 16);
-        Round(g, new(405, 137, 350, 160), Color.FromArgb(49, 67, 62), Coral, 14);
+        Round(g, new(382, 119, 350, 201), Color.FromArgb(83, 87, 107), Color.FromArgb(113, 120, 141), 16);
+        Round(g, new(405, 137, 350, 200), Color.FromArgb(49, 67, 62), Coral, 14);
         DrawLabel(g, "01  /  THE CARTRIDGE", 17, Coral, new(425, 144, 300, 29), true);
         using (var pins = new SolidBrush(Color.FromArgb(239, 194, 92)))
-            for (int x = 434; x < 731; x += 17) g.FillRectangle(pins, x, 286, 10, 16);
+            for (int x = 434; x < 731; x += 17) g.FillRectangle(pins, x, 331, 10, 10);
         DrawLabel(g, "A whole world, plugged in.", 16, Coral, new(43, 176, 300, 28), true);
         DrawLabel(g, "ROM supplies the instructions.", 14, Muted, new(43, 213, 320, 24));
-        DrawLabel(g, "Cartridge RAM holds game data.", 14, Muted, new(43, 241, 320, 24));
+        DrawLabel(g, this.HasBankController ? "The mapper selects visible banks." : "Fixed ROM needs no bank controller.",
+            14, Muted, new(43, 241, 320, 24));
+        DrawLabel(g, this.HasBankController ? "Writes to ROM addresses control it." : "Load a cartridge to inspect its hardware.",
+            13, Muted, new(43, 269, 320, 24));
 
         Round(g, new(39, 361, 303, 602), Color.FromArgb(47, 43, 77), Violet, 22);
         DrawLabel(g, "02  /  UNDER THE SHELL", 16, Violet, new(61, 373, 265, 29), true);
@@ -172,6 +181,12 @@ internal sealed partial class InteractionDiagramControl
             float y = b.Top + b.Height / 2;
             PointF[] path = chip.Node switch
             {
+                HardwareNode.CartridgeRom or HardwareNode.CartridgeRam when this.HasBankController => new[] {
+                    new PointF(577, 269), new PointF(577, 262),
+                    new PointF(b.Left + b.Width / 2, 262), new PointF(b.Left + b.Width / 2, b.Bottom) },
+                HardwareNode.CartridgeMapper => new[] {
+                    new PointF(310, 454), new PointF(364, 454), new PointF(364, 343),
+                    new PointF(577, 343), new PointF(577, b.Bottom) },
                 HardwareNode.CartridgeRom or HardwareNode.CartridgeRam => new[] {
                     new PointF(310, 454), new PointF(364, 454), new PointF(364, 320),
                     new PointF(b.Left + b.Width / 2, 320), new PointF(b.Left + b.Width / 2, b.Bottom) },
@@ -184,6 +199,18 @@ internal sealed partial class InteractionDiagramControl
                 _ => new[] { new PointF(310, 454), new PointF(365, 454), new PointF(365, y), new PointF(b.Left, y) }
             };
             Heat heat = this.heat[(int)chip.Node];
+            if (chip.Node == HardwareNode.CartridgeMapper)
+            {
+                // The cartridge bus carries data accesses as well as mapper-register writes.
+                // Keep the controller chip's own pulse reserved for its control registers.
+                Heat rom = this.heat[(int)HardwareNode.CartridgeRom];
+                Heat ram = this.heat[(int)HardwareNode.CartridgeRam];
+                heat = new Heat
+                {
+                    Read = Math.Max(rom.Read, ram.Read),
+                    Write = Math.Max(heat.Write, ram.Write)
+                };
+            }
             DrawTrace(g, SignalFor(heat), heat.Strength, path);
         }
     }
@@ -194,10 +221,21 @@ internal sealed partial class InteractionDiagramControl
         Heat heat = this.heat[(int)chip.Node];
         Traffic traffic = this.activity[(int)chip.Node];
         Color edge = ColorBlend(chip.Accent, SignalFor(heat), heat.Strength);
+        if (chip.Node == HardwareNode.CartridgeRam && !this.HasCartridgeRam) edge = Copper;
         Round(g, b, Color.FromArgb(25, 34, 49), edge, 7);
         bool narrow = b.Width < 160;
-        DrawLabel(g, chip.Title, narrow ? 12 : 14, edge, new(b.X + 10, b.Y + 5, b.Width - 20, 22), true);
+        string title = chip.Node == HardwareNode.CartridgeRam && !this.HasCartridgeRam ? "NO SAVE RAM" : chip.Title;
+        DrawLabel(g, title, narrow ? 12 : 14, edge, new(b.X + 10, b.Y + 5, b.Width - 20, 22), true);
         DrawLabel(g, chip.Address, 11, Muted, new(b.X + 10, b.Y + 27, b.Width - 20, 17));
+        if (chip.Node is HardwareNode.CartridgeRom or HardwareNode.CartridgeRam)
+        {
+            string banks = chip.Node == HardwareNode.CartridgeRom
+                ? this.diagramCartridge == null ? "No cartridge" : $"Banks {this.lowerRomBank:X2} / {this.upperRomBank:X2}"
+                : !this.HasCartridgeRam ? "Not fitted" : this.HasActiveMapper
+                    ? $"Bank {this.ramBank:X2} · {(this.ramEnabled ? "on" : "off")}" : "Unavailable";
+            DrawLabel(g, banks, 11, Silk, new(b.X + 10, b.Y + 47, b.Width - 20, 18));
+            return;
+        }
         DrawLabel(g, chip.Node == HardwareNode.Joypad ? $"Held: {this.heldButtons}" : chip.Note,
             11, Silk, new(b.X + 10, b.Y + 47, b.Width - 20, 18));
         string counts = $"R{traffic.Reads + traffic.Fetches} W{traffic.Writes}";

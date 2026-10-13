@@ -12,7 +12,7 @@ namespace GB.Emulator.Core
             byte[] ramBank3,
             byte[] internalRam,
             byte[] io,
-            Mbc3.State? cartridgeState,
+            CartridgeMapperState cartridgeState,
             Timer.TimerState timerState,
             Apu.ApuState soundState,
             Joypad.JoypadState joypadState,
@@ -56,7 +56,7 @@ namespace GB.Emulator.Core
 
         internal byte[] Io { get; }
 
-        internal Mbc3.State? CartridgeState { get; }
+        internal CartridgeMapperState CartridgeState { get; }
 
         internal Timer.TimerState TimerState { get; }
 

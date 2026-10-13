@@ -583,8 +583,10 @@ public partial class DebuggerForm : Form
         this.cartridgeInfo.ShowBanks(this.gameboy.Memory);
         this.memoryMapDiagram.ShowStep(this.lastInteractionStep, Cpu.Registers.PC,
             this.cartridge != null, this.recentReads, this.recentWrites, this.traceRunning,
-            this.gameboy.Memory.SelectedRomBank, this.gameboy.Memory.SelectedCartridgeRamBank);
+            this.gameboy.Memory.SelectedRomBank, this.gameboy.Memory.SelectedCartridgeRamBank,
+            this.gameboy.Memory.SelectedLowerRomBank);
         this.interactionDiagram.ShowButtons(this.gameboy.Input);
+        this.interactionDiagram.ShowCartridge(this.cartridge, this.gameboy.Memory);
         byte scanline = this.gameboy.Scanline;
         this.interactionDiagram.ShowStep(
             this.lastInteractionStep,
@@ -616,7 +618,13 @@ public partial class DebuggerForm : Form
             $"CPU       PC is now 0x{Cpu.Registers.PC:X4}. The opcode came from " +
                 (this.lastInteractionStep.Address < 0x8000 ? "cartridge ROM." : "mapped memory."),
             FormatAccesses("READ", this.recentReads),
-            FormatAccesses("WRITE", this.recentWrites),
+            FormatAccesses("WRITE", this.recentWrites, mapperControls: true),
+            "MAPPER    " + (this.gameboy.Memory.SelectedCartridgeRamBank.HasValue
+                ? $"{this.gameboy.Memory.CartridgeBankingMode}; ROM banks " +
+                    $"{this.gameboy.Memory.SelectedLowerRomBank:X2} / {this.gameboy.Memory.SelectedRomBank:X2}."
+                : this.cartridge.Header.CartridgeType == CartridgeType.RomOnly
+                    ? "Fixed ROM wiring; no bank controller."
+                    : "Required cartridge controller is unavailable."),
             $"LCD       Clock advanced; scanline {this.scanlineBeforeLastStep} → {scanline}.",
             "APU       FF10–FF3F controls four sound channels and stereo routing.",
             "BOARD     Cyan = read/fetch, amber = write, violet = both. Recent activity fades over time.",
@@ -625,10 +633,11 @@ public partial class DebuggerForm : Form
         this.interactionDetails.Lines = lines.ToArray();
     }
 
-    private static string FormatAccesses(string label, IEnumerable<ushort> addresses)
+    private string FormatAccesses(string label, IEnumerable<ushort> addresses, bool mapperControls = false)
     {
         string[] entries = addresses.OrderBy(address => address)
-            .Select(address => $"0x{address:X4} ({DescribeAddress(address)})")
+            .Select(address => $"0x{address:X4} ({(mapperControls && address <= 0x7FFF &&
+                this.gameboy.Memory.SelectedCartridgeRamBank.HasValue ? "mapper control" : DescribeAddress(address))})")
             .ToArray();
         return $"{label,-10}{(entries.Length == 0 ? "none" : string.Join(", ", entries))}";
     }

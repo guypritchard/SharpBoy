@@ -42,7 +42,11 @@ namespace GB.Emulator.Core
             var available = new List<string>();
             var missing = new List<string>();
             var notes = new List<string>();
-            bool mapperSupported = type is 0x00 or 0x11 or 0x12 or 0x13;
+            bool mapperSupported = type is 0x00 or 0x01 or 0x02 or 0x03 or 0x11 or 0x12 or 0x13;
+            bool mbc1TooLarge = type is >= 0x01 and <= 0x03 &&
+                (cartridge.Data.Length > 0x200000 || header.DeclaredRomSizeBytes > 0x200000 ||
+                 header.RamSizeCode is not (0 or 2 or 3) ||
+                 ((cartridge.Data.Length > 0x80000 || header.DeclaredRomSizeBytes > 0x80000) && header.RamSizeCode == 3));
             bool mbc3TooLarge = type is >= 0x11 and <= 0x13 &&
                 (cartridge.Data.Length > 0x200000 || header.RamSizeCode is not (0 or 2 or 3));
 
@@ -52,6 +56,14 @@ namespace GB.Emulator.Core
 
             if (type == 0x00)
                 available.Add("Fixed ROM mapped at 0000–7FFF");
+            else if (type is >= 0x01 and <= 0x03)
+            {
+                available.Add("MBC1 ROM bank switching");
+                available.Add("MBC1 simple and advanced banking modes");
+                if (type != 0x01 && header.DeclaredRamSizeBytes > 0)
+                    available.Add("MBC1 RAM bank switching");
+                notes.Add("Standard MBC1 wiring is implemented; MBC1M multicart wiring is not detected.");
+            }
             else if (type is >= 0x11 and <= 0x13)
             {
                 available.Add("MBC3 ROM bank switching");
@@ -65,6 +77,8 @@ namespace GB.Emulator.Core
                 missing.Add("ROM banking for a file larger than 32 KiB");
             if (mbc3TooLarge)
                 missing.Add("MBC3 cartridge size beyond the implemented ROM/RAM range");
+            if (mbc1TooLarge)
+                missing.Add("MBC1 cartridge size beyond standard ROM/RAM wiring (2 MiB ROM, or 512 KiB ROM with 32 KiB RAM)");
 
             if (HasBattery(type))
             {
@@ -108,7 +122,7 @@ namespace GB.Emulator.Core
             if (header.DeclaredRamSizeBytes == null)
                 notes.Add($"Unknown RAM size code 0x{header.RamSizeCode:X2}.");
 
-            CartridgeSupportLevel level = !mapperSupported || mbc3TooLarge ||
+            CartridgeSupportLevel level = !mapperSupported || mbc1TooLarge || mbc3TooLarge ||
                 header.RequiresColorGameBoy ||
                 (type == 0x00 && cartridge.Data.Length > 0x8000)
                 ? CartridgeSupportLevel.Unsupported
