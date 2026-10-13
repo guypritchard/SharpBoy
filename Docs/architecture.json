@@ -1,0 +1,650 @@
+{
+  "version": 1,
+  "title": "SharpBoy | logical architecture",
+  "source": "Working tree based on 6171c0b3311bd6a4d4b52269449277ab9b40811f; input fingerprint 6a130b5d22c96efab0ed6aaf8589c6c24da25eb68e899dadecbc141b89a224f3",
+  "notes": [
+    "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
+    "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
+    "CPU registers and memory references remain static; experiment workers use separate processes. Rendering reconstructs snapshots, not a cycle-accurate pixel pipeline.",
+    "CI/release infrastructure, ROM assets and individual opcode helpers are outside this overview. Source inspection supports relationships; runtime behavior was not exercised."
+  ],
+  "nodes": [
+    {
+      "id": "console",
+      "label": "Console front end",
+      "group": "Hosts",
+      "role": "Owns terminal playback and keyboard input",
+      "boundary": "Console executable",
+      "contracts": [
+        "Gameboy control",
+        "ANSI frame display"
+      ],
+      "files": [
+        "GB.Emulator.Console/ConsoleEmulator.cs",
+        "GB.Emulator.Console/ConsoleScreen.cs",
+        "GB.Emulator.Console/ConsoleVideoRenderer.cs",
+        "GB.Emulator.Console/ConsoleKeyboardInput.cs",
+        "GB.Emulator.Console/GB.Emulator.Console.csproj"
+      ],
+      "evidence": [
+        "GB.Emulator.Console/ConsoleEmulator.cs: Console front end",
+        "GB.Emulator.Console/ConsoleScreen.cs: Console front end",
+        "GB.Emulator.Console/ConsoleVideoRenderer.cs: Console front end",
+        "GB.Emulator.Console/ConsoleKeyboardInput.cs: Console front end",
+        "GB.Emulator.Console/GB.Emulator.Console.csproj: Console front end"
+      ],
+      "confidence": "high",
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "debugger",
+      "label": "WinForms debugger",
+      "group": "Hosts",
+      "role": "Owns stepping, inspection and visual diagnostics",
+      "boundary": "WinForms executable",
+      "contracts": [
+        "Gameboy stepping and restore",
+        "Diagnostic views"
+      ],
+      "files": [
+        "GB.Debugger/DebuggerForm.cs",
+        "GB.Debugger/InteractionDiagramControl.cs",
+        "GB.Debugger/MemoryMapControl.cs",
+        "GB.Debugger/GB.Debugger.csproj"
+      ],
+      "evidence": [
+        "GB.Debugger/DebuggerForm.cs: WinForms debugger",
+        "GB.Debugger/InteractionDiagramControl.cs: WinForms debugger",
+        "GB.Debugger/MemoryMapControl.cs: WinForms debugger",
+        "GB.Debugger/GB.Debugger.csproj: WinForms debugger"
+      ],
+      "confidence": "high",
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "experiments",
+      "label": "HTTP / serial experiment",
+      "group": "Hosts",
+      "role": "Owns HTTP requests and isolated emulator workers",
+      "boundary": "Host process plus worker processes",
+      "contracts": [
+        "HTTP to emulated serial protocol",
+        "One emulator per worker process"
+      ],
+      "files": [
+        "GB.Experiments/Program.cs",
+        "GB.Experiments/GameboyWorkerPool.cs",
+        "GB.Experiments/GameboyWorkerHost.cs",
+        "GB.Experiments/GameboySerialServer.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/Program.cs: HTTP / serial experiment",
+        "GB.Experiments/GameboyWorkerPool.cs: HTTP / serial experiment",
+        "GB.Experiments/GameboyWorkerHost.cs: HTTP / serial experiment",
+        "GB.Experiments/GameboySerialServer.cs: HTTP / serial experiment"
+      ],
+      "confidence": "high",
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "audio",
+      "label": "Windows audio adapter",
+      "group": "Platform",
+      "role": "Adapts APU stereo PCM to Windows waveOut",
+      "boundary": "Shared .NET library: GB.Emulator.Windows",
+      "contracts": [
+        "APU SamplesReady to waveOut",
+        "TryCreate returns null when unavailable"
+      ],
+      "files": [
+        "GB.Emulator.Windows/WindowsAudioOutput.cs",
+        "GB.Emulator.Windows/GB.Emulator.Windows.csproj"
+      ],
+      "evidence": [
+        "GB.Emulator.Windows/WindowsAudioOutput.cs: Windows audio adapter",
+        "GB.Emulator.Windows/GB.Emulator.Windows.csproj: Windows audio adapter"
+      ],
+      "confidence": "high",
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "renderer",
+      "label": "Snapshot pixel renderer",
+      "group": "Rendering",
+      "role": "Converts immutable video state into shade pixels",
+      "boundary": "Platform-independent core library",
+      "contracts": [
+        "VideoState to screen / tile atlas"
+      ],
+      "files": [
+        "GB.Emulator.Core/Rendering/DmgScreenRenderer.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/Rendering/DmgScreenRenderer.cs: Snapshot pixel renderer"
+      ],
+      "confidence": "high",
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "gameboy",
+      "label": "Gameboy coordinator",
+      "group": "Core",
+      "role": "Composes devices and owns reset, run and snapshots",
+      "boundary": "Core library composition root",
+      "contracts": [
+        "Load / RunStep / Step / CaptureState / RestoreState",
+        "Video and sound snapshots"
+      ],
+      "files": [
+        "GB.Emulator.Core/Gameboy.cs",
+        "GB.Emulator.Core/GameboyState.cs",
+        "GB.Emulator.Core/RomDisassembler.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/Gameboy.cs: Gameboy coordinator",
+        "GB.Emulator.Core/GameboyState.cs: Gameboy coordinator",
+        "GB.Emulator.Core/RomDisassembler.cs: Gameboy coordinator"
+      ],
+      "confidence": "high",
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "apu",
+      "label": "APU / PCM synthesis",
+      "group": "Hardware",
+      "role": "Owns sound registers and stereo sample generation",
+      "boundary": "Core hardware device",
+      "contracts": [
+        "Stereo signed 16-bit PCM",
+        "SamplesReady event"
+      ],
+      "files": [
+        "GB.Emulator.Core/InputOutput/Apu.cs",
+        "GB.Emulator.Core/InputOutput/Apu.Synthesis.cs",
+        "GB.Emulator.Core/SoundState.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/InputOutput/Apu.cs: APU / PCM synthesis",
+        "GB.Emulator.Core/InputOutput/Apu.Synthesis.cs: APU / PCM synthesis",
+        "GB.Emulator.Core/SoundState.cs: APU / PCM synthesis"
+      ],
+      "confidence": "high",
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "video",
+      "label": "Video / LCD state",
+      "group": "Hardware",
+      "role": "Owns LCD timing and VRAM / OAM snapshots",
+      "boundary": "Core hardware devices",
+      "contracts": [
+        "FrameReady notification",
+        "Immutable VideoState"
+      ],
+      "files": [
+        "GB.Emulator.Core/Video.cs",
+        "GB.Emulator.Core/VideoState.cs",
+        "GB.Emulator.Core/InputOutput/Lcd.cs",
+        "GB.Emulator.Core/BackgroundTileManager.cs",
+        "GB.Emulator.Core/SpriteTileManager.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/Video.cs: Video / LCD state",
+        "GB.Emulator.Core/VideoState.cs: Video / LCD state",
+        "GB.Emulator.Core/InputOutput/Lcd.cs: Video / LCD state",
+        "GB.Emulator.Core/BackgroundTileManager.cs: Video / LCD state",
+        "GB.Emulator.Core/SpriteTileManager.cs: Video / LCD state"
+      ],
+      "confidence": "high",
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "cpu",
+      "label": "CPU execution",
+      "group": "Hardware",
+      "role": "Executes opcodes and advances device cycles",
+      "boundary": "Core; static registers and memory reference",
+      "contracts": [
+        "Instruction stepping and cycle accounting",
+        "Process isolation for multiple emulators"
+      ],
+      "files": [
+        "GB.Emulator.Core/Cpu.cs",
+        "GB.Emulator.Core/Cpu.Operations.cs",
+        "GB.Emulator.Core/Cpu.Memory.cs",
+        "GB.Emulator.Core/Cpu.Registers.cs",
+        "GB.Emulator.Core/Cpu.Instructions.cs",
+        "GB.Emulator.Core/Cpu.OpcodeTable.cs",
+        "GB.Emulator.Core/CpuStepResult.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/Cpu.cs: CPU execution",
+        "GB.Emulator.Core/Cpu.Operations.cs: CPU execution",
+        "GB.Emulator.Core/Cpu.Memory.cs: CPU execution",
+        "GB.Emulator.Core/Cpu.Registers.cs: CPU execution",
+        "GB.Emulator.Core/Cpu.Instructions.cs: CPU execution",
+        "GB.Emulator.Core/Cpu.OpcodeTable.cs: CPU execution",
+        "GB.Emulator.Core/CpuStepResult.cs: CPU execution"
+      ],
+      "confidence": "high",
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "serial",
+      "label": "Serial / link port",
+      "group": "Hardware",
+      "role": "Owns byte transfers and serial interrupt requests",
+      "boundary": "Core serial device and cable",
+      "contracts": [
+        "ISerialPeer",
+        "SerialLinkCable"
+      ],
+      "files": [
+        "GB.Emulator.Core/InputOutput/SerialPort.cs",
+        "GB.Emulator.Core/InputOutput/SerialLinkCable.cs",
+        "GB.Emulator.Core/InputOutput/ISerialPeer.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/InputOutput/SerialPort.cs: Serial / link port",
+        "GB.Emulator.Core/InputOutput/SerialLinkCable.cs: Serial / link port",
+        "GB.Emulator.Core/InputOutput/ISerialPeer.cs: Serial / link port"
+      ],
+      "confidence": "high",
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "io",
+      "label": "Joypad / timer / IRQ",
+      "group": "Hardware",
+      "role": "Owns button matrix, timer and interrupt state",
+      "boundary": "Core mapped hardware devices",
+      "contracts": [
+        "IButtonInput",
+        "Timer and interrupt registers"
+      ],
+      "files": [
+        "GB.Emulator.Core/InputOutput/Joypad.cs",
+        "GB.Emulator.Core/InputOutput/Timer.cs",
+        "GB.Emulator.Core/Interrupt.cs",
+        "GB.Emulator.Core/InputOutput/IButtonInput.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/InputOutput/Joypad.cs: Joypad / timer / IRQ",
+        "GB.Emulator.Core/InputOutput/Timer.cs: Joypad / timer / IRQ",
+        "GB.Emulator.Core/Interrupt.cs: Joypad / timer / IRQ",
+        "GB.Emulator.Core/InputOutput/IButtonInput.cs: Joypad / timer / IRQ"
+      ],
+      "confidence": "high",
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "memory",
+      "label": "Memory bus / observers",
+      "group": "Hardware",
+      "role": "Routes bus accesses, DMA and debugger recording",
+      "boundary": "Core memory routing boundary",
+      "contracts": [
+        "Mapped reads and writes",
+        "Silent / recording access observers"
+      ],
+      "files": [
+        "GB.Emulator.Core/MemoryMap.cs",
+        "GB.Emulator.Core/MemoryAccessRecorder.cs",
+        "GB.Emulator.Core/InputOutput/IMemoryRange.cs",
+        "GB.Emulator.Core/Ram.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/MemoryMap.cs: Memory bus / observers",
+        "GB.Emulator.Core/MemoryAccessRecorder.cs: Memory bus / observers",
+        "GB.Emulator.Core/InputOutput/IMemoryRange.cs: Memory bus / observers",
+        "GB.Emulator.Core/Ram.cs: Memory bus / observers"
+      ],
+      "confidence": "high",
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "tests",
+      "label": "Verification suite",
+      "group": "Tests",
+      "role": "Checks hardware, console and serial behavior",
+      "boundary": "MSTest project",
+      "contracts": [
+        "Hardware and front end regression tests"
+      ],
+      "files": [
+        "GB.Emulator.Tests/GB.Emulator.Tests.csproj",
+        "GB.Emulator.Tests/HardwareBoundaryTests.cs",
+        "GB.Emulator.Tests/ConsoleVideoRendererTests.cs",
+        "GB.Emulator.Tests/SerialExperimentTests.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite",
+        "GB.Emulator.Tests/HardwareBoundaryTests.cs: Verification suite",
+        "GB.Emulator.Tests/ConsoleVideoRendererTests.cs: Verification suite",
+        "GB.Emulator.Tests/SerialExperimentTests.cs: Verification suite"
+      ],
+      "confidence": "high",
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "cartridge",
+      "label": "Cartridge / MBC3",
+      "group": "Hardware",
+      "role": "Owns cartridge validation and mapped ROM / RAM banks",
+      "boundary": "Core cartridge devices",
+      "contracts": [
+        "Cartridge loading and support diagnostics",
+        "MBC3 banked memory"
+      ],
+      "files": [
+        "GB.Emulator.Core/Cartridge.cs",
+        "GB.Emulator.Core/CartridgeLoader.cs",
+        "GB.Emulator.Core/CartridgeSupport.cs",
+        "GB.Emulator.Core/Mbc3.cs",
+        "GB.Emulator.Core/Rom.cs",
+        "GB.Emulator.Core/Header.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Core/Cartridge.cs: Cartridge / MBC3",
+        "GB.Emulator.Core/CartridgeLoader.cs: Cartridge / MBC3",
+        "GB.Emulator.Core/CartridgeSupport.cs: Cartridge / MBC3",
+        "GB.Emulator.Core/Mbc3.cs: Cartridge / MBC3",
+        "GB.Emulator.Core/Rom.cs: Cartridge / MBC3",
+        "GB.Emulator.Core/Header.cs: Cartridge / MBC3"
+      ],
+      "confidence": "high",
+      "row": 4,
+      "col": 2
+    }
+  ],
+  "edges": [
+    {
+      "id": "console-audio",
+      "from": "console",
+      "to": "audio",
+      "kind": "project-reference",
+      "label": "references platform audio library",
+      "evidence": [
+        "GB.Emulator.Console/GB.Emulator.Console.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "debugger-audio",
+      "from": "debugger",
+      "to": "audio",
+      "kind": "project-reference",
+      "label": "references platform audio library",
+      "evidence": [
+        "GB.Debugger/GB.Debugger.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "audio-apu",
+      "from": "audio",
+      "to": "apu",
+      "kind": "runtime-call",
+      "label": "subscribes to PCM sample events",
+      "evidence": [
+        "GB.Emulator.Windows/WindowsAudioOutput.cs: SamplesReady subscription"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "console-renderer",
+      "from": "console",
+      "to": "renderer",
+      "kind": "runtime-call",
+      "label": "renders video snapshots",
+      "evidence": [
+        "GB.Emulator.Console/ConsoleScreen.cs: DmgScreenRenderer"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "console-gameboy",
+      "from": "console",
+      "to": "gameboy",
+      "kind": "runtime-call",
+      "label": "controls emulator execution",
+      "evidence": [
+        "GB.Emulator.Console/ConsoleEmulator.cs: RunStep"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "debugger-renderer",
+      "from": "debugger",
+      "to": "renderer",
+      "kind": "runtime-call",
+      "label": "renders video snapshots",
+      "evidence": [
+        "GB.Debugger/DebuggerForm.cs: DmgScreenRenderer"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "debugger-gameboy",
+      "from": "debugger",
+      "to": "gameboy",
+      "kind": "runtime-call",
+      "label": "controls emulator execution",
+      "evidence": [
+        "GB.Debugger/DebuggerForm.cs: stepping and tracing"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-gameboy",
+      "from": "experiments",
+      "to": "gameboy",
+      "kind": "runtime-call",
+      "label": "runs emulator in isolated worker processes",
+      "evidence": [
+        "GB.Experiments/GameboyWorkerPool.cs: Worker; GameboySerialServer.cs: Gameboy"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-serial",
+      "from": "experiments",
+      "to": "serial",
+      "kind": "runtime-call",
+      "label": "exchanges request and response bytes",
+      "evidence": [
+        "GB.Experiments/GameboySerialServer.cs: serial exchange"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "renderer-video",
+      "from": "renderer",
+      "to": "video",
+      "kind": "data-consumption",
+      "label": "reads immutable VideoState snapshots",
+      "evidence": [
+        "GB.Emulator.Core/Rendering/DmgScreenRenderer.cs: RenderScreen(VideoState)"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "gameboy-cpu",
+      "from": "gameboy",
+      "to": "cpu",
+      "kind": "composition",
+      "label": "creates and resets devices",
+      "evidence": [
+        "GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "gameboy-memory",
+      "from": "gameboy",
+      "to": "memory",
+      "kind": "composition",
+      "label": "creates and resets devices",
+      "evidence": [
+        "GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "gameboy-apu",
+      "from": "gameboy",
+      "to": "apu",
+      "kind": "composition",
+      "label": "creates and resets devices",
+      "evidence": [
+        "GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "gameboy-video",
+      "from": "gameboy",
+      "to": "video",
+      "kind": "composition",
+      "label": "creates and resets devices",
+      "evidence": [
+        "GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "gameboy-serial",
+      "from": "gameboy",
+      "to": "serial",
+      "kind": "composition",
+      "label": "creates and resets devices",
+      "evidence": [
+        "GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "gameboy-io",
+      "from": "gameboy",
+      "to": "io",
+      "kind": "composition",
+      "label": "creates and resets devices",
+      "evidence": [
+        "GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cpu-memory",
+      "from": "cpu",
+      "to": "memory",
+      "kind": "runtime-call",
+      "label": "fetches and executes via mapped memory",
+      "evidence": [
+        "GB.Emulator.Core/Cpu.Memory.cs: memory access"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cpu-apu",
+      "from": "cpu",
+      "to": "apu",
+      "kind": "runtime-call",
+      "label": "advances device timing",
+      "evidence": [
+        "GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cpu-video",
+      "from": "cpu",
+      "to": "video",
+      "kind": "runtime-call",
+      "label": "advances device timing",
+      "evidence": [
+        "GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cpu-serial",
+      "from": "cpu",
+      "to": "serial",
+      "kind": "runtime-call",
+      "label": "advances device timing",
+      "evidence": [
+        "GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cpu-io",
+      "from": "cpu",
+      "to": "io",
+      "kind": "runtime-call",
+      "label": "advances device timing",
+      "evidence": [
+        "GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "memory-cartridge",
+      "from": "memory",
+      "to": "cartridge",
+      "kind": "composition",
+      "label": "selects cartridge ROM / RAM windows",
+      "evidence": [
+        "GB.Emulator.Core/MemoryMap.cs: AddCartridgeDevices"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-console",
+      "from": "tests",
+      "to": "console",
+      "kind": "project-reference",
+      "label": "references console for renderer and input tests",
+      "evidence": [
+        "GB.Emulator.Tests/GB.Emulator.Tests.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-gameboy",
+      "from": "tests",
+      "to": "gameboy",
+      "kind": "runtime-call",
+      "label": "checks execution and hardware boundaries",
+      "evidence": [
+        "GB.Emulator.Tests/HardwareBoundaryTests.cs: Gameboy"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-experiments",
+      "from": "tests",
+      "to": "experiments",
+      "kind": "project-reference",
+      "label": "references serial HTTP experiment",
+      "evidence": [
+        "GB.Emulator.Tests/GB.Emulator.Tests.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

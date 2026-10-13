@@ -35,9 +35,9 @@ turns a video snapshot into shade pixels. `GB.Emulator.Console` owns the Unicode
 terminal renderer. The console app and `GB.Debugger` control the hardware and present it
 through their own user interfaces. The core does not depend on drawing or
 terminal APIs. The APU generates stereo PCM; a cycle-accurate pixel pipeline is
-still future hardware work. Both front ends compile the Windows audio adapter
-from `Shared/WindowsAudioOutput.cs`; platform audio stays outside the core
-without requiring another assembly.
+still future hardware work. Both front ends reference `GB.Emulator.Windows`,
+which owns the Windows audio adapter and depends on the core. Platform audio
+stays outside the core; the console can continue silently on other platforms.
 The memory bus uses separate silent and recording access observers for continuous
 play and debugger stepping. Both modes execute instructions through the same CPU path.
 

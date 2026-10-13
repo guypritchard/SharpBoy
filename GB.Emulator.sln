@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Debugger", "GB.Debugger\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Experiments", "GB.Experiments\GB.Experiments.csproj", "{EA8C1932-75CA-4816-850B-A36AEB7F29AC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB.Emulator.Windows", "GB.Emulator.Windows\GB.Emulator.Windows.csproj", "{0C82F004-CD94-4924-B4FC-AF7F7272394F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,18 @@ Global
 		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|x64.Build.0 = Release|Any CPU
 		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|x86.ActiveCfg = Release|Any CPU
 		{EA8C1932-75CA-4816-850B-A36AEB7F29AC}.Release|x86.Build.0 = Release|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Debug|x64.Build.0 = Debug|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Debug|x86.Build.0 = Debug|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Release|x64.ActiveCfg = Release|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Release|x64.Build.0 = Release|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Release|x86.ActiveCfg = Release|Any CPU
+		{0C82F004-CD94-4924-B4FC-AF7F7272394F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

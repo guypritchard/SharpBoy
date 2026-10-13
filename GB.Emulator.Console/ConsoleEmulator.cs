@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using GB.Emulator.Core;
-using GB.Emulator.Audio;
+using GB.Emulator.Windows;
 
 namespace GB.Emulator;
 
