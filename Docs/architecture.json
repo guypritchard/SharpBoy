@@ -1,12 +1,13 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "Working tree based on 6171c0b3311bd6a4d4b52269449277ab9b40811f; input fingerprint 6a130b5d22c96efab0ed6aaf8589c6c24da25eb68e899dadecbc141b89a224f3",
+  "source": "16d2c3683925898426306089eaba36e065f5f89a",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
     "CPU registers and memory references remain static; experiment workers use separate processes. Rendering reconstructs snapshots, not a cycle-accurate pixel pipeline.",
-    "CI/release infrastructure, ROM assets and individual opcode helpers are outside this overview. Source inspection supports relationships; runtime behavior was not exercised."
+    "Standard MBC1 only; MBC1M wiring, persistent battery saves and MBC3 RTC remain outside this implementation.",
+    "Mapper selection, mapped windows and cartridge snapshots use the shared CartridgeMapper / CartridgeMapperState contracts; MBC1 and MBC3 own their banking rules. Debugger inspection reads mapper capabilities and live bank state."
   ],
   "nodes": [
     {
@@ -45,19 +46,27 @@
       "boundary": "WinForms executable",
       "contracts": [
         "Gameboy stepping and restore",
-        "Diagnostic views"
+        "Diagnostic views",
+        "Cartridge capability view and separate mapper-control activity"
       ],
       "files": [
         "GB.Debugger/DebuggerForm.cs",
         "GB.Debugger/InteractionDiagramControl.cs",
         "GB.Debugger/MemoryMapControl.cs",
-        "GB.Debugger/GB.Debugger.csproj"
+        "GB.Debugger/GB.Debugger.csproj",
+        "GB.Debugger/CartridgeInfoControl.cs",
+        "GB.Debugger/InteractionDiagramControl.cs",
+        "GB.Debugger/InteractionDiagramControl.Poster.cs",
+        "GB.Debugger/InteractionDiagramControl.Cartridge.cs"
       ],
       "evidence": [
         "GB.Debugger/DebuggerForm.cs: WinForms debugger",
         "GB.Debugger/InteractionDiagramControl.cs: WinForms debugger",
         "GB.Debugger/MemoryMapControl.cs: WinForms debugger",
-        "GB.Debugger/GB.Debugger.csproj: WinForms debugger"
+        "GB.Debugger/GB.Debugger.csproj: WinForms debugger",
+        "GB.Debugger/CartridgeInfoControl.cs: ShowBanks",
+        "GB.Debugger/InteractionDiagramControl.cs: ShowCartridge / ClassifyWrite",
+        "GB.Debugger/InteractionDiagramControl.Cartridge.cs: DrawMapper / DrawCartridgeProfile"
       ],
       "confidence": "high",
       "row": 0,
@@ -138,7 +147,8 @@
       "boundary": "Core library composition root",
       "contracts": [
         "Load / RunStep / Step / CaptureState / RestoreState",
-        "Video and sound snapshots"
+        "Video and sound snapshots",
+        "CartridgeMapperState snapshot payload"
       ],
       "files": [
         "GB.Emulator.Core/Gameboy.cs",
@@ -148,7 +158,8 @@
       "evidence": [
         "GB.Emulator.Core/Gameboy.cs: Gameboy coordinator",
         "GB.Emulator.Core/GameboyState.cs: Gameboy coordinator",
-        "GB.Emulator.Core/RomDisassembler.cs: Gameboy coordinator"
+        "GB.Emulator.Core/RomDisassembler.cs: Gameboy coordinator",
+        "GB.Emulator.Core/GameboyState.cs: CartridgeState (CartridgeMapperState)"
       ],
       "confidence": "high",
       "row": 1,
@@ -296,7 +307,9 @@
       "boundary": "Core memory routing boundary",
       "contracts": [
         "Mapped reads and writes",
-        "Silent / recording access observers"
+        "Silent / recording access observers",
+        "Polymorphic mapper lifecycle and snapshots",
+        "Active lower / upper ROM bank inspection"
       ],
       "files": [
         "GB.Emulator.Core/MemoryMap.cs",
@@ -308,7 +321,8 @@
         "GB.Emulator.Core/MemoryMap.cs: Memory bus / observers",
         "GB.Emulator.Core/MemoryAccessRecorder.cs: Memory bus / observers",
         "GB.Emulator.Core/InputOutput/IMemoryRange.cs: Memory bus / observers",
-        "GB.Emulator.Core/Ram.cs: Memory bus / observers"
+        "GB.Emulator.Core/Ram.cs: Memory bus / observers",
+        "GB.Emulator.Core/MemoryMap.cs: cartridgeMapper, CaptureCartridgeState, Snapshot, SelectedLowerRomBank"
       ],
       "confidence": "high",
       "row": 3,
@@ -327,13 +341,18 @@
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj",
         "GB.Emulator.Tests/HardwareBoundaryTests.cs",
         "GB.Emulator.Tests/ConsoleVideoRendererTests.cs",
-        "GB.Emulator.Tests/SerialExperimentTests.cs"
+        "GB.Emulator.Tests/SerialExperimentTests.cs",
+        "GB.Emulator.Tests/Mbc3Tests.cs",
+        "GB.Emulator.Tests/CartridgeSupportTests.cs",
+        "GB.Emulator.Tests/Mbc1Tests.cs"
       ],
       "evidence": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite",
         "GB.Emulator.Tests/HardwareBoundaryTests.cs: Verification suite",
         "GB.Emulator.Tests/ConsoleVideoRendererTests.cs: Verification suite",
-        "GB.Emulator.Tests/SerialExperimentTests.cs: Verification suite"
+        "GB.Emulator.Tests/SerialExperimentTests.cs: Verification suite",
+        "GB.Emulator.Tests/Mbc3Tests.cs: ROM/RAM and snapshot integration tests",
+        "GB.Emulator.Tests/Mbc1Tests.cs: banking, CPU, DMA, snapshots and cartridge reload"
       ],
       "confidence": "high",
       "row": 4,
@@ -341,13 +360,14 @@
     },
     {
       "id": "cartridge",
-      "label": "Cartridge / MBC3",
+      "label": "Cartridge / MBC1 + MBC3",
       "group": "Hardware",
-      "role": "Owns cartridge validation and mapped ROM / RAM banks",
+      "role": "Owns cartridge storage, mapper selection and ROM / RAM banking",
       "boundary": "Core cartridge devices",
       "contracts": [
         "Cartridge loading and support diagnostics",
-        "MBC3 banked memory"
+        "CartridgeMapper ROM / RAM windows",
+        "MBC1 / MBC3 banking and typed snapshots"
       ],
       "files": [
         "GB.Emulator.Core/Cartridge.cs",
@@ -355,15 +375,21 @@
         "GB.Emulator.Core/CartridgeSupport.cs",
         "GB.Emulator.Core/Mbc3.cs",
         "GB.Emulator.Core/Rom.cs",
-        "GB.Emulator.Core/Header.cs"
+        "GB.Emulator.Core/Header.cs",
+        "GB.Emulator.Core/CartridgeMapper.cs",
+        "GB.Emulator.Core/CartridgeMapperFactory.cs",
+        "GB.Emulator.Core/Mbc1.cs"
       ],
       "evidence": [
-        "GB.Emulator.Core/Cartridge.cs: Cartridge / MBC3",
-        "GB.Emulator.Core/CartridgeLoader.cs: Cartridge / MBC3",
-        "GB.Emulator.Core/CartridgeSupport.cs: Cartridge / MBC3",
-        "GB.Emulator.Core/Mbc3.cs: Cartridge / MBC3",
-        "GB.Emulator.Core/Rom.cs: Cartridge / MBC3",
-        "GB.Emulator.Core/Header.cs: Cartridge / MBC3"
+        "GB.Emulator.Core/Cartridge.cs: cartridge storage, selection or banking",
+        "GB.Emulator.Core/CartridgeLoader.cs: cartridge storage, selection or banking",
+        "GB.Emulator.Core/CartridgeSupport.cs: cartridge storage, selection or banking",
+        "GB.Emulator.Core/Mbc3.cs: cartridge storage, selection or banking",
+        "GB.Emulator.Core/Rom.cs: cartridge storage, selection or banking",
+        "GB.Emulator.Core/Header.cs: cartridge storage, selection or banking",
+        "GB.Emulator.Core/CartridgeMapper.cs: cartridge storage, selection or banking",
+        "GB.Emulator.Core/CartridgeMapperFactory.cs: cartridge storage, selection or banking",
+        "GB.Emulator.Core/Mbc1.cs: cartridge storage, selection or banking"
       ],
       "confidence": "high",
       "row": 4,
@@ -607,9 +633,11 @@
       "from": "memory",
       "to": "cartridge",
       "kind": "composition",
-      "label": "selects cartridge ROM / RAM windows",
+      "label": "creates a mapper through the factory and routes its windows",
       "evidence": [
-        "GB.Emulator.Core/MemoryMap.cs: AddCartridgeDevices"
+        "GB.Emulator.Core/MemoryMap.cs: AddCartridgeDevices / RemoveCartridgeDevices",
+        "GB.Emulator.Core/CartridgeMapperFactory.cs: Create",
+        "GB.Emulator.Core/CartridgeMapper.cs: RomRange / RamRange"
       ],
       "confidence": "high"
     },
@@ -643,6 +671,33 @@
       "label": "references serial HTTP experiment",
       "evidence": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "gameboy-cartridge-state",
+      "from": "gameboy",
+      "to": "cartridge",
+      "kind": "data-consumption",
+      "label": "stores polymorphic cartridge snapshot state",
+      "evidence": [
+        "GB.Emulator.Core/GameboyState.cs: CartridgeMapperState CartridgeState",
+        "GB.Emulator.Core/CartridgeMapper.cs: Snapshot / Restore",
+        "GB.Emulator.Core/Mbc1.cs: State",
+        "GB.Emulator.Core/Mbc3.cs: State"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "debugger-memory-banks",
+      "from": "debugger",
+      "to": "memory",
+      "kind": "runtime-call",
+      "label": "inspects both ROM windows and RAM bank selection",
+      "evidence": [
+        "GB.Emulator.Core/MemoryMap.cs: SelectedLowerRomBank",
+        "GB.Debugger/DebuggerForm.cs: memoryMapDiagram.ShowStep",
+        "GB.Debugger/CartridgeInfoControl.cs: ShowBanks"
       ],
       "confidence": "high"
     }

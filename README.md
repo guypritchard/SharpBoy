@@ -145,6 +145,13 @@ hardware on an exploded Game Boy poster. The cartridge lifts above the console,
 video components sit in the screen, input sits with the controls, and the APU
 sits with the exploded speaker. **Fit poster** shows the whole assembly;
 **100% / read labels** provides a scrollable view at full size.
+The cartridge board changes with the loaded ROM: fixed wiring for ROM-only games,
+a violet MBC1 controller with simple/advanced mode, or a cyan MBC3 controller.
+Its capability panel shows both active ROM banks, RAM selection and enable state,
+and battery, RTC or rumble limitations. Mapper register writes light the controller;
+reads and instruction fetches light the ROM. Unsupported controllers use a dashed
+outline and an unavailable label. Reset and Step Back restore the displayed banks.
+
 The diagram shows cartridge ROM and RAM, work
 RAM banks, video RAM, sprite OAM, LCD/PPU, APU, joypad, serial link, timer/I/O,
 interrupt registers, high RAM, and OAM DMA. Cyan traces mark reads and fetches,
@@ -178,6 +185,12 @@ refreshes after relevant writes while stepping or tracing;
 Step Back and Reset restore the view. It is reconstructed from the current
 memory snapshot, so it cannot show mid-frame effects until the emulator has a
 full pixel pipeline.
+
+Standard MBC1 cartridges (types `01`–`03`) support ROM banking, RAM enable/disable,
+and both simple and advanced banking modes, including the lower ROM window.
+Supported wiring allows up to 2 MiB ROM with 8 KiB RAM, or up to 512 KiB ROM with
+32 KiB RAM. MBC1M multicart wiring is not detected. Mapper state and all RAM banks
+are included in Step Back snapshots; debugger inspection reads the active banks.
 
 MBC3 cartridges, including Pokémon Red, can switch ROM and cartridge RAM banks.
 The CPU fetches banked instructions through the memory bus, so Pokémon Red can

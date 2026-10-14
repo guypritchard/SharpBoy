@@ -59,6 +59,7 @@ internal sealed class MemoryMapControl : Control
     private bool hasRom;
     private ushort pc;
     private int selectedRomBank = 1;
+    private int selectedLowerRomBank;
     private int? selectedRamBank;
 
     public MemoryMapControl()
@@ -79,11 +80,12 @@ internal sealed class MemoryMapControl : Control
 
     public void ShowStep(CpuStepResult? step, ushort programCounter, bool romLoaded,
         IEnumerable<ushort> reads, IEnumerable<ushort> writes, bool tracing,
-        int romBank, int? ramBank)
+        int romBank, int? ramBank, int lowerRomBank)
     {
         this.pc = programCounter;
         this.hasRom = romLoaded;
         this.selectedRomBank = romBank;
+        this.selectedLowerRomBank = lowerRomBank;
         this.selectedRamBank = ramBank;
         this.hoveredRegion = -1;
         foreach (RegionActivity state in this.activity) state.ClearCurrent();
@@ -206,7 +208,8 @@ internal sealed class MemoryMapControl : Control
         g.DrawRectangle(border, bounds);
         g.FillRectangle(accent, 24, y, 5, 42);
         g.DrawString($"{region.Start:X4}–{region.End:X4}", addressFont, addressBrush, 39, y + 9);
-        string title = region.Start == 0x4000 ? $"ROM BANK {this.selectedRomBank:X2}" :
+        string title = region.Start == 0x0000 ? $"ROM BANK {this.selectedLowerRomBank:X2}" :
+            region.Start == 0x4000 ? $"ROM BANK {this.selectedRomBank:X2}" :
             region.Start == 0xA000 && this.selectedRamBank.HasValue
                 ? $"CARTRIDGE RAM {this.selectedRamBank.Value:X2}" : region.Name;
         g.DrawString(title, titleFont, textBrush, 202, y + 3);

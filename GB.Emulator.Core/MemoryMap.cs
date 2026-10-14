@@ -18,7 +18,7 @@ namespace GB.Emulator.Core
         private readonly SerialPort serial;
         private readonly Apu apu;
         private readonly Timer timer;
-        private Mbc3 mbc3;
+        private CartridgeMapper cartridgeMapper;
         private IMemoryAccessRecorder accessRecorder = new RecordingMemoryAccessRecorder();
 
         public MemoryMap(params IMemoryRange[] devices)
@@ -50,28 +50,21 @@ namespace GB.Emulator.Core
 
         private void RemoveCartridgeDevices()
         {
-            IMemoryRange oldMbcRom = this.mbc3?.Rom;
-            IMemoryRange oldMbcRam = this.mbc3?.Ram;
+            IMemoryRange oldMbcRom = this.cartridgeMapper?.Rom;
+            IMemoryRange oldMbcRam = this.cartridgeMapper?.Ram;
             this.devices.RemoveAll(d => d is Rom || ReferenceEquals(d, oldMbcRom) ||
                 ReferenceEquals(d, oldMbcRam));
-            this.mbc3 = null;
+            this.cartridgeMapper = null;
         }
 
         private void AddCartridgeDevices(byte[] romData)
         {
             // Insert cartridge windows first so they win over the generic address-space backing.
-            byte type = romData.Length > 0x149 ? romData[0x147] : (byte)0;
-            if (type is >= 0x11 and <= 0x13)
+            this.cartridgeMapper = CartridgeMapperFactory.Create(romData);
+            if (this.cartridgeMapper != null)
             {
-                int ramSize = romData[0x149] switch
-                {
-                    2 => 0x2000,
-                    3 => 0x8000,
-                    _ => 0
-                };
-                this.mbc3 = new Mbc3(romData, ramSize);
-                this.devices.Insert(0, this.mbc3.Ram);
-                this.devices.Insert(0, this.mbc3.Rom);
+                this.devices.Insert(0, this.cartridgeMapper.Ram);
+                this.devices.Insert(0, this.cartridgeMapper.Rom);
             }
             else
             {
@@ -79,17 +72,23 @@ namespace GB.Emulator.Core
             }
         }
 
-        internal Mbc3.State? CaptureCartridgeState() => this.mbc3?.Snapshot();
+        internal CartridgeMapperState CaptureCartridgeState() => this.cartridgeMapper?.Snapshot();
 
-        public int SelectedRomBank => this.mbc3?.SelectedRomBank ?? 1;
+        public int SelectedRomBank => this.cartridgeMapper?.SelectedRomBank ?? 1;
 
-        public int? SelectedCartridgeRamBank => this.mbc3?.SelectedRamBank;
+        public int SelectedLowerRomBank => this.cartridgeMapper?.SelectedLowerRomBank ?? 0;
 
-        internal void RestoreCartridgeState(Mbc3.State? state)
+        public bool CartridgeRamEnabled => this.cartridgeMapper?.IsRamEnabled ?? false;
+
+        public string CartridgeBankingMode => this.cartridgeMapper?.BankingMode ?? "Fixed ROM";
+
+        public int? SelectedCartridgeRamBank => this.cartridgeMapper?.SelectedRamBank;
+
+        internal void RestoreCartridgeState(CartridgeMapperState state)
         {
-            if (state.HasValue)
+            if (state != null)
             {
-                this.mbc3?.Restore(state.Value);
+                this.cartridgeMapper?.Restore(state);
             }
         }
 
@@ -266,7 +265,7 @@ namespace GB.Emulator.Core
                 return this.timer.Read8(address);
             }
 
-            if (this.mbc3 != null && (address <= 0x7FFF || address is >= 0xA000 and <= 0xBFFF))
+            if (this.cartridgeMapper != null && (address <= 0x7FFF || address is >= 0xA000 and <= 0xBFFF))
             {
                 return this.deviceByAddress[address].Read8(address);
             }
@@ -282,6 +281,8 @@ namespace GB.Emulator.Core
             this.CopyDeviceRegisters(this.serial, copy);
             this.CopyDeviceRegisters(this.apu, copy);
             this.CopyDeviceRegisters(this.timer, copy);
+            this.CopyDeviceRegisters(this.cartridgeMapper?.Rom, copy);
+            this.CopyDeviceRegisters(this.cartridgeMapper?.Ram, copy);
             return copy;
         }
 

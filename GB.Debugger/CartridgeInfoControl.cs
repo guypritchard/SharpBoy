@@ -126,7 +126,7 @@ internal sealed class CartridgeInfoControl : UserControl
     {
         if (!this.hasCartridge) return;
         string banks = "CURRENT BANK MAPPING\r\n" +
-            "  0000–3FFF        ROM bank 00\r\n" +
+            $"  0000–3FFF        ROM bank {memory.SelectedLowerRomBank:X2}\r\n" +
             $"  4000–7FFF        ROM bank {memory.SelectedRomBank:X2}\r\n" +
             (memory.SelectedCartridgeRamBank is int bank
                 ? $"  A000–BFFF        RAM bank {bank:X2}"

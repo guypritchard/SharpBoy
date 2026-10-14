@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="2799" viewBox="0 0 1360 2799" role="img" aria-labelledby="title desc"><title id="title">SharpBoy | logical architecture</title><desc id="desc">Logical architecture. Component family colours, explicit boundaries, and consumer-to-provider arrows with source evidence.</desc><defs><marker id="edge-arrow-0" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#b72e77" fill-opacity="1"/></marker><marker id="edge-arrow-1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-4" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-5" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-6" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-7" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-8" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-9" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-10" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-11" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-12" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-13" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-14" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-15" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-16" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-17" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-18" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-19" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-20" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-21" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#7044bb" fill-opacity="1"/></marker><marker id="edge-arrow-22" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-23" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-24" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><linearGradient id="accent"><stop stop-color="#245ed1"/><stop offset="0.35" stop-color="#b72e77"/><stop offset="0.65" stop-color="#007d81"/><stop offset="1" stop-color="#a76208"/></linearGradient></defs><rect width="100%" height="100%" fill="#ffffff"/><g font-family="Segoe UI, Arial, sans-serif"><rect width="1360" height="212" fill="#14283f"/><rect width="1360" height="5" fill="url(#accent)"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="2874" viewBox="0 0 1360 2874" role="img" aria-labelledby="title desc"><title id="title">SharpBoy | logical architecture</title><desc id="desc">Logical architecture. Component family colours, explicit boundaries, and consumer-to-provider arrows with source evidence.</desc><defs><marker id="edge-arrow-0" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#b72e77" fill-opacity="1"/></marker><marker id="edge-arrow-1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-4" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-5" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-6" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-7" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-8" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-9" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-10" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-11" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-12" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-13" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-14" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-15" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-16" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-17" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-18" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-19" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-20" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-21" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-22" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-23" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#7044bb" fill-opacity="1"/></marker><marker id="edge-arrow-24" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-25" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-26" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><linearGradient id="accent"><stop stop-color="#245ed1"/><stop offset="0.35" stop-color="#b72e77"/><stop offset="0.65" stop-color="#007d81"/><stop offset="1" stop-color="#a76208"/></linearGradient></defs><rect width="100%" height="100%" fill="#ffffff"/><g font-family="Segoe UI, Arial, sans-serif"><rect width="1360" height="212" fill="#14283f"/><rect width="1360" height="5" fill="url(#accent)"/>
 <text x="44" y="46" font-size="12" fill="#74d8d4" font-weight="700" letter-spacing="2">CODEBASE / LOGICAL ARCHITECTURE</text>
 <text x="44" y="88" font-size="34" fill="#ffffff" font-weight="700" >SharpBoy | logical architecture</text>
-<text x="44" y="136" font-size="13" fill="#bdcde1" font-weight="400" >Working tree based on 6171c0b3311bd6a4d4b52269449277ab9b40811f; input fingerprint 6a130b5d22c96efab0ed6aaf8589c6c24da25eb68e899dadecbc141b89a224f3</text>
+<text x="44" y="136" font-size="13" fill="#bdcde1" font-weight="400" >16d2c3683925898426306089eaba36e065f5f89a</text>
 <rect x="44" y="165" width="125.4" height="25" rx="8" fill="#263e5c" stroke="none" />
 <text x="56" y="182" font-size="12" fill="#e4efff" font-weight="700" >14 components</text>
 <rect x="181.4" y="165" width="148.8" height="25" rx="8" fill="#263e5c" stroke="none" />
-<text x="193.4" y="182" font-size="12" fill="#e4efff" font-weight="700" >25 relationships</text>
+<text x="193.4" y="182" font-size="12" fill="#e4efff" font-weight="700" >27 relationships</text>
 <rect x="342.20000000000005" y="165" width="180" height="25" rx="8" fill="#263e5c" stroke="none" />
 <text x="354.20000000000005" y="182" font-size="12" fill="#e4efff" font-weight="700" >6 component families</text>
 <text x="44" y="244" font-size="12" fill="#52657a" font-weight="700" letter-spacing="1.2">COMPONENT FAMILIES</text>
@@ -51,8 +51,8 @@ GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls</title></path>
 <path d="M 1036 1207 V 1225 H 626 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
 <path d="M 1036 1207 V 1225 H 626 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-5)"><title>unchanged: cpu -&gt; io | runtime-call: advances device timing
 GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls</title></path>
-<path d="M 1081 1207 V 1231 H 1036 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1081 1207 V 1231 H 1036 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-6)"><title>unchanged: cpu -&gt; memory | runtime-call: fetches and executes via mapped memory
+<path d="M 1081 1207 V 1231 H 1013.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1081 1207 V 1231 H 1013.5 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-6)"><title>unchanged: cpu -&gt; memory | runtime-call: fetches and executes via mapped memory
 GB.Emulator.Core/Cpu.Memory.cs: memory access</title></path>
 <path d="M 1126 1207 V 1237 H 193.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
 <path d="M 1126 1207 V 1237 H 193.5 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-7)"><title>unchanged: cpu -&gt; serial | runtime-call: advances device timing
@@ -60,53 +60,66 @@ GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls</title></path>
 <path d="M 916 1105 H 836" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
 <path d="M 916 1105 H 836" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-8)"><title>unchanged: cpu -&gt; video | runtime-call: advances device timing
 GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls</title></path>
-<path d="M 603.5 579 V 621 H 306 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 603.5 579 V 621 H 306 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-9)"><title>unchanged: debugger -&gt; audio | project-reference: references platform audio library
+<path d="M 590 579 V 621 H 306 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 590 579 V 621 H 306 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-9)"><title>unchanged: debugger -&gt; audio | project-reference: references platform audio library
 GB.Debugger/GB.Debugger.csproj: ProjectReference</title></path>
-<path d="M 671 579 V 597 H 1054 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 671 579 V 597 H 1054 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-10)"><title>unchanged: debugger -&gt; gameboy | runtime-call: controls emulator execution
+<path d="M 644 579 V 597 H 1054 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 644 579 V 597 H 1054 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-10)"><title>unchanged: debugger -&gt; gameboy | runtime-call: controls emulator execution
 GB.Debugger/DebuggerForm.cs: stepping and tracing</title></path>
-<path d="M 738.5 579 V 603 H 716 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 738.5 579 V 603 H 716 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-11)"><title>unchanged: debugger -&gt; renderer | runtime-call: renders video snapshots
+<path d="M 698 579 V 603 H 484 V 1291 H 1081 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 698 579 V 603 H 484 V 1291 H 1081 V 1311" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-11)"><title>unchanged: debugger -&gt; memory | runtime-call: inspects both ROM windows and RAM bank selection
+GB.Emulator.Core/MemoryMap.cs: SelectedLowerRomBank
+GB.Debugger/DebuggerForm.cs: memoryMapDiagram.ShowStep
+GB.Debugger/CartridgeInfoControl.cs: ShowBanks</title></path>
+<path d="M 752 579 V 609 H 716 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 752 579 V 609 H 716 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-12)"><title>unchanged: debugger -&gt; renderer | runtime-call: renders video snapshots
 GB.Debugger/DebuggerForm.cs: DmgScreenRenderer</title></path>
-<path d="M 1036 579 V 609 H 1108 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1036 579 V 609 H 1108 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-12)"><title>unchanged: experiments -&gt; gameboy | runtime-call: runs emulator in isolated worker processes
+<path d="M 1036 579 V 615 H 1108 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1036 579 V 615 H 1108 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-13)"><title>unchanged: experiments -&gt; gameboy | runtime-call: runs emulator in isolated worker processes
 GB.Experiments/GameboyWorkerPool.cs: Worker; GameboySerialServer.cs: Gameboy</title></path>
-<path d="M 1126 579 V 615 H 882 V 1279 H 261 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1126 579 V 615 H 882 V 1279 H 261 V 1311" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-13)"><title>unchanged: experiments -&gt; serial | runtime-call: exchanges request and response bytes
+<path d="M 1126 579 V 621 H 876 V 1273 H 261 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1126 579 V 621 H 876 V 1273 H 261 V 1311" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-14)"><title>unchanged: experiments -&gt; serial | runtime-call: exchanges request and response bytes
 GB.Experiments/GameboySerialServer.cs: serial exchange</title></path>
-<path d="M 984.5714285714286 893 V 935 H 328.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 984.5714285714286 893 V 935 H 328.5 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-14)"><title>unchanged: gameboy -&gt; apu | composition: creates and resets devices
+<path d="M 979.75 893 V 911 H 328.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 979.75 893 V 911 H 328.5 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-15)"><title>unchanged: gameboy -&gt; apu | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1023.1428571428571 893 V 911 H 1081 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1023.1428571428571 893 V 911 H 1081 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-15)"><title>unchanged: gameboy -&gt; cpu | composition: creates and resets devices
+<path d="M 1013.5 893 V 917 H 894 V 1605 H 1036 V 1625" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1013.5 893 V 917 H 894 V 1605 H 1036 V 1625" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="2 5" marker-end="url(#edge-arrow-16)"><title>unchanged: gameboy -&gt; cartridge | data-consumption: stores polymorphic cartridge snapshot state
+GB.Emulator.Core/GameboyState.cs: CartridgeMapperState CartridgeState
+GB.Emulator.Core/CartridgeMapper.cs: Snapshot / Restore
+GB.Emulator.Core/Mbc1.cs: State
+GB.Emulator.Core/Mbc3.cs: State</title></path>
+<path d="M 1047.25 893 V 923 H 1081 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1047.25 893 V 923 H 1081 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-17)"><title>unchanged: gameboy -&gt; cpu | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1061.7142857142858 893 V 917 H 894 V 1291 H 716 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1061.7142857142858 893 V 917 H 894 V 1291 H 716 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-16)"><title>unchanged: gameboy -&gt; io | composition: creates and resets devices
+<path d="M 1081 893 V 929 H 882 V 1279 H 716 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1081 893 V 929 H 882 V 1279 H 716 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-18)"><title>unchanged: gameboy -&gt; io | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1100.2857142857142 893 V 923 H 888 V 1285 H 1126 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1100.2857142857142 893 V 923 H 888 V 1285 H 1126 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-17)"><title>unchanged: gameboy -&gt; memory | composition: creates and resets devices
+<path d="M 1114.75 893 V 935 H 876 V 1273 H 1148.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1114.75 893 V 935 H 876 V 1273 H 1148.5 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-19)"><title>unchanged: gameboy -&gt; memory | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1138.857142857143 893 V 929 H 882 V 1279 H 328.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1138.857142857143 893 V 929 H 882 V 1279 H 328.5 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-18)"><title>unchanged: gameboy -&gt; serial | composition: creates and resets devices
+<path d="M 1148.5 893 V 911 H 900 V 1297 H 328.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1148.5 893 V 911 H 900 V 1297 H 328.5 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-20)"><title>unchanged: gameboy -&gt; serial | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1177.4285714285713 893 V 935 H 671 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1177.4285714285713 893 V 935 H 671 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-19)"><title>unchanged: gameboy -&gt; video | composition: creates and resets devices
+<path d="M 1182.25 893 V 917 H 671 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1182.25 893 V 917 H 671 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-21)"><title>unchanged: gameboy -&gt; video | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1081 1521 V 1539 H 1081 V 1625" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1081 1521 V 1539 H 1081 V 1625" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-20)"><title>unchanged: memory -&gt; cartridge | composition: selects cartridge ROM / RAM windows
-GB.Emulator.Core/MemoryMap.cs: AddCartridgeDevices</title></path>
-<path d="M 671 893 V 917 H 738.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 671 893 V 917 H 738.5 V 997" fill="none" stroke="#7044bb" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="2 5" marker-end="url(#edge-arrow-21)"><title>unchanged: renderer -&gt; video | data-consumption: reads immutable VideoState snapshots
+<path d="M 1081 1521 V 1551 H 1126 V 1625" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1081 1521 V 1551 H 1126 V 1625" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-22)"><title>unchanged: memory -&gt; cartridge | composition: creates a mapper through the factory and routes its windows
+GB.Emulator.Core/MemoryMap.cs: AddCartridgeDevices / RemoveCartridgeDevices
+GB.Emulator.Core/CartridgeMapperFactory.cs: Create
+GB.Emulator.Core/CartridgeMapper.cs: RomRange / RamRange</title></path>
+<path d="M 671 893 V 929 H 738.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 671 893 V 929 H 738.5 V 997" fill="none" stroke="#7044bb" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="2 5" marker-end="url(#edge-arrow-23)"><title>unchanged: renderer -&gt; video | data-consumption: reads immutable VideoState snapshots
 GB.Emulator.Core/Rendering/DmgScreenRenderer.cs: RenderScreen(VideoState)</title></path>
-<path d="M 193.5 1625 V 1599 H 68 V 609 H 261 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 193.5 1625 V 1599 H 68 V 609 H 261 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-22)"><title>unchanged: tests -&gt; console | project-reference: references console for renderer and input tests
+<path d="M 193.5 1625 V 1587 H 56 V 621 H 261 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 193.5 1625 V 1587 H 56 V 621 H 261 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-24)"><title>unchanged: tests -&gt; console | project-reference: references console for renderer and input tests
 GB.Emulator.Tests/GB.Emulator.Tests.csproj: ProjectReference</title></path>
-<path d="M 261 1625 V 1593 H 62 V 615 H 1081 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 261 1625 V 1593 H 62 V 615 H 1081 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-23)"><title>unchanged: tests -&gt; experiments | project-reference: references serial HTTP experiment
+<path d="M 261 1625 V 1611 H 80 V 597 H 1081 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 261 1625 V 1611 H 80 V 597 H 1081 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-25)"><title>unchanged: tests -&gt; experiments | project-reference: references serial HTTP experiment
 GB.Emulator.Tests/GB.Emulator.Tests.csproj: ProjectReference</title></path>
-<path d="M 328.5 1625 V 1587 H 56 V 935 H 1162 V 893" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 328.5 1625 V 1587 H 56 V 935 H 1162 V 893" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-24)"><title>unchanged: tests -&gt; gameboy | runtime-call: checks execution and hardware boundaries
+<path d="M 328.5 1625 V 1605 H 74 V 917 H 1162 V 893" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 328.5 1625 V 1605 H 74 V 917 H 1162 V 893" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-26)"><title>unchanged: tests -&gt; gameboy | runtime-call: checks execution and hardware boundaries
 GB.Emulator.Tests/HardwareBoundaryTests.cs: Gameboy</title></path>
 <g><title>Console front end
 Boundary: Console executable
@@ -134,12 +147,15 @@ GB.Emulator.Console/GB.Emulator.Console.csproj: Console front end
 </g>
 <g><title>WinForms debugger
 Boundary: WinForms executable
-Contracts: Gameboy stepping and restore; Diagnostic views
+Contracts: Gameboy stepping and restore; Diagnostic views; Cartridge capability view and separate mapper-control activity
 Confidence: high
 GB.Debugger/DebuggerForm.cs: WinForms debugger
 GB.Debugger/InteractionDiagramControl.cs: WinForms debugger
 GB.Debugger/MemoryMapControl.cs: WinForms debugger
 GB.Debugger/GB.Debugger.csproj: WinForms debugger
+GB.Debugger/CartridgeInfoControl.cs: ShowBanks
+GB.Debugger/InteractionDiagramControl.cs: ShowCartridge / ClassifyWrite
+GB.Debugger/InteractionDiagramControl.Cartridge.cs: DrawMapper / DrawCartridgeProfile
 </title>
 <rect x="508" y="374" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="506" y="369" width="330" height="210" rx="13" fill="#eaf1ff" stroke="#c7d9ff" stroke-width="1.5" stroke-dasharray=""/>
@@ -153,7 +169,7 @@ GB.Debugger/GB.Debugger.csproj: WinForms debugger
 <text x="524" y="520" font-size="9" fill="#245ed1" font-weight="700" letter-spacing="1">BOUNDARY</text>
 <text x="524" y="534" font-size="12" fill="#40556e" font-weight="400" >WinForms executable</text>
 <path d="M 524 550 H 818" stroke="#c7d9ff"/>
-<text x="524" y="568" font-size="11" fill="#40556e" font-weight="400" >4 source files  /  high confidence</text>
+<text x="524" y="568" font-size="11" fill="#40556e" font-weight="400" >8 source files  /  high confidence</text>
 </g>
 <g><title>HTTP / serial experiment
 Boundary: Host process plus worker processes
@@ -221,11 +237,12 @@ GB.Emulator.Core/Rendering/DmgScreenRenderer.cs: Snapshot pixel renderer
 </g>
 <g><title>Gameboy coordinator
 Boundary: Core library composition root
-Contracts: Load / RunStep / Step / CaptureState / RestoreState; Video and sound snapshots
+Contracts: Load / RunStep / Step / CaptureState / RestoreState; Video and sound snapshots; CartridgeMapperState snapshot payload
 Confidence: high
 GB.Emulator.Core/Gameboy.cs: Gameboy coordinator
 GB.Emulator.Core/GameboyState.cs: Gameboy coordinator
 GB.Emulator.Core/RomDisassembler.cs: Gameboy coordinator
+GB.Emulator.Core/GameboyState.cs: CartridgeState (CartridgeMapperState)
 </title>
 <rect x="918" y="688" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="916" y="683" width="330" height="210" rx="13" fill="#e3f7f5" stroke="#aee2dd" stroke-width="1.5" stroke-dasharray=""/>
@@ -360,12 +377,13 @@ GB.Emulator.Core/InputOutput/IButtonInput.cs: Joypad / timer / IRQ
 </g>
 <g><title>Memory bus / observers
 Boundary: Core memory routing boundary
-Contracts: Mapped reads and writes; Silent / recording access observers
+Contracts: Mapped reads and writes; Silent / recording access observers; Polymorphic mapper lifecycle and snapshots; Active lower / upper ROM bank inspection
 Confidence: high
 GB.Emulator.Core/MemoryMap.cs: Memory bus / observers
 GB.Emulator.Core/MemoryAccessRecorder.cs: Memory bus / observers
 GB.Emulator.Core/InputOutput/IMemoryRange.cs: Memory bus / observers
 GB.Emulator.Core/Ram.cs: Memory bus / observers
+GB.Emulator.Core/MemoryMap.cs: cartridgeMapper, CaptureCartridgeState, Snapshot, SelectedLowerRomBank
 </title>
 <rect x="918" y="1316" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="916" y="1311" width="330" height="210" rx="13" fill="#fff5e5" stroke="#f0d6a7" stroke-width="1.5" stroke-dasharray=""/>
@@ -389,6 +407,8 @@ GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite
 GB.Emulator.Tests/HardwareBoundaryTests.cs: Verification suite
 GB.Emulator.Tests/ConsoleVideoRendererTests.cs: Verification suite
 GB.Emulator.Tests/SerialExperimentTests.cs: Verification suite
+GB.Emulator.Tests/Mbc3Tests.cs: ROM/RAM and snapshot integration tests
+GB.Emulator.Tests/Mbc1Tests.cs: banking, CPU, DMA, snapshots and cartridge reload
 </title>
 <rect x="98" y="1630" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="96" y="1625" width="330" height="210" rx="13" fill="#eef8e9" stroke="#c4dfb7" stroke-width="1.5" stroke-dasharray=""/>
@@ -402,18 +422,21 @@ GB.Emulator.Tests/SerialExperimentTests.cs: Verification suite
 <text x="114" y="1776" font-size="9" fill="#317832" font-weight="700" letter-spacing="1">BOUNDARY</text>
 <text x="114" y="1790" font-size="12" fill="#40556e" font-weight="400" >MSTest project</text>
 <path d="M 114 1806 H 408" stroke="#c4dfb7"/>
-<text x="114" y="1824" font-size="11" fill="#40556e" font-weight="400" >4 source files  /  high confidence</text>
+<text x="114" y="1824" font-size="11" fill="#40556e" font-weight="400" >7 source files  /  high confidence</text>
 </g>
-<g><title>Cartridge / MBC3
+<g><title>Cartridge / MBC1 + MBC3
 Boundary: Core cartridge devices
-Contracts: Cartridge loading and support diagnostics; MBC3 banked memory
+Contracts: Cartridge loading and support diagnostics; CartridgeMapper ROM / RAM windows; MBC1 / MBC3 banking and typed snapshots
 Confidence: high
-GB.Emulator.Core/Cartridge.cs: Cartridge / MBC3
-GB.Emulator.Core/CartridgeLoader.cs: Cartridge / MBC3
-GB.Emulator.Core/CartridgeSupport.cs: Cartridge / MBC3
-GB.Emulator.Core/Mbc3.cs: Cartridge / MBC3
-GB.Emulator.Core/Rom.cs: Cartridge / MBC3
-GB.Emulator.Core/Header.cs: Cartridge / MBC3
+GB.Emulator.Core/Cartridge.cs: cartridge storage, selection or banking
+GB.Emulator.Core/CartridgeLoader.cs: cartridge storage, selection or banking
+GB.Emulator.Core/CartridgeSupport.cs: cartridge storage, selection or banking
+GB.Emulator.Core/Mbc3.cs: cartridge storage, selection or banking
+GB.Emulator.Core/Rom.cs: cartridge storage, selection or banking
+GB.Emulator.Core/Header.cs: cartridge storage, selection or banking
+GB.Emulator.Core/CartridgeMapper.cs: cartridge storage, selection or banking
+GB.Emulator.Core/CartridgeMapperFactory.cs: cartridge storage, selection or banking
+GB.Emulator.Core/Mbc1.cs: cartridge storage, selection or banking
 </title>
 <rect x="918" y="1630" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="916" y="1625" width="330" height="210" rx="13" fill="#fff5e5" stroke="#f0d6a7" stroke-width="1.5" stroke-dasharray=""/>
@@ -421,13 +444,13 @@ GB.Emulator.Core/Header.cs: Cartridge / MBC3
 <rect x="934" y="1642" width="28" height="28" rx="8" fill="#945508" stroke="none" />
 <text x="948" y="1661" font-size="12" fill="#ffffff" font-weight="700" text-anchor="middle">14</text>
 <text x="972" y="1660" font-size="11" fill="#945508" font-weight="700" letter-spacing="0.7">HARDWARE</text>
-<text x="934" y="1697" font-size="22" fill="#142840" font-weight="800" >Cartridge / MBC3</text>
-<text x="934" y="1728" font-size="14" fill="#24364d" font-weight="400" >Owns cartridge validation and mapped</text>
-<text x="934" y="1748" font-size="14" fill="#24364d" font-weight="400" >ROM / RAM banks</text>
+<text x="934" y="1697" font-size="22" fill="#142840" font-weight="800" >Cartridge / MBC1 + MBC3</text>
+<text x="934" y="1728" font-size="14" fill="#24364d" font-weight="400" >Owns cartridge storage, mapper</text>
+<text x="934" y="1748" font-size="14" fill="#24364d" font-weight="400" >selection and ROM / RAM banking</text>
 <text x="934" y="1776" font-size="9" fill="#945508" font-weight="700" letter-spacing="1">BOUNDARY</text>
 <text x="934" y="1790" font-size="12" fill="#40556e" font-weight="400" >Core cartridge devices</text>
 <path d="M 934 1806 H 1228" stroke="#f0d6a7"/>
-<text x="934" y="1824" font-size="11" fill="#40556e" font-weight="400" >6 source files  /  high confidence</text>
+<text x="934" y="1824" font-size="11" fill="#40556e" font-weight="400" >9 source files  /  high confidence</text>
 </g>
 <rect x="28" y="1892" width="1304" height="39" rx="9" fill="#e9eff8" stroke="none" />
 <text x="44" y="1917" font-size="19" fill="#142840" font-weight="700" >Relationship index</text>
@@ -529,7 +552,7 @@ GB.Emulator.Core/Header.cs: Cartridge / MBC3
 <text x="44" y="2465" font-size="13" fill="#945508" font-weight="700" >22</text>
 <text x="78" y="2465" font-size="13" fill="#945508" font-weight="600" >memory -&gt; cartridge</text>
 <text x="415" y="2465" font-size="11" fill="#52657a" font-weight="400" >composition</text>
-<text x="630" y="2465" font-size="13" fill="#24364d" font-weight="400" >selects cartridge ROM / RAM windows</text>
+<text x="630" y="2465" font-size="13" fill="#24364d" font-weight="400" >creates a mapper through the factory and routes its windows</text>
 <rect x="28" y="2472" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
 <text x="44" y="2489" font-size="13" fill="#317832" font-weight="700" >23</text>
 <text x="78" y="2489" font-size="13" fill="#317832" font-weight="600" >tests -&gt; console</text>
@@ -544,15 +567,26 @@ GB.Emulator.Core/Header.cs: Cartridge / MBC3
 <text x="78" y="2537" font-size="13" fill="#317832" font-weight="600" >tests -&gt; experiments</text>
 <text x="415" y="2537" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
 <text x="630" y="2537" font-size="13" fill="#24364d" font-weight="400" >references serial HTTP experiment</text>
-<rect x="28" y="2556" width="1304" height="39" rx="9" fill="#e9eff8" stroke="none" />
-<text x="44" y="2581" font-size="19" fill="#142840" font-weight="700" >Scope / evidence limits</text>
-<text x="44" y="2625" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2625" font-size="13" fill="#52657a" font-weight="400" >Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.</text>
-<text x="44" y="2652" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2652" font-size="13" fill="#52657a" font-weight="400" >Consumer -&gt; provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.</text>
-<text x="44" y="2679" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2679" font-size="13" fill="#52657a" font-weight="400" >CPU registers and memory references remain static; experiment workers use separate processes. Rendering reconstructs snapshots, not a cycle-accurate pixel</text>
-<text x="64" y="2698" font-size="13" fill="#52657a" font-weight="400" >pipeline.</text>
-<text x="44" y="2725" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2725" font-size="13" fill="#52657a" font-weight="400" >CI/release infrastructure, ROM assets and individual opcode helpers are outside this overview. Source inspection supports relationships; runtime behavior</text>
-<text x="64" y="2744" font-size="13" fill="#52657a" font-weight="400" >was not exercised.</text></g></svg>
+<text x="44" y="2561" font-size="13" fill="#006d72" font-weight="700" >26</text>
+<text x="78" y="2561" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; cartridge</text>
+<text x="415" y="2561" font-size="11" fill="#52657a" font-weight="400" >data-consumption</text>
+<text x="630" y="2561" font-size="13" fill="#24364d" font-weight="400" >stores polymorphic cartridge snapshot state</text>
+<rect x="28" y="2568" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2585" font-size="13" fill="#245ed1" font-weight="700" >27</text>
+<text x="78" y="2585" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; memory</text>
+<text x="415" y="2585" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
+<text x="630" y="2585" font-size="13" fill="#24364d" font-weight="400" >inspects both ROM windows and RAM bank selection</text>
+<rect x="28" y="2604" width="1304" height="39" rx="9" fill="#e9eff8" stroke="none" />
+<text x="44" y="2629" font-size="19" fill="#142840" font-weight="700" >Scope / evidence limits</text>
+<text x="44" y="2673" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2673" font-size="13" fill="#52657a" font-weight="400" >Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.</text>
+<text x="44" y="2700" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2700" font-size="13" fill="#52657a" font-weight="400" >Consumer -&gt; provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.</text>
+<text x="44" y="2727" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2727" font-size="13" fill="#52657a" font-weight="400" >CPU registers and memory references remain static; experiment workers use separate processes. Rendering reconstructs snapshots, not a cycle-accurate pixel</text>
+<text x="64" y="2746" font-size="13" fill="#52657a" font-weight="400" >pipeline.</text>
+<text x="44" y="2773" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2773" font-size="13" fill="#52657a" font-weight="400" >Standard MBC1 only; MBC1M wiring, persistent battery saves and MBC3 RTC remain outside this implementation.</text>
+<text x="44" y="2800" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2800" font-size="13" fill="#52657a" font-weight="400" >Mapper selection, mapped windows and cartridge snapshots use the shared CartridgeMapper / CartridgeMapperState contracts; MBC1 and MBC3 own their banking</text>
+<text x="64" y="2819" font-size="13" fill="#52657a" font-weight="400" >rules. Debugger inspection reads mapper capabilities and live bank state.</text></g></svg>
