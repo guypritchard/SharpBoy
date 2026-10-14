@@ -1,212 +1,217 @@
 # SharpBoy
-[![.NET](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml)
 
-A basic Gameboy emulator.
+[![Windows build](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml)
 
-## Windows builds and versioning
+A Game Boy emulator written in C#, with a playable terminal front end and a Windows debugger that shows what happens inside the machine.
 
-The [Windows build](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml)
-runs on pushes and pull requests to `master`, on version tags, and on manual
-dispatch. It builds the console emulator and WinForms debugger, runs the tests,
-and uploads self-contained `win-x64` and `win-arm64` builds of each app as
-separate artifacts. Download an artifact and run `GB.Emulator.Console.exe` or
-`GB.Debugger.exe` from the folder for your processor architecture.
+Play through a Unicode console display, or follow instructions across an exploded Game Boy: cartridge banks, CPU, memory, display, sound and input. SharpBoy is a work in progress, with an emphasis on making the hardware visible and understandable.
 
-GitVersion uses GitHub Flow. The `v0.5.1` tag marks the initial version;
-later versions are calculated from Git history. Tag a release commit with
-`v<major>.<minor>.<patch>` to fix its release version. Commit messages can
-request a larger increment with `+semver: minor` or `+semver: major`.
-The calculated version is applied to the .NET assemblies and artifact names.
+[Download Windows builds](https://github.com/guypritchard/SharpBoy/releases/latest) · [Run from source](#run-from-source) · [Explore the debugger](#explore-the-debugger) · [Hardware support](#hardware-support) · [Architecture](#architecture)
 
-After a merge or push to `master`, a successful build and test run automatically
-creates a GitHub release tagged `v<calculated version>` at the built commit.
-The release notes contain that commit's full message (the merge commit message
-for a merge, or the squash commit message for a squash merge). Each release
-includes separate ZIP downloads for the console emulator and debugger on
-`win-x64` and `win-arm64`. Pull requests, tag pushes, and manual builds upload
-build artifacts without creating a release.
+## See it running
+
+### The console emulator
+
+![SharpBoy console running the bundled sprite demo with a small terminal font](Docs/screenshots/console.png)
+
+*The bundled `GB.Roms/SPRITE.GB` demo running in Windows Terminal with a 6-point Cascadia Mono font. The capture includes the complete Game Boy frame and the FPS/control line; unused terminal space is cropped.*
+
+The display is real terminal text: two Game Boy pixels per character, using foreground and background colours. It needs **160 columns × 73 rows**, so a small font is essential.
+
+### The debugger
+
+![SharpBoy debugger loaded with the bundled sprite demo, showing registers, disassembly and the Video tab](Docs/screenshots/debugger-interaction.jpg)
+
+*The debugger loaded with `GB.Roms/SPRITE.GB`: registers on the left, disassembly in the centre, and the Video tab on the right. The hardware visualisation is shown in detail below.*
+
+![Readable detail of the Game Boy hardware atlas with the bundled ROM-only sprite demo](Docs/screenshots/debugger-hardware.png)
+
+*Hardware atlas detail, rendered by the debugger's diagram control from the executing `GB.Roms/SPRITE.GB` demo. This ROM-only cartridge shows fixed wiring; the controller and capability panel change with the loaded ROM.*
+
+All screenshots use demo ROMs from [GB.Roms](GB.Roms). ROMs from `GB.Roms.Private` are excluded from documentation captures.
+
+## Get started on Windows
+
+1. Download the console or debugger ZIP from the [latest release](https://github.com/guypritchard/SharpBoy/releases/latest): `win-x64` for Intel/AMD PCs, or `win-arm64` for Windows on ARM.
+2. Extract the whole ZIP. These builds include the .NET runtime.
+3. For the debugger, launch `GB.Debugger.exe`, click **Load ROM…**, and choose a `.gb` file.
+4. For console play, configure your terminal as described below, then run the executable with a ROM path:
+
+```powershell
+.\GB.Emulator.Console.exe "C:\Games\your-game.gb"
+```
+
+Without a path, the console uses `Tetris (World).gb` if present alongside the executable, otherwise the bundled `SPRITE.GB` demo. Private ROMs are excluded from published builds.
+
+### Make the console fit
+
+A Game Boy screen is 160 × 144 pixels. SharpBoy packs vertically adjacent pixels into `▀`/`█` characters, producing a **160-column, 72-row picture**, plus one status row.
+
+Use a terminal with UTF-8, ANSI true colour and a monospaced font with block characters. In Windows Terminal:
+
+- Set a small font for the emulator profile. **6 points** worked for the capture above; your display scaling may need a different size.
+- Make the window at least **160 columns wide and 73 rows high** before launching. A wide window alone is not enough: all 73 rows must fit vertically.
+- Use a font such as Cascadia Mono and reduce terminal padding if space is tight.
+- Press **R** to repaint after changing the window size. A subsequent frame also clears and redraws after resizing.
+
+If you see `Console video requires at least 160 columns and 73 rows`, reduce the font size or enlarge the terminal, then launch again. Redirected output is unsupported because the renderer needs an interactive terminal.
+
+### Controls
+
+| Game Boy button | Keyboard |
+| --- | --- |
+| D-pad | Arrow keys |
+| A | **Z** |
+| B | **X** |
+| Start | **Enter** |
+| Select | **Space** |
+| Repaint console | **R** |
+| Stop console | **Ctrl+C** |
+
+The debugger accepts game buttons from every tab. On Windows, console input tracks physical key state; quick taps last at least 30 ms. Other terminal platforms use short holds extended by key repeat. The debugger releases held buttons when it loses focus.
+
+## Explore the debugger
+
+Load a ROM, choose a tab, then use **Step**, **Trace**, **Stop**, **Step Back** and **Reset** to follow execution. **F10** steps one instruction; **Shift+F10** steps back.
+
+| View | What it shows |
+| --- | --- |
+| **Video** | Current 160 × 144 screen, the 384-tile VRAM atlas, scanline and VBlank status. |
+| **Interaction map** | An exploded Game Boy with live reads, writes, instruction fetches and a bus log. |
+| **Address map** | The complete `0000–FFFF` address space, access activity and active cartridge banks. |
+| **Cartridge** | ROM header, mapper, declared sizes, display modes, active banks and support limitations. |
+| **Memory** | Memory inspection alongside disassembly, registers, interrupts and stack state. |
+
+### Follow the hardware
+
+In **Interaction map**, choose **Fit poster** to see the whole machine, or **100% / read labels** for a scrollable view at full size.
+
+- **Cyan:** reads and instruction fetches.
+- **Amber:** writes.
+- **Violet:** both reads and writes.
+
+Trace accumulates activity across instructions: more accesses produce brighter light, which fades when activity stops. The bus log lists the latest instruction's addresses; the glow shows recent activity rather than a permanent history.
+
+ROM reads light the cartridge ROM. Writes to mapper-control addresses light the bank controller instead. Cartridge appearance reflects its hardware:
+
+| Cartridge | Visualisation |
+| --- | --- |
+| ROM only | Fixed wiring with no bank-controller chip. |
+| MBC1 | Violet controller showing simple or advanced banking mode. |
+| MBC3 | Cyan controller with independent ROM/RAM selection. |
+| Unimplemented mapper | Dashed controller outline with an unavailable label. |
+
+The capability panel shows both ROM windows, selected RAM bank, RAM enable state and optional hardware limitations. **Step Back** restores mapper registers and every cartridge RAM bank as part of the emulator snapshot. **Reset** reloads the cartridge and resets its state.
+
+The Video tab reconstructs the screen from current VRAM, OAM and LCD registers, combining background, window and sprites. It refreshes while stepping/tracing and after relevant writes, including OAM DMA at `FF46`. Mid-frame effects require a more accurate pixel pipeline.
+
+## Hardware support
+
+| Area | Current implementation |
+| --- | --- |
+| CPU | All 245 documented unprefixed and 256 `CB` opcodes; undefined opcodes raise an error. Interrupt entry, delayed `EI`, `RETI` and the HALT bug are handled. |
+| ROM only | Fixed cartridge ROM. |
+| MBC1 | Types `01–03`: ROM banking, RAM enable/disable, both banking modes and banked RAM. Standard wiring supports up to 2 MiB ROM with 8 KiB RAM, or 512 KiB ROM with 32 KiB RAM. |
+| MBC3 | Types `11–13`: ROM and cartridge RAM banking. RTC hardware is not implemented. |
+| Display | DMG monochrome screen reconstruction, LCD timing, background/window/sprites and OAM DMA. Full pixel-pipeline accuracy remains in progress. |
+| Sound | Two pulse channels, wave audio and noise, with stereo routing/volume. Windows front ends play PCM through the shared audio adapter. |
+| Input/timer | Joypad button matrix and interrupts; timer hardware. |
+| Serial | Functional byte transfers, completion interrupt and link-cable abstraction; individual bits are not yet shifted during transfers. |
+| Other cartridge hardware | MBC1M multicarts, other mappers, RTC, rumble and motion sensors are unavailable. |
+| Enhanced systems | Game Boy Color mode and Super Game Boy enhancements are unavailable. DMG-compatible CGB cartridges can use their DMG mode. |
+
+Mapper support does not guarantee that every game runs correctly. The Cartridge tab reports requirements and limitations for the ROM you load; battery-backed or enhanced-system cartridges may be marked partial even when banking works.
+
+### Battery saves and Step Back
+
+**There are currently no persistent battery save files.** Cartridge RAM lives in memory for the current emulator session. SharpBoy does not read or write `.sav` files and has no save-directory setting.
+
+Closing the app, loading another cartridge or resetting loses that RAM. Debugger Step Back snapshots preserve cartridge RAM while the session is running; they are not disk saves. Persistent battery storage is still to be implemented.
+
+## Run from source
+
+Use the **.NET 10 SDK**. The WinForms debugger requires Windows. Windows audio is provided by a separate platform library; the console can continue silently on other platforms with a suitable terminal.
+
+```powershell
+git clone https://github.com/guypritchard/SharpBoy.git
+cd SharpBoy
+dotnet restore GB.Emulator.sln
+```
+
+Start the console in a terminal large enough for its display:
+
+```powershell
+dotnet run --project GB.Emulator.Console -c Release -- "C:\Games\your-game.gb"
+```
+
+Start the debugger:
+
+```powershell
+dotnet run --project GB.Debugger -c Release
+```
+
+Use the bundled demo explicitly:
+
+```powershell
+dotnet run --project GB.Emulator.Console -c Release -- "GB.Roms\SPRITE.GB"
+```
+
+When `GB.Roms.Private/Tetris (World).gb` exists locally, the console project copies it into the build output and uses it by default. It is excluded from publish output.
+
+Build and test:
+
+```powershell
+dotnet build GB.Emulator.Console/GB.Emulator.Console.csproj -c Release
+dotnet build GB.Debugger/GB.Debugger.csproj -c Release
+dotnet test GB.Emulator.Tests/GB.Emulator.Tests.csproj -c Release
+```
 
 ## Architecture
 
-`GB.Emulator.Core` owns the hardware: CPU execution, the memory bus, LCD timing,
-VRAM/OAM state, the joypad, and the APU. `Gameboy` coordinates those
-devices and exposes immutable video and sound snapshots. Its `Rendering` folder
-turns a video snapshot into shade pixels. `GB.Emulator.Console` owns the Unicode
-terminal renderer. The console app and `GB.Debugger` control the hardware and present it
-through their own user interfaces. The core does not depend on drawing or
-terminal APIs. The APU generates stereo PCM; a cycle-accurate pixel pipeline is
-still future hardware work. Both front ends reference `GB.Emulator.Windows`,
-which owns the Windows audio adapter and depends on the core. Platform audio
-stays outside the core; the console can continue silently on other platforms.
-The memory bus uses separate silent and recording access observers for continuous
-play and debugger stepping. Both modes execute instructions through the same CPU path.
+![SharpBoy logical architecture](Docs/architecture.svg)
 
-Within the core, `Gameboy` creates and resets the devices, wires their interrupts,
-and coordinates save and restore. `RomDisassembler` builds debugger instruction
-windows without executing code. The CPU handles interrupt entry, operand fetch,
-instruction execution, and delayed interrupt enablement in separate methods;
-its registers own their snapshot and restore logic. `MemoryMap` routes bus
-accesses, selects cartridge devices, and copies OAM DMA through normal bus reads
-and writes so debugger traces include the transfer. These boundaries keep
-hardware behavior separate from debugger views. CPU registers and the CPU memory
-reference are still static, so multiple emulators require process isolation.
+[Open the architecture diagram](Docs/architecture.svg) · [Source-backed architecture model](Docs/architecture.json)
 
-The CPU executes all 245 documented unprefixed opcodes and all 256 `CB`
-bit/rotate opcodes. The 11 undefined opcodes raise an error. Instruction cycle
-counts drive LCD timing, and interrupt entry, delayed `EI`, `RETI`, and the HALT
-bug are handled. The wider emulator is still in progress; STOP wake-up and
-complete audio/video hardware accuracy is still in progress.
+| Project | Responsibility |
+| --- | --- |
+| `GB.Emulator.Core` | CPU and hardware devices, memory routing, cartridge mappers, snapshots and platform-independent DMG rendering. |
+| `GB.Emulator.Console` | Unicode terminal display, keyboard input and paced playback. |
+| `GB.Debugger` | WinForms stepping, disassembly, state inspection, hardware atlas and screen/tile views. |
+| `GB.Emulator.Windows` | Shared Windows audio output adapter. |
+| `GB.Experiments` | HTTP-to-emulated-serial experiments and isolated emulator workers. |
+| `GB.Emulator.Tests` | Hardware, execution, mapper, rendering, input and experiment regression tests. |
 
-## Console video
+`Gameboy` composes and resets the hardware. `MemoryMap` routes reads/writes and DMA; the cartridge factory selects a mapper from the header. The shared `CartridgeMapper` owns ROM/RAM storage and mapped windows, while MBC1/MBC3 own their banking rules and snapshots. Silent and recording memory observers allow continuous play and debugger tracing through the same CPU execution path.
 
-`ConsoleVideoRenderer` converts a 160 × 144 frame of Game Boy shade indices
-(0 = lightest, 3 = darkest) into ANSI true-color text. Each `▀` displays one
-pixel in its foreground color and the pixel below it in its background color;
-pixels with the same shade use `█`. A frame therefore occupies **160 columns
-and 72 rows**. For interactive drawing, use a terminal at least **160 columns
-by 73 rows** so the cursor has a spare row. The terminal also needs UTF-8,
-ANSI true-color, and a font with block characters.
+The core does not depend on terminal or drawing APIs. `DmgScreenRenderer` converts video snapshots into shade pixels; each front end presents them. CPU registers and the CPU memory reference are currently static, so independent emulator instances require separate processes.
 
-```csharp
-byte[] frame = new byte[Video.Width * Video.Height];
-// Fill frame with shade indices 0 through 3, in row-major order.
-ConsoleVideoRenderer.Draw(frame);
-```
+## Link-port web experiment
 
-`GB.Emulator.Console` redraws the current video state when the LCD reaches VBlank.
-When `GB.Roms.Private/Tetris (World).gb` is present, the console runs it by
-default. The private ROM is copied into the local build output but excluded from
-publish output. Without it, the bundled sprite ROM is used; a command-line ROM
-path always takes precedence.
-The bottom row shows rendered frames per second, averaged over the last second.
-Press **R** to repaint the terminal, or **Ctrl+C** to stop. If the terminal is
-resized, the next frame clears and redraws it. The debugger uses the same
-core renderer for its screen and tile views, and repaints its frame when the
-view is resized.
-
-## Input
-
-Both the console and every debugger tab use **arrow keys** for the D-pad,
-**Z** for A, **X** for B, **Enter** for Start, and **Space** for Select. The
-console uses the physical key state on Windows, so buttons stay pressed until
-release; quick taps last at least 30 ms. On other terminals, key repeat extends
-a short timed hold. The debugger uses key-down and key-up events and releases
-all buttons when it loses focus.
-Other input sources can call `gameboy.Input.SetButtonState(button, pressed)`.
-The joypad device implements the active-low `FF00` button matrix and requests
-the joypad interrupt when a selected input line becomes low.
-
-## Link port web experiment
-
-`GB.Experiments` runs a small ROM in the emulator and exposes its serial reply
-as a local HTTP page. Start it with:
+Run a small ROM as a local HTTP service through the emulated serial port:
 
 ```powershell
 dotnet run --project GB.Experiments -- --port 8765
-curl http://127.0.0.1:8765/
+curl.exe http://127.0.0.1:8765/
+curl.exe http://127.0.0.1:8765/api/primes/10
 ```
 
-Use `--workers 8` to run eight independent Game Boy emulators. The default is
-four workers (or fewer when fewer processors are available). The listener
-accepts requests concurrently and assigns them round robin. Each worker runs
-in its own process because the current CPU registers and memory bus are static;
-that process boundary keeps their hardware state separate. One worker handles
-one request at a time. Run `dotnet run --project GB.Experiments -- --benchmark`
-to measure worker counts on your computer.
+The built-in ROM replies `Hello from the Game Boy serial port!`; the prime endpoint returns `{"n":10,"prime":29}`. The prime search executes in the ROM using work RAM. Indices `1–6542` are supported, ending at 65521; invalid indices return HTTP 400.
 
-The listener binds to `127.0.0.1`. `GET /` sends the byte `G` to the ROM using
-an externally clocked transfer at `FF01` (SB) and `FF02` (SC). The ROM responds
-with ASCII bytes followed by a zero byte; the adapter clocks each byte and wraps
-the result in HTTP. The built-in ROM serves `Hello from the Game Boy serial
-port!`. Supply `--rom path/to/program.gb` to try another ROM implementing the
-same protocol.
+The listener binds to `127.0.0.1`. By default it uses up to four isolated emulator worker processes and distributes requests round robin. Use `--workers 8` for eight workers, `--rom path/to/program.gb` for a ROM implementing the serial protocol, or `--benchmark` to measure worker counts.
 
-The same server exposes `GET /api/primes/{n}`. For example,
-`curl http://127.0.0.1:8765/api/primes/10` returns
-`{"n":10,"prime":29}` as JSON. The adapter sends `P`, a 16-bit little-endian
-index, and a 16-bit search ceiling. For each request, the emulated ROM marks
-odd composites in work RAM, counts primes, and sends the result as two
-little-endian bytes. No prime results are stored in the cartridge. The ceiling
-is at most `min(65535, 16 * n)`, so small requests do less work. The supported
-range is **1–6542**, ending at 65521, the largest prime that fits in 16 bits.
-Invalid indices return HTTP 400. A custom ROM must implement the `P` command
-and this request and response format to support the endpoint.
+The protocol sends `G` for the greeting, or `P` followed by a 16-bit little-endian index and search ceiling for primes. Replies are zero-terminated ASCII or a two-byte little-endian prime respectively. The search ceiling is at most `min(65535, 16 * n)`.
 
-The core also exposes `gameboy.Serial` and `SerialLinkCable` for byte exchange
-between an internally clocked serial port and an externally clocked one. Serial completion
-clears SC bit 7 and requests interrupt bit 3. The current byte exchange is a
-functional model; individual bits are not yet shifted during the transfer.
+## Builds and releases
 
-## Debugger interaction map
+[GitHub Actions](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml) builds both front ends, runs tests and publishes self-contained `win-x64`/`win-arm64` artifacts. Successful builds on `master` also create a GitHub release with separate console/debugger ZIPs. Pull requests, tag pushes and manual builds upload artifacts without creating a release.
 
-Open `GB.Debugger`, load a ROM, and select the **Interaction map** tab. Press
-**Step** or F10 to follow a single instruction through the CPU and mapped
-hardware on an exploded Game Boy poster. The cartridge lifts above the console,
-video components sit in the screen, input sits with the controls, and the APU
-sits with the exploded speaker. **Fit poster** shows the whole assembly;
-**100% / read labels** provides a scrollable view at full size.
-The cartridge board changes with the loaded ROM: fixed wiring for ROM-only games,
-a violet MBC1 controller with simple/advanced mode, or a cyan MBC3 controller.
-Its capability panel shows both active ROM banks, RAM selection and enable state,
-and battery, RTC or rumble limitations. Mapper register writes light the controller;
-reads and instruction fetches light the ROM. Unsupported controllers use a dashed
-outline and an unavailable label. Reset and Step Back restore the displayed banks.
+GitVersion calculates assembly and artifact versions from Git history using GitHub Flow. Tags of the form `v<major>.<minor>.<patch>` set a release version; commit messages can request a larger increment with `+semver: minor` or `+semver: major`. Automatic release notes use the built commit's full message.
 
-The diagram shows cartridge ROM and RAM, work
-RAM banks, video RAM, sprite OAM, LCD/PPU, APU, joypad, serial link, timer/I/O,
-interrupt registers, high RAM, and OAM DMA. Cyan traces mark reads and fetches,
-amber marks writes, and violet marks both. **Trace** accumulates activity from
-every instruction in a batch; brighter traces indicate more accesses. The
-transparent glow fades within about a second after activity stops.
-Scroll the board to inspect the lower components; the separate bus log lists
-the latest instruction's exact addresses. **Step Back** or Shift+F10 restores
-the previous instruction and its diagram.
-The **Address map** tab lays out every address from `0000` through `FFFF` as
-coloured hardware blocks. Cyan and amber bars show where reads and writes land
-inside each range; the cream marker shows the latest instruction fetch. Activity
-accumulates during Trace and fades after it stops. Hover over a block for the
-exact addresses touched by the latest instruction. Cartridge blocks show the
-selected ROM and RAM banks when the cartridge has a mapper.
-The **Cartridge** tab reads the ROM header and shows its mapper, declared ROM and
-RAM sizes, display modes, active banks, and hardware requirements. Its support
-status distinguishes implemented features from missing ones; Pokémon Red is
-marked partial because battery saves and Super Game Boy enhancements are not
-yet implemented.
-Sound register access lights the APU on the map. The DMG APU generates two pulse
-channels, programmable wave audio, and noise, with stereo routing and volume.
-On Windows the console and debugger play the resulting PCM through the system
-audio device; the console paces emulation to the Game Boy clock when it runs ahead.
+## Implementation references
 
-The debugger's **Video** tab shows a 160 × 144 screen preview alongside a
-scrollable atlas of all 384 VRAM tiles. The preview combines the current
-background, window, and sprites using LCD control, scroll, and monochrome
-palette registers. Writes to `FF46` copy sprite entries into OAM. The preview
-refreshes after relevant writes while stepping or tracing;
-Step Back and Reset restore the view. It is reconstructed from the current
-memory snapshot, so it cannot show mid-frame effects until the emulator has a
-full pixel pipeline.
-
-Standard MBC1 cartridges (types `01`–`03`) support ROM banking, RAM enable/disable,
-and both simple and advanced banking modes, including the lower ROM window.
-Supported wiring allows up to 2 MiB ROM with 8 KiB RAM, or up to 512 KiB ROM with
-32 KiB RAM. MBC1M multicart wiring is not detected. Mapper state and all RAM banks
-are included in Step Back snapshots; debugger inspection reads the active banks.
-
-MBC3 cartridges, including Pokémon Red, can switch ROM and cartridge RAM banks.
-The CPU fetches banked instructions through the memory bus, so Pokémon Red can
-reach its title screen and introduction. Battery RAM currently lasts only for
-the running emulator session; persistent save files are not yet implemented.
-
-> This is an early work in progress.  
-
-## Implementation Reference Docs:
-
-- I made this:  https://guypritchard.github.io/SharpBoy-Opcode-Manual/
-
-- This is excellent:  https://meganesulli.com/generate-gb-opcodes/
-- https://cturt.github.io/cinoop.html
-- https://web.archive.org/web/20141105020940/http://problemkaputt.de/pandocs.htm#thecartridgeheader
-- http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
-- http://gameboy.mongenel.com/dmg/lesson1.html
-- http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
-- http://www.codeslinger.co.uk/pages/projects/gameboy.html
+- [SharpBoy opcode manual](https://guypritchard.github.io/SharpBoy-Opcode-Manual/)
+- [Pan Docs](https://gbdev.io/pandocs/)
+- [Game Boy opcode tables](https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
+- [Game Boy CPU manual](http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf)
+- [Opcode-generation notes](https://meganesulli.com/generate-gb-opcodes/)
+- [Cinoop emulator walkthrough](https://cturt.github.io/cinoop.html)
