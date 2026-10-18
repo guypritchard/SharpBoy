@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <PackageId>GB.Sdk</PackageId>
+    <Version>0.1.0-alpha.1</Version>
+    <Authors>SharpBoy contributors</Authors>
+    <RepositoryUrl>https://github.com/guypritchard/SharpBoy</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Description>Reference-only Game Boy C# hardware API contract for the SharpBoy native ROM compiler.</Description>
+    <PackageTags>gameboy;dmg;sharpboy;sdk;reference</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="PackageREADME.md" Pack="true" PackagePath="README.md" />
+  </ItemGroup>
+</Project>

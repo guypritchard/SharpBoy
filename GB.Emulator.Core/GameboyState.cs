@@ -21,7 +21,8 @@ namespace GB.Emulator.Core
             byte[] backgroundTiles,
             Lcd.LcdState lcdState,
             byte interruptFlags,
-            Cpu.CpuExecutionState cpuExecutionState)
+            Cpu.CpuExecutionState cpuExecutionState,
+            DmgStartupSequence.StartupState? startupState)
         {
             this.Registers = registers;
             this.Memory = memory;
@@ -40,6 +41,7 @@ namespace GB.Emulator.Core
             this.LcdState = lcdState;
             this.InterruptFlags = interruptFlags;
             this.CpuExecutionState = cpuExecutionState;
+            this.StartupState = startupState;
         }
 
         internal CpuRegistersState Registers { get; }
@@ -74,6 +76,7 @@ namespace GB.Emulator.Core
         internal byte InterruptFlags { get; }
 
         internal Cpu.CpuExecutionState CpuExecutionState { get; }
+        internal DmgStartupSequence.StartupState? StartupState { get; }
     }
 
     internal readonly struct CpuRegistersState

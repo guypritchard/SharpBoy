@@ -27,9 +27,11 @@ namespace GB.Emulator.Core
         private readonly RecordingMemoryAccessRecorder debuggerAccesses = new();
         private Cartridge? cartridge;
         private byte[] romData = Array.Empty<byte>();
+        private readonly DmgStartupSequence? startup;
 
-        public Gameboy()
+        public Gameboy(bool enableDmgStartup = false)
         {
+            if (enableDmgStartup) this.startup = new DmgStartupSequence();
             this.lcd = new Lcd();
             this.spriteTileManager = new SpriteTileManager();
             this.backgroundTileManager = new BackgroundTileManager();
@@ -88,6 +90,10 @@ namespace GB.Emulator.Core
 
         public Cartridge? Cartridge => this.cartridge;
 
+        public bool IsStartupSequenceActive => this.startup?.IsActive ?? false;
+
+        public int StartupFramesCompleted => this.startup?.FramesCompleted ?? 0;
+
         public void Load(Cartridge newCartridge)
         {
             this.cartridge = newCartridge;
@@ -96,6 +102,7 @@ namespace GB.Emulator.Core
             this.memory.LoadRom(this.romData);
             Cpu.Registers.Reset();
             this.cpu.ResetExecutionState();
+            this.startup?.Restart();
         }
 
         private void ResetHardware()
@@ -125,7 +132,9 @@ namespace GB.Emulator.Core
         public void ExecuteLoadedRom()
         {
             this.EnsureCartridgeLoaded("executing");
-
+            if (this.IsStartupSequenceActive)
+                this.memory.UseAccessRecorder(SilentMemoryAccessRecorder.Instance);
+            while (this.IsStartupSequenceActive) this.startup!.AdvanceFrame(this.memory, this.cpu, this.romData);
             this.cpu.Execute(this.romData);
         }
 
@@ -134,6 +143,12 @@ namespace GB.Emulator.Core
             this.EnsureCartridgeLoaded("stepping");
 
             this.memory.UseAccessRecorder(this.debuggerAccesses);
+            if (this.IsStartupSequenceActive)
+            {
+                this.startup!.AdvanceFrame(this.memory, this.cpu, this.romData);
+                return new CpuStepResult(new Instruction(0, "DMG startup frame", (_, _) => { }, 0, false),
+                    Cpu.Registers.PC, 0, 0, this.memory.ConsumeRecentWrites(), this.memory.ConsumeRecentReads());
+            }
             return this.cpu.ExecuteNextInstruction(this.romData);
         }
 
@@ -142,6 +157,11 @@ namespace GB.Emulator.Core
         {
             this.EnsureCartridgeLoaded("running");
             this.memory.UseAccessRecorder(SilentMemoryAccessRecorder.Instance);
+            if (this.IsStartupSequenceActive)
+            {
+                this.startup!.AdvanceFrame(this.memory, this.cpu, this.romData);
+                return false;
+            }
             this.cpu.ExecuteNextInstructionFast(this.romData);
             return this.cpu.IsStopped;
         }
@@ -195,7 +215,8 @@ namespace GB.Emulator.Core
                 this.backgroundTileManager.Snapshot(),
                 this.lcd.Snapshot(),
                 this.interrupt.Snapshot(),
-                this.cpu.CaptureExecutionState());
+                this.cpu.CaptureExecutionState(),
+                this.startup?.CaptureState());
         }
 
         public void RestoreState(GameboyState state)
@@ -204,6 +225,9 @@ namespace GB.Emulator.Core
             {
                 throw new ArgumentNullException(nameof(state));
             }
+
+            if ((this.startup != null) != state.StartupState.HasValue)
+                throw new InvalidOperationException("Cannot restore a startup-enabled snapshot into a differently configured Gameboy.");
 
             Cpu.Registers.RestoreState(state.Registers);
 
@@ -223,6 +247,8 @@ namespace GB.Emulator.Core
             this.lcd.Restore(state.LcdState);
             this.interrupt.Restore(state.InterruptFlags);
             this.cpu.RestoreExecutionState(state.CpuExecutionState);
+            if (state.StartupState is DmgStartupSequence.StartupState startupState)
+                this.startup!.RestoreState(startupState);
         }
     }
 }

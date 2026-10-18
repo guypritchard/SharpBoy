@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Host oracle uses explicit unchecked arithmetic, matching the target's supported subset. -->
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.0.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.0.1" />
+    <ProjectReference Include="..\GB.Compiler\GB.Compiler.csproj" />
+    <ProjectReference Include="..\GB.Compiler.Cli\GB.Compiler.Cli.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Fixtures/ArithmeticGame.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/Assets/*" Link="Assets/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/SemanticPure.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/SemanticGame.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Tools/IndependentEmulator/validate.py" Link="IndependentEmulator/validate.py" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/ScrollingBackground/ScrollingBackground.cs" Link="Fixtures/ScrollingBackground.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/Sprites/Sprites.cs" Link="Fixtures/Sprites.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/BankedAssets/BankedAssets.cs" Link="Fixtures/BankedAssets.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/BankedAssets/data.bin" Link="Fixtures/data.bin" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/BankedAssets/tail.bin" Link="Fixtures/tail.bin" CopyToOutputDirectory="PreserveNewest" />
+    <Compile Remove="Fixtures/ArithmeticGame.cs" />
+    <Compile Remove="Fixtures/SemanticGame.cs" />
+  </ItemGroup>
+</Project>

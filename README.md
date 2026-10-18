@@ -4,7 +4,18 @@
 
 A Game Boy emulator written in C#, with a playable terminal front end and a Windows debugger that shows what happens inside the machine.
 
+The experimental C#-to-DMG compiler builds native ROMs with RGBDS 0.9.0: 32 KiB ROM-only cartridges and scoped 64-512 KiB MBC1 cartridges with banked read-only assets. Samples cover a [scrolling background](Samples/ScrollingBackground/README.md), [direct-OAM sprites](Samples/Sprites/README.md), and [MBC1 assets](Samples/BankedAssets/README.md). See the [clean-checkout Windows toolchain and source-to-ROM CLI guide](Docs/csharp-gameboy-toolchain.md), [independent PyBoy validation procedure](Docs/csharp-gameboy-independent-validation.md), and the plan's explicit [remaining implementation backlog](Docs/csharp-gameboy-compiler-plan.md#what-remains-to-implement). The compiler supports a [restricted C# subset](Docs/csharp-gameboy-language.md), not arbitrary .NET programs. Both software emulators run bootless in validation; neither is independent hardware proof. Compiler sprite writes do not use OAM DMA or model DMA timing/bus blocking.
+
+The SDK distribution has three separate packages: `GB.Sdk` is the reference-only
+C# API for project validation and IntelliSense; `GB.Compiler.Cli` installs `gbc`,
+the native-ROM compiler; `GB.Sdk.Templates` provides standalone `dotnet new`
+blank, background and sprites starters with their own artwork. The SDK host
+method bodies only throw guard exceptions: there is no alternate CLR intrinsic
+implementation. See [package installation and isolated verification](Docs/csharp-gameboy-toolchain.md#sdk-packages-and-standalone-templates).
+
 Play through a Unicode console display, or follow instructions across an exploded Game Boy: cartridge banks, CPU, memory, display, sound and input. SharpBoy is a work in progress, with an emphasis on making the hardware visible and understandable.
+
+The console and debugger opt into a [clean-room DMG logo scroll and two-note startup](Docs/dmg-startup.md) before running cartridge code (~4.42 seconds). Debugger Step/Trace advance one animation frame per step; Reset replays it. Logo mismatches warn but never block. Core `new Gameboy()` and compiler/emulator validation remain boot-skipped by default; no boot ROM is bundled.
 
 [Download Windows builds](https://github.com/guypritchard/SharpBoy/releases/latest) · [Run from source](#run-from-source) · [Explore the debugger](#explore-the-debugger) · [Hardware support](#hardware-support) · [Architecture](#architecture)
 
@@ -166,6 +177,17 @@ dotnet build GB.Debugger/GB.Debugger.csproj -c Release
 dotnet test GB.Emulator.Tests/GB.Emulator.Tests.csproj -c Release
 ```
 
+To compile your own native ROM, install the exact official RGBDS 0.9.0 Windows ZIP (MIT) with the [verified SHA-256 and Python 3.11 / PyBoy 2.6.0 (LGPL-3.0-only) setup](Docs/csharp-gameboy-toolchain.md). Once `$bin` points to the verified RGBDS directory:
+
+```powershell
+dotnet run --project GB.Compiler.Cli -c Release -- --rgbds-bin $bin --out artifacts/ci/scrolling.gb --title SCROLLING --background-tiles Samples/Assets/background.2bpp --background-map Samples/Assets/background.tilemap Samples/ScrollingBackground/ScrollingBackground.cs
+dotnet run --project GB.Debugger -c Release
+```
+
+Click **Load ROM…** and select `artifacts/ci/scrolling.gb`. The compiler also produces `.asm`, `.sym` labels, `.map` layout and `.memory.txt` memory usage next to the ROM. These provide manual source-to-label inspection, **not** debugger source-level integration. Compile errors identify source locations and diagnostic codes; see the [CLI diagnostics](Docs/csharp-gameboy-toolchain.md). CI smoke-checks all five outputs and the 32768-byte ROM; configured compiler and emulator test TRX reports must be nonempty and have **zero skipped/inconclusive tests**. The generated `artifacts/ci` files are ignored and are not uploaded with release application packages.
+
+The [banked-assets sample](Samples/BankedAssets/README.md) extends this ROM-only path with **asset-only MBC1 type `$01` without RAM**: 4/8/16/32 banks, code and bank-switch helper in ROM0, display data in bank 1, declared assets in banks 2+, and `$D000-$D7FF` WRAM staging. Copy/read operands must be compile-time constants; each copy restores the previous bank. Interrupts remain disabled. Function banking, save RAM, >32 banks, VRAM/DMA transfers, reentrancy and managed arrays are not supported. Configured compiler tests build and execute all four sizes in SharpBoy and validate a 4-bank image in PyBoy.
+
 ## Architecture
 
 ![SharpBoy logical architecture](Docs/architecture.svg)
@@ -203,7 +225,7 @@ The protocol sends `G` for the greeting, or `P` followed by a 16-bit little-endi
 
 ## Builds and releases
 
-[GitHub Actions](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml) builds both front ends, runs tests and publishes self-contained `win-x64`/`win-arm64` artifacts. Successful builds on `master` also create a GitHub release with separate console/debugger ZIPs. Pull requests, tag pushes and manual builds upload artifacts without creating a release.
+[GitHub Actions](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml) builds the full solution, runs configured compiler/PyBoy and emulator tests with a zero-skip TRX gate, smoke-builds the sample, and publishes self-contained `win-x64`/`win-arm64` console/debugger artifacts. Successful builds on `master` also create a GitHub release with separate console/debugger ZIPs. Pull requests, tag pushes and manual builds upload artifacts without creating a release. CI installs RGBDS/PyBoy only into runner temp; generated ROMs, venvs and tools are not included in the published packages.
 
 GitVersion calculates assembly and artifact versions from Git history using GitHub Flow. Tags of the form `v<major>.<minor>.<patch>` set a release version; commit messages can request a larger increment with `+semver: minor` or `+semver: major`. Automatic release notes use the built commit's full message.
 

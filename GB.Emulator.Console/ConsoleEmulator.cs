@@ -29,7 +29,7 @@ internal sealed class ConsoleEmulator : IDisposable
         string romPath = args.Length > 0
             ? Path.GetFullPath(args[0])
             : DefaultRomPath();
-        var gameboy = new Gameboy();
+        var gameboy = new Gameboy(enableDmgStartup: true);
         gameboy.Load(await CartridgeLoader.Load(romPath));
         return new ConsoleEmulator(gameboy);
     }
@@ -53,7 +53,7 @@ internal sealed class ConsoleEmulator : IDisposable
                 this.PollInput();
                 clock.WaitForButton();
             }
-            else if (clock.InputPollDue())
+            else if (this.gameboy.IsStartupSequenceActive || clock.InputPollDue())
             {
                 this.PollInput();
                 clock.Pace(this.gameboy.EmulatedCycles, stopping);

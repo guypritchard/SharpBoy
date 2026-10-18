@@ -284,6 +284,9 @@ namespace GB.Emulator.Core
             }
         }
 
+        // Synthetic startup advances the peripherals without fetching or executing an opcode.
+        internal void AdvanceStartupFrame() => this.AdvanceHardware(Lcd.CyclesPerScanline * Lcd.ScanlinesPerFrame);
+
         internal readonly record struct CpuExecutionState(
             bool InterruptMasterEnabled,
             int EnableInterruptsDelay,
