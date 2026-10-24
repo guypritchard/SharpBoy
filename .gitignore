@@ -52,6 +52,9 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+# Workflow release staging when reproduced locally (packages only come from artifacts/console and artifacts/debugger).
+/release-assets/
+/release-notes.md
 **/Properties/launchSettings.json
 
 # StyleCop
@@ -297,6 +300,9 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+.venv/
+venv/
+*.pyboy
 
 # Cake - Uncomment if you are using it
 # tools/**

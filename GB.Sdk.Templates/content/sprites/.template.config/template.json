@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "SharpBoy contributors",
+  "classifications": ["Game Boy", "DMG", "C#"],
+  "identity": "SharpBoy.Sdk.Dmg.Sprites",
+  "name": "SharpBoy DMG sprites",
+  "shortName": "gb-dmg-sprites",
+  "sourceName": "TemplateProject",
+  "preferNameDirectory": true,
+  "symbols": {
+    "romTitle": { "type": "parameter", "datatype": "text", "defaultValue": "SPRITES", "replaces": "ROMTITLE", "description": "ROM header title (1-16 printable ASCII characters)" },
+    "sdkVersion": { "type": "parameter", "datatype": "text", "defaultValue": "0.1.0-alpha.1", "replaces": "0.1.0-alpha.1", "description": "Matching GB.Sdk package version" }
+  }
+}

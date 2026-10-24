@@ -40,7 +40,7 @@ public partial class DebuggerForm : Form
         Color.Black
     };
 
-    private readonly Gameboy gameboy = new();
+    private readonly Gameboy gameboy = new(enableDmgStartup: true);
     private readonly DebuggerKeyboardInput keyboardInput;
     private readonly HashSet<ushort> recentWrites = new();
     private readonly HashSet<ushort> recentReads = new();
@@ -253,7 +253,11 @@ public partial class DebuggerForm : Form
         StepResult outcome = StepResult.Success;
         string? errorMessage = null;
 
-        for (int i = 0; i < TraceStepsPerTick; i++)
+        // Startup steps represent entire frames, not opcodes: never consume the
+        // whole 4.4-second animation in a single UI timer callback.
+        int stepsThisTick = this.gameboy.IsStartupSequenceActive ? 1 : TraceStepsPerTick;
+        this.traceTimer.Interval = this.gameboy.IsStartupSequenceActive ? 17 : TraceIntervalMs;
+        for (int i = 0; i < stepsThisTick; i++)
         {
             outcome = this.StepOnce(out errorMessage);
             if (outcome != StepResult.Success)
@@ -561,7 +565,11 @@ public partial class DebuggerForm : Form
         this.UpdateInteractionView();
         long codeTicks = Stopwatch.GetTimestamp();
 
-        if (reportTiming)
+        if (this.gameboy.IsStartupSequenceActive)
+        {
+            this.statusLabel.Text = $"DMG startup · frame {this.gameboy.StartupFramesCompleted}/264 · Step Back available";
+        }
+        else if (reportTiming)
         {
             this.statusLabel.Text =
                 $"Step {TicksToMilliseconds(codeTicks - startTicks):0.0}ms | " +

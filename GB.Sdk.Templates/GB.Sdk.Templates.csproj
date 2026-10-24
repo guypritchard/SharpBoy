@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>GB.Sdk.Templates</PackageId>
+    <Version>0.1.0-alpha.1</Version>
+    <Authors>SharpBoy contributors</Authors>
+    <RepositoryUrl>https://github.com/guypritchard/SharpBoy</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Description>Standalone DMG C# ROM starter projects for SharpBoy gbc.</Description>
+    <PackageTags>gameboy;dmg;sharpboy;dotnet-new;templates</PackageTags>
+    <PackageType>Template</PackageType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- NuGet mistakes template-owned build.ps1 files for install hooks, and expects
+         framework assemblies from a content-only template package. Neither applies. -->
+    <NoWarn>$(NoWarn);NU5110;NU5111;NU5128</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="PackageREADME.md" Pack="true" PackagePath="README.md" />
+    <Content Include="content/**/*" Exclude="content/**/bin/**;content/**/obj/**" Pack="true" PackagePath="content/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
