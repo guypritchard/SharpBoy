@@ -2,7 +2,7 @@
 
 [![Windows build](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml/badge.svg?branch=master)](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml)
 
-A Game Boy emulator written in C#, with a playable terminal front end and a Windows debugger that shows what happens inside the machine.
+A Game Boy emulator written in C#, with a scalable Windows player, a playable terminal front end and a Windows debugger that shows what happens inside the machine.
 
 The experimental C#-to-DMG compiler builds native ROMs with RGBDS 0.9.0: 32 KiB ROM-only cartridges and scoped 64-512 KiB MBC1 cartridges with banked read-only assets. Samples cover a [scrolling background](Samples/ScrollingBackground/README.md), [direct-OAM sprites](Samples/Sprites/README.md), and [MBC1 assets](Samples/BankedAssets/README.md). See the [clean-checkout Windows toolchain and source-to-ROM CLI guide](Docs/csharp-gameboy-toolchain.md), [independent PyBoy validation procedure](Docs/csharp-gameboy-independent-validation.md), and the plan's explicit [remaining implementation backlog](Docs/csharp-gameboy-compiler-plan.md#what-remains-to-implement). The compiler supports a [restricted C# subset](Docs/csharp-gameboy-language.md), not arbitrary .NET programs. Both software emulators run bootless in validation; neither is independent hardware proof. Compiler sprite writes do not use OAM DMA or model DMA timing/bus blocking.
 
@@ -43,16 +43,45 @@ All screenshots use demo ROMs from [GB.Roms](GB.Roms). ROMs from `GB.Roms.Privat
 
 ## Get started on Windows
 
-1. Download the console or debugger ZIP from the [latest release](https://github.com/guypritchard/SharpBoy/releases/latest): `win-x64` for Intel/AMD PCs, or `win-arm64` for Windows on ARM.
+1. Download the Windows player, console or debugger ZIP from the [latest release](https://github.com/guypritchard/SharpBoy/releases/latest): `win-x64` for Intel/AMD PCs, or `win-arm64` for Windows on ARM. Windows player packages are produced by builds containing the player project.
 2. Extract the whole ZIP. These builds include the .NET runtime.
-3. For the debugger, launch `GB.Debugger.exe`, click **Load ROM…**, and choose a `.gb` file.
+3. For the player, launch `GB.Emulator.Windows.exe` and use **File → Open ROM…**, drag in a `.gb` file, or choose **Load bundled demo**. For the debugger, launch `GB.Debugger.exe`, click **Load ROM…**, and choose a `.gb` file.
 4. For console play, configure your terminal as described below, then run the executable with a ROM path:
 
 ```powershell
 .\GB.Emulator.Console.exe "C:\Games\your-game.gb"
 ```
 
-Without a path, the console uses `Tetris (World).gb` if present alongside the executable, otherwise the bundled `SPRITE.GB` demo. Private ROMs are excluded from published builds.
+Without a path, the console uses the bundled `SPRITE.GB` demo.
+
+### Windows player
+
+The player reuses `GB.Emulator.Core` for hardware, startup and rendering, and
+`GB.Emulator.Core.Win32` for audio. Resize freely: the display stays centered with
+its original aspect ratio. **View → Window size** selects 2×–6×, and **Integer
+scaling** keeps evenly sized pixels. Disable integer scaling to fit the available
+space more closely. Windows controls scale with per-monitor DPI; very small
+windows are limited by their controls' minimum size.
+
+- **Ctrl+O** opens a ROM; a path can also be passed on the command line.
+- **Ctrl+P** pauses/resumes; **Ctrl+R** resets and replays startup. Reset clears cartridge RAM.
+- **F11** toggles fullscreen; **Esc** leaves it. The previous window size/state is restored.
+- **View → Show FPS and speed** enables LCD frame rate and emulation speed relative to the original clock. Paused time is excluded; this is emulation throughput, not monitor refresh rate.
+- **Ctrl+I** opens the optional, resizable inspector with cartridge capabilities and live bank selection, CPU/hardware registers, and a read-only memory viewer. Inspection refreshes at most four times per second, independently of playback.
+- **Emulation → Mute audio** controls sound. Playback pauses on loss of application focus by default; this can be disabled. Held game buttons are released on focus loss and pause.
+
+Game controls are **arrows**, **Z/X**, and **Enter/Space**. Playback uses bounded
+CPU batches and a reused frame bitmap; slow window operations cannot accumulate
+an unbounded catch-up queue. Audio stops on pause and shutdown and can be absent
+without preventing play. The existing core's hardware and save limitations below
+also apply to this player.
+
+Run from source:
+
+```powershell
+dotnet run --project GB.Emulator.Windows -c Release
+dotnet run --project GB.Emulator.Windows -c Release -- "GB.Roms/SPRITE.GB"
+```
 
 ### Make the console fit
 
@@ -167,14 +196,17 @@ Use the bundled demo explicitly:
 dotnet run --project GB.Emulator.Console -c Release -- "GB.Roms\SPRITE.GB"
 ```
 
-When `GB.Roms.Private/Tetris (World).gb` exists locally, the console project copies it into the build output and uses it by default. It is excluded from publish output.
+To load another ROM, pass its path as the command-line argument. Private ROMs are not copied into build or publish output automatically.
 
 Build and test:
 
 ```powershell
 dotnet build GB.Emulator.Console/GB.Emulator.Console.csproj -c Release
 dotnet build GB.Debugger/GB.Debugger.csproj -c Release
+dotnet build GB.Emulator.Windows/GB.Emulator.Windows.csproj -c Release
 dotnet test GB.Emulator.Tests/GB.Emulator.Tests.csproj -c Release
+dotnet test GB.Emulator.Hosting.Tests/GB.Emulator.Hosting.Tests.csproj -c Release
+dotnet test GB.Emulator.Windows.Tests/GB.Emulator.Windows.Tests.csproj -c Release
 ```
 
 To compile your own native ROM, install the exact official RGBDS 0.9.0 Windows ZIP (MIT) with the [verified SHA-256 and Python 3.11 / PyBoy 2.6.0 (LGPL-3.0-only) setup](Docs/csharp-gameboy-toolchain.md). Once `$bin` points to the verified RGBDS directory:
@@ -197,15 +229,19 @@ The [banked-assets sample](Samples/BankedAssets/README.md) extends this ROM-only
 | Project | Responsibility |
 | --- | --- |
 | `GB.Emulator.Core` | CPU and hardware devices, memory routing, cartridge mappers, snapshots and platform-independent DMG rendering. |
+| `GB.Emulator.Hosting` | Shared `EmulationHost`: playback, pacing, immutable frames, audio contracts, statistics, inspection and debugging. |
+| `GB.Emulator.Hosting.Tests` | Independent-machine, host lifecycle, frame/audio, inspection and debugger regression tests. |
 | `GB.Emulator.Console` | Unicode terminal display, keyboard input and paced playback. |
 | `GB.Debugger` | WinForms stepping, disassembly, state inspection, hardware atlas and screen/tile views. |
-| `GB.Emulator.Windows` | Shared Windows audio output adapter. |
+| `GB.Emulator.Core.Win32` | Shared Windows audio output adapter implementing the host's audio contract. |
+| `GB.Emulator.Windows` | DPI-aware WinForms player, scaled display, ROM dialogs, playback controls and optional live inspector/statistics. |
+| `GB.Emulator.Windows.Tests` | Player pacing, scaling, input and Windows UI/lifecycle regression tests. |
 | `GB.Experiments` | HTTP-to-emulated-serial experiments and isolated emulator workers. |
 | `GB.Emulator.Tests` | Hardware, execution, mapper, rendering, input and experiment regression tests. |
 
 `Gameboy` composes and resets the hardware. `MemoryMap` routes reads/writes and DMA; the cartridge factory selects a mapper from the header. The shared `CartridgeMapper` owns ROM/RAM storage and mapped windows, while MBC1/MBC3 own their banking rules and snapshots. Silent and recording memory observers allow continuous play and debugger tracing through the same CPU execution path.
 
-The core does not depend on terminal or drawing APIs. `DmgScreenRenderer` converts video snapshots into shade pixels; each front end presents them. CPU registers and the CPU memory reference are currently static, so independent emulator instances require separate processes.
+The core does not depend on terminal or drawing APIs. Each machine owns its CPU registers, flags, memory reference and instruction handlers; independent machines can run in one process. Console, Windows player and debugger compose the shared `EmulationHost`. It owns playback state, pacing, immutable frames, audio routing, statistics, inspection and bounded debugger rewind. Front ends provide presentation, physical input and scheduling. See [hosting another UI](Docs/emulation-host.md) for contracts, ownership and examples. Experiment workers retain process isolation as a host policy.
 
 ## Link-port web experiment
 

@@ -100,7 +100,7 @@ namespace GB.Emulator.Core
             this.romData = newCartridge.Data;
             this.ResetHardware();
             this.memory.LoadRom(this.romData);
-            Cpu.Registers.Reset();
+            this.cpu.Registers.Reset();
             this.cpu.ResetExecutionState();
             this.startup?.Restart();
         }
@@ -147,7 +147,7 @@ namespace GB.Emulator.Core
             {
                 this.startup!.AdvanceFrame(this.memory, this.cpu, this.romData);
                 return new CpuStepResult(new Instruction(0, "DMG startup frame", (_, _) => { }, 0, false),
-                    Cpu.Registers.PC, 0, 0, this.memory.ConsumeRecentWrites(), this.memory.ConsumeRecentReads());
+                    this.cpu.Registers.PC, 0, 0, this.memory.ConsumeRecentWrites(), this.memory.ConsumeRecentReads());
             }
             return this.cpu.ExecuteNextInstruction(this.romData);
         }
@@ -166,8 +166,20 @@ namespace GB.Emulator.Core
             return this.cpu.IsStopped;
         }
 
+        /// <summary>Runs bounded work. An instruction or synthetic startup frame may overshoot the cycle budget.</summary>
+        public long RunForCycles(long cycleBudget, int maxInstructions = 32768)
+        {
+            if (cycleBudget < 0) throw new ArgumentOutOfRangeException(nameof(cycleBudget));
+            if (maxInstructions <= 0) throw new ArgumentOutOfRangeException(nameof(maxInstructions));
+            this.EnsureCartridgeLoaded("running");
+            long start = this.EmulatedCycles;
+            for (int i = 0; i < maxInstructions && this.EmulatedCycles - start < cycleBudget; i++)
+                if (this.RunStep()) break;
+            return this.EmulatedCycles - start;
+        }
+
         public IReadOnlyList<CpuStepResult> GetInstructionWindow(int instructionsBefore, int instructionsAfter) =>
-            this.disassembler.GetInstructionWindow(this.romData, Cpu.Registers.PC, instructionsBefore, instructionsAfter);
+            this.disassembler.GetInstructionWindow(this.romData, this.cpu.Registers.PC, instructionsBefore, instructionsAfter);
 
         public IReadOnlyList<CpuStepResult> GetDisassembly() =>
             this.disassembler.GetDisassembly(this.romData);
@@ -199,7 +211,7 @@ namespace GB.Emulator.Core
         public GameboyState CaptureState()
         {
             return new GameboyState(
-                Cpu.Registers.CaptureState(),
+                this.cpu.Registers.CaptureState(),
                 this.memory.Snapshot(),
                 this.cartridgeRam.Snapshot(),
                 this.workRamBank0.Snapshot(),
@@ -229,7 +241,7 @@ namespace GB.Emulator.Core
             if ((this.startup != null) != state.StartupState.HasValue)
                 throw new InvalidOperationException("Cannot restore a startup-enabled snapshot into a differently configured Gameboy.");
 
-            Cpu.Registers.RestoreState(state.Registers);
+            this.cpu.Registers.RestoreState(state.Registers);
 
             this.memory.RestoreSnapshot(state.Memory);
             this.cartridgeRam.Restore(state.RamBank1);

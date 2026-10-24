@@ -1,13 +1,17 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "16d2c3683925898426306089eaba36e065f5f89a",
+  "source": "Working tree on 8e1604fa36c19ce613ca1f16715715c338738048; pre-documentation manifest 86198cf5de7e693cda2f1682cb854b97a32ca1cfec83044a24068c84409f6476",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
-    "CPU registers and memory references remain static; experiment workers use separate processes. Rendering reconstructs snapshots, not a cycle-accurate pixel pipeline.",
+    "Each machine owns its CPU registers, flags and memory references; experiment workers retain processes as a host policy. Rendering reconstructs snapshots, not a cycle-accurate pixel pipeline.",
     "Standard MBC1 only; MBC1M wiring, persistent battery saves and MBC3 RTC remain outside this implementation.",
-    "Mapper selection, mapped windows and cartridge snapshots use the shared CartridgeMapper / CartridgeMapperState contracts; MBC1 and MBC3 own their banking rules. Debugger inspection reads mapper capabilities and live bank state."
+    "Mapper selection, mapped windows and cartridge snapshots use the shared CartridgeMapper / CartridgeMapperState contracts; MBC1 and MBC3 own their banking rules. Debugger inspection reads mapper capabilities and live bank state.",
+    "Emulator overview updated for the Windows player and Win32 audio extraction; compiler/toolchain components remain outside this diagram. Windows playback and read-only inspection share one UI thread; inspector refresh is capped at 4 Hz.",
+    "Console and Windows playback share EmulationHost pacing, immutable frame publication, audio lifetime and inspection. Debugger stepping/rewind use the shared debugging service; rich debugger views still inspect composed core devices.",
+    "Hosting calls IAudioOutput supplied by the UI; the hosting-to-audio arrow is runtime dispatch only. Only the Win32 adapter references Hosting at compile time. Other audio adapters may implement the same contract.",
+    "The console defaults to the bundled SPRITE.GB demo and accepts explicit ROM paths; private ROMs are not automatically copied by its project. This is configuration behavior within the existing front-end boundary."
   ],
   "nodes": [
     {
@@ -17,8 +21,8 @@
       "role": "Owns terminal playback and keyboard input",
       "boundary": "Console executable",
       "contracts": [
-        "Gameboy control",
-        "ANSI frame display"
+        "EmulationHost lifecycle and input",
+        "IVideoOutput terminal presentation"
       ],
       "files": [
         "GB.Emulator.Console/ConsoleEmulator.cs",
@@ -32,7 +36,8 @@
         "GB.Emulator.Console/ConsoleScreen.cs: Console front end",
         "GB.Emulator.Console/ConsoleVideoRenderer.cs: Console front end",
         "GB.Emulator.Console/ConsoleKeyboardInput.cs: Console front end",
-        "GB.Emulator.Console/GB.Emulator.Console.csproj: Console front end"
+        "GB.Emulator.Console/GB.Emulator.Console.csproj: Console front end",
+        "GB.Emulator.Console/ConsoleEmulator.cs: explicit ROM argument or bundled SPRITE.GB"
       ],
       "confidence": "high",
       "row": 0,
@@ -42,11 +47,11 @@
       "id": "debugger",
       "label": "WinForms debugger",
       "group": "Hosts",
-      "role": "Owns stepping, inspection and visual diagnostics",
+      "role": "Owns debugger controls and deep visual diagnostics",
       "boundary": "WinForms executable",
       "contracts": [
-        "Gameboy stepping and restore",
-        "Diagnostic views",
+        "EmulationHost stepping, breakpoints and rewind",
+        "Diagnostic views over the composed machine",
         "Cartridge capability view and separate mapper-control activity"
       ],
       "files": [
@@ -55,7 +60,6 @@
         "GB.Debugger/MemoryMapControl.cs",
         "GB.Debugger/GB.Debugger.csproj",
         "GB.Debugger/CartridgeInfoControl.cs",
-        "GB.Debugger/InteractionDiagramControl.cs",
         "GB.Debugger/InteractionDiagramControl.Poster.cs",
         "GB.Debugger/InteractionDiagramControl.Cartridge.cs"
       ],
@@ -66,7 +70,8 @@
         "GB.Debugger/GB.Debugger.csproj: WinForms debugger",
         "GB.Debugger/CartridgeInfoControl.cs: ShowBanks",
         "GB.Debugger/InteractionDiagramControl.cs: ShowCartridge / ClassifyWrite",
-        "GB.Debugger/InteractionDiagramControl.Cartridge.cs: DrawMapper / DrawCartridgeProfile"
+        "GB.Debugger/InteractionDiagramControl.Cartridge.cs: DrawMapper / DrawCartridgeProfile",
+        "GB.Debugger/DebuggerForm.cs: host.Debugging Step / StepBack and injected Gameboy"
       ],
       "confidence": "high",
       "row": 0,
@@ -103,18 +108,17 @@
       "label": "Windows audio adapter",
       "group": "Platform",
       "role": "Adapts APU stereo PCM to Windows waveOut",
-      "boundary": "Shared .NET library: GB.Emulator.Windows",
+      "boundary": "Shared .NET library: GB.Emulator.Core.Win32",
       "contracts": [
-        "APU SamplesReady to waveOut",
+        "IAudioOutput Write / Flush / Dispose",
         "TryCreate returns null when unavailable"
       ],
       "files": [
-        "GB.Emulator.Windows/WindowsAudioOutput.cs",
-        "GB.Emulator.Windows/GB.Emulator.Windows.csproj"
+        "GB.Emulator.Core.Win32/WindowsAudioOutput.cs",
+        "GB.Emulator.Core.Win32/GB.Emulator.Core.Win32.csproj"
       ],
       "evidence": [
-        "GB.Emulator.Windows/WindowsAudioOutput.cs: Windows audio adapter",
-        "GB.Emulator.Windows/GB.Emulator.Windows.csproj: Windows audio adapter"
+        "GB.Emulator.Core.Win32/WindowsAudioOutput.cs: standalone bounded waveOut adapter implementing IAudioOutput"
       ],
       "confidence": "high",
       "row": 1,
@@ -148,7 +152,8 @@
       "contracts": [
         "Load / RunStep / Step / CaptureState / RestoreState",
         "Video and sound snapshots",
-        "CartridgeMapperState snapshot payload"
+        "CartridgeMapperState snapshot payload",
+        "Bounded RunForCycles with instruction overshoot"
       ],
       "files": [
         "GB.Emulator.Core/Gameboy.cs",
@@ -221,18 +226,17 @@
       "id": "cpu",
       "label": "CPU execution",
       "group": "Hardware",
-      "role": "Executes opcodes and advances device cycles",
-      "boundary": "Core; static registers and memory reference",
+      "role": "Executes opcodes and clocks devices",
+      "boundary": "Core; per-machine CPU state",
       "contracts": [
         "Instruction stepping and cycle accounting",
-        "Process isolation for multiple emulators"
+        "Independent CPU state and instance-bound instruction handlers"
       ],
       "files": [
         "GB.Emulator.Core/Cpu.cs",
         "GB.Emulator.Core/Cpu.Operations.cs",
         "GB.Emulator.Core/Cpu.Memory.cs",
-        "GB.Emulator.Core/Cpu.Registers.cs",
-        "GB.Emulator.Core/Cpu.Instructions.cs",
+        "GB.Emulator.Core/CpuRegisters.cs",
         "GB.Emulator.Core/Cpu.OpcodeTable.cs",
         "GB.Emulator.Core/CpuStepResult.cs"
       ],
@@ -240,10 +244,10 @@
         "GB.Emulator.Core/Cpu.cs: CPU execution",
         "GB.Emulator.Core/Cpu.Operations.cs: CPU execution",
         "GB.Emulator.Core/Cpu.Memory.cs: CPU execution",
-        "GB.Emulator.Core/Cpu.Registers.cs: CPU execution",
-        "GB.Emulator.Core/Cpu.Instructions.cs: CPU execution",
+        "GB.Emulator.Core/CpuRegisters.cs: CPU execution",
         "GB.Emulator.Core/Cpu.OpcodeTable.cs: CPU execution",
-        "GB.Emulator.Core/CpuStepResult.cs: CPU execution"
+        "GB.Emulator.Core/CpuStepResult.cs: CPU execution",
+        "GB.Emulator.Core/Cpu.cs: instance-owned Registers, Flags, Operations and memory"
       ],
       "confidence": "high",
       "row": 2,
@@ -332,10 +336,12 @@
       "id": "tests",
       "label": "Verification suite",
       "group": "Tests",
-      "role": "Checks hardware, console and serial behavior",
-      "boundary": "MSTest project",
+      "role": "Checks hardware, host contracts and front ends",
+      "boundary": "MSTest projects",
       "contracts": [
-        "Hardware and front end regression tests"
+        "Hardware and front end regression tests",
+        "Windows player UI and pacing regression coverage",
+        "Independent machine state, host lifecycle, output and debugger contracts"
       ],
       "files": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj",
@@ -344,7 +350,11 @@
         "GB.Emulator.Tests/SerialExperimentTests.cs",
         "GB.Emulator.Tests/Mbc3Tests.cs",
         "GB.Emulator.Tests/CartridgeSupportTests.cs",
-        "GB.Emulator.Tests/Mbc1Tests.cs"
+        "GB.Emulator.Tests/Mbc1Tests.cs",
+        "GB.Emulator.Windows.Tests/PlayerTests.cs",
+        "GB.Emulator.Windows.Tests/GB.Emulator.Windows.Tests.csproj",
+        "GB.Emulator.Hosting.Tests/EmulationHostTests.cs",
+        "GB.Emulator.Hosting.Tests/GB.Emulator.Hosting.Tests.csproj"
       ],
       "evidence": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite",
@@ -352,7 +362,9 @@
         "GB.Emulator.Tests/ConsoleVideoRendererTests.cs: Verification suite",
         "GB.Emulator.Tests/SerialExperimentTests.cs: Verification suite",
         "GB.Emulator.Tests/Mbc3Tests.cs: ROM/RAM and snapshot integration tests",
-        "GB.Emulator.Tests/Mbc1Tests.cs: banking, CPU, DMA, snapshots and cartridge reload"
+        "GB.Emulator.Tests/Mbc1Tests.cs: banking, CPU, DMA, snapshots and cartridge reload",
+        "GB.Emulator.Windows.Tests/PlayerTests.cs: pacing, scaling, lifecycle and live playback",
+        "GB.Emulator.Hosting.Tests/EmulationHostTests.cs: independent machines and host contract tests"
       ],
       "confidence": "high",
       "row": 4,
@@ -394,6 +406,64 @@
       "confidence": "high",
       "row": 4,
       "col": 2
+    },
+    {
+      "id": "windows",
+      "label": "Windows player",
+      "group": "Hosts",
+      "role": "Owns scalable playback and optional live inspection",
+      "boundary": "WinForms executable",
+      "contracts": [
+        "EmulationHost commands and immutable frames",
+        "DPI-aware display, input and fullscreen",
+        "Read-only host inspection and statistics"
+      ],
+      "files": [
+        "GB.Emulator.Windows/GB.Emulator.Windows.csproj",
+        "GB.Emulator.Windows/Program.cs",
+        "GB.Emulator.Windows/PlayerForm.cs",
+        "GB.Emulator.Windows/ScreenControl.cs",
+        "GB.Emulator.Windows/InspectorForm.cs",
+        "GB.Emulator.Windows/PlayerKeyboardInput.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Windows/PlayerForm.cs: composition root and TickEmulation",
+        "GB.Emulator.Windows/InspectorForm.cs: read-only live inspection",
+        "GB.Emulator.Windows/ScreenControl.cs: snapshot painting and viewport scaling"
+      ],
+      "confidence": "high",
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "hosting",
+      "label": "Emulation host",
+      "group": "Core",
+      "role": "Owns playback policy, outputs and inspection",
+      "boundary": "Platform-independent hosting library",
+      "contracts": [
+        "State, pacing and bounded execution",
+        "Owned frames and audio output lifetime",
+        "Read-only inspection, stepping and rewind"
+      ],
+      "files": [
+        "GB.Emulator.Hosting/EmulationHost.cs",
+        "GB.Emulator.Hosting/EmulationPacer.cs",
+        "GB.Emulator.Hosting/Presentation.cs",
+        "GB.Emulator.Hosting/CartridgeSource.cs",
+        "GB.Emulator.Hosting/EmulationInspection.cs",
+        "GB.Emulator.Hosting/EmulationDebugger.cs",
+        "GB.Emulator.Hosting/GB.Emulator.Hosting.csproj"
+      ],
+      "evidence": [
+        "GB.Emulator.Hosting/EmulationHost.cs: composition, lifecycle and Advance",
+        "GB.Emulator.Hosting/Presentation.cs: output contracts and immutable frames",
+        "GB.Emulator.Hosting/EmulationDebugger.cs: stepping, breakpoints and bounded history",
+        "GB.Emulator.Hosting/CartridgeSource.cs: ICartridgeSource / FileCartridgeSource"
+      ],
+      "confidence": "high",
+      "row": 1,
+      "col": 3
     }
   ],
   "edges": [
@@ -420,39 +490,6 @@
       "confidence": "high"
     },
     {
-      "id": "audio-apu",
-      "from": "audio",
-      "to": "apu",
-      "kind": "runtime-call",
-      "label": "subscribes to PCM sample events",
-      "evidence": [
-        "GB.Emulator.Windows/WindowsAudioOutput.cs: SamplesReady subscription"
-      ],
-      "confidence": "high"
-    },
-    {
-      "id": "console-renderer",
-      "from": "console",
-      "to": "renderer",
-      "kind": "runtime-call",
-      "label": "renders video snapshots",
-      "evidence": [
-        "GB.Emulator.Console/ConsoleScreen.cs: DmgScreenRenderer"
-      ],
-      "confidence": "high"
-    },
-    {
-      "id": "console-gameboy",
-      "from": "console",
-      "to": "gameboy",
-      "kind": "runtime-call",
-      "label": "controls emulator execution",
-      "evidence": [
-        "GB.Emulator.Console/ConsoleEmulator.cs: RunStep"
-      ],
-      "confidence": "high"
-    },
-    {
       "id": "debugger-renderer",
       "from": "debugger",
       "to": "renderer",
@@ -467,10 +504,10 @@
       "id": "debugger-gameboy",
       "from": "debugger",
       "to": "gameboy",
-      "kind": "runtime-call",
-      "label": "controls emulator execution",
+      "kind": "composition",
+      "label": "composes machine for deep diagnostics",
       "evidence": [
-        "GB.Debugger/DebuggerForm.cs: stepping and tracing"
+        "GB.Debugger/DebuggerForm.cs: machine composed into EmulationHost"
       ],
       "confidence": "high"
     },
@@ -698,6 +735,149 @@
         "GB.Emulator.Core/MemoryMap.cs: SelectedLowerRomBank",
         "GB.Debugger/DebuggerForm.cs: memoryMapDiagram.ShowStep",
         "GB.Debugger/CartridgeInfoControl.cs: ShowBanks"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "windows-audio",
+      "from": "windows",
+      "to": "audio",
+      "kind": "project-reference",
+      "label": "references platform audio library",
+      "evidence": [
+        "GB.Emulator.Windows/GB.Emulator.Windows.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-windows",
+      "from": "tests",
+      "to": "windows",
+      "kind": "project-reference",
+      "label": "exercises player lifecycle and playback",
+      "evidence": [
+        "GB.Emulator.Windows.Tests/GB.Emulator.Windows.Tests.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "console-hosting",
+      "from": "console",
+      "to": "hosting",
+      "kind": "composition",
+      "label": "composes shared playback host",
+      "evidence": [
+        "GB.Emulator.Console/ConsoleEmulator.cs: EmulationHost composition"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "windows-hosting",
+      "from": "windows",
+      "to": "hosting",
+      "kind": "composition",
+      "label": "composes shared playback host",
+      "evidence": [
+        "GB.Emulator.Windows/PlayerForm.cs: EmulationHost composition"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "debugger-hosting",
+      "from": "debugger",
+      "to": "hosting",
+      "kind": "composition",
+      "label": "composes shared playback host",
+      "evidence": [
+        "GB.Debugger/DebuggerForm.cs: EmulationHost composition"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "hosting-gameboy",
+      "from": "hosting",
+      "to": "gameboy",
+      "kind": "composition",
+      "label": "coordinates one independent machine",
+      "evidence": [
+        "GB.Emulator.Hosting/EmulationHost.cs: Machine and Advance"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "hosting-renderer",
+      "from": "hosting",
+      "to": "renderer",
+      "kind": "runtime-call",
+      "label": "captures and renders owned frames",
+      "evidence": [
+        "GB.Emulator.Hosting/Presentation.cs: VideoFrame"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "hosting-apu",
+      "from": "hosting",
+      "to": "apu",
+      "kind": "runtime-call",
+      "label": "subscribes to PCM sample events",
+      "evidence": [
+        "GB.Emulator.Hosting/EmulationHost.cs: OnSamplesReady"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "hosting-audio",
+      "from": "hosting",
+      "to": "audio",
+      "kind": "runtime-call",
+      "label": "writes PCM through injected output contract",
+      "evidence": [
+        "GB.Emulator.Hosting/EmulationHost.cs: IAudioOutput dependency"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "audio-hosting",
+      "from": "audio",
+      "to": "hosting",
+      "kind": "project-reference",
+      "label": "implements shared audio output contract",
+      "evidence": [
+        "GB.Emulator.Core.Win32/GB.Emulator.Core.Win32.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "hosting-cartridge",
+      "from": "hosting",
+      "to": "cartridge",
+      "kind": "runtime-call",
+      "label": "loads and assesses cartridge requirements",
+      "evidence": [
+        "GB.Emulator.Hosting/EmulationHost.cs: Load"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "hosting-memory",
+      "from": "hosting",
+      "to": "memory",
+      "kind": "snapshot-consumption",
+      "label": "captures read-only mapped memory",
+      "evidence": [
+        "GB.Emulator.Hosting/EmulationInspection.cs: ReadMemory"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-hosting",
+      "from": "tests",
+      "to": "hosting",
+      "kind": "project-reference",
+      "label": "tests lifecycle and independent machines",
+      "evidence": [
+        "GB.Emulator.Hosting.Tests/GB.Emulator.Hosting.Tests.csproj: ProjectReference"
       ],
       "confidence": "high"
     }

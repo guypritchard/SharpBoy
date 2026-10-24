@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="2874" viewBox="0 0 1360 2874" role="img" aria-labelledby="title desc"><title id="title">SharpBoy | logical architecture</title><desc id="desc">Logical architecture. Component family colours, explicit boundaries, and consumer-to-provider arrows with source evidence.</desc><defs><marker id="edge-arrow-0" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#b72e77" fill-opacity="1"/></marker><marker id="edge-arrow-1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-4" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-5" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-6" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-7" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-8" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-9" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-10" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-11" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-12" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-13" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-14" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-15" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-16" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-17" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-18" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-19" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-20" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-21" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-22" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-23" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#7044bb" fill-opacity="1"/></marker><marker id="edge-arrow-24" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-25" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-26" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><linearGradient id="accent"><stop stop-color="#245ed1"/><stop offset="0.35" stop-color="#b72e77"/><stop offset="0.65" stop-color="#007d81"/><stop offset="1" stop-color="#a76208"/></linearGradient></defs><rect width="100%" height="100%" fill="#ffffff"/><g font-family="Segoe UI, Arial, sans-serif"><rect width="1360" height="212" fill="#14283f"/><rect width="1360" height="5" fill="url(#accent)"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1770" height="3279" viewBox="0 0 1770 3279" role="img" aria-labelledby="title desc"><title id="title">SharpBoy | logical architecture</title><desc id="desc">Logical architecture. Component family colours, explicit boundaries, and consumer-to-provider arrows with source evidence.</desc><defs><marker id="edge-arrow-0" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#b72e77" fill-opacity="1"/></marker><marker id="edge-arrow-1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-4" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-5" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-6" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-7" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-8" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-9" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-10" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-11" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-12" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-13" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-14" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-15" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-16" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-17" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-18" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-19" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-20" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-21" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-22" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-23" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-24" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-25" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-26" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-27" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#006d72" fill-opacity="1"/></marker><marker id="edge-arrow-28" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#945508" fill-opacity="1"/></marker><marker id="edge-arrow-29" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#7044bb" fill-opacity="1"/></marker><marker id="edge-arrow-30" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-31" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-32" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-33" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-34" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#317832" fill-opacity="1"/></marker><marker id="edge-arrow-35" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><marker id="edge-arrow-36" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#245ed1" fill-opacity="1"/></marker><linearGradient id="accent"><stop stop-color="#245ed1"/><stop offset="0.35" stop-color="#b72e77"/><stop offset="0.65" stop-color="#007d81"/><stop offset="1" stop-color="#a76208"/></linearGradient></defs><rect width="100%" height="100%" fill="#ffffff"/><g font-family="Segoe UI, Arial, sans-serif"><rect width="1770" height="212" fill="#14283f"/><rect width="1770" height="5" fill="url(#accent)"/>
 <text x="44" y="46" font-size="12" fill="#74d8d4" font-weight="700" letter-spacing="2">CODEBASE / LOGICAL ARCHITECTURE</text>
 <text x="44" y="88" font-size="34" fill="#ffffff" font-weight="700" >SharpBoy | logical architecture</text>
-<text x="44" y="136" font-size="13" fill="#bdcde1" font-weight="400" >16d2c3683925898426306089eaba36e065f5f89a</text>
+<text x="44" y="136" font-size="13" fill="#bdcde1" font-weight="400" >Working tree on 8e1604fa36c19ce613ca1f16715715c338738048; pre-documentation manifest 86198cf5de7e693cda2f1682cb854b97a32ca1cfec83044a24068c84409f6476</text>
 <rect x="44" y="165" width="125.4" height="25" rx="8" fill="#263e5c" stroke="none" />
-<text x="56" y="182" font-size="12" fill="#e4efff" font-weight="700" >14 components</text>
+<text x="56" y="182" font-size="12" fill="#e4efff" font-weight="700" >16 components</text>
 <rect x="181.4" y="165" width="148.8" height="25" rx="8" fill="#263e5c" stroke="none" />
-<text x="193.4" y="182" font-size="12" fill="#e4efff" font-weight="700" >27 relationships</text>
+<text x="193.4" y="182" font-size="12" fill="#e4efff" font-weight="700" >37 relationships</text>
 <rect x="342.20000000000005" y="165" width="180" height="25" rx="8" fill="#263e5c" stroke="none" />
 <text x="354.20000000000005" y="182" font-size="12" fill="#e4efff" font-weight="700" >6 component families</text>
 <text x="44" y="244" font-size="12" fill="#52657a" font-weight="700" letter-spacing="1.2">COMPONENT FAMILIES</text>
@@ -23,68 +23,68 @@
 <text x="695" y="244" font-size="12" fill="#317832" font-weight="700" >Tests</text>
 <text x="44" y="279" font-size="14" fill="#40556e" font-weight="400" >Arrows point from consumer to provider. Colour identifies the consumer family; changed links use green / red.</text>
 <text x="44" y="301" font-size="13" fill="#52657a" font-weight="400" >Cards show responsibility and boundary. Hover cards and connections for source evidence.</text>
-<rect x="28" y="333" width="1304" height="282" rx="16" fill="#f8fafd" stroke="#e3eaf3" />
+<rect x="28" y="333" width="1714" height="282" rx="16" fill="#f8fafd" stroke="#e3eaf3" />
 <text x="36" y="355" font-size="10" fill="#52657a" font-weight="700" >01</text>
-<rect x="28" y="647" width="1304" height="282" rx="16" fill="#f0f4fa" stroke="#e3eaf3" />
+<rect x="28" y="647" width="1714" height="282" rx="16" fill="#f0f4fa" stroke="#e3eaf3" />
 <text x="36" y="669" font-size="10" fill="#52657a" font-weight="700" >02</text>
-<rect x="28" y="961" width="1304" height="282" rx="16" fill="#f8fafd" stroke="#e3eaf3" />
+<rect x="28" y="961" width="1714" height="282" rx="16" fill="#f8fafd" stroke="#e3eaf3" />
 <text x="36" y="983" font-size="10" fill="#52657a" font-weight="700" >03</text>
-<rect x="28" y="1275" width="1304" height="282" rx="16" fill="#f0f4fa" stroke="#e3eaf3" />
+<rect x="28" y="1275" width="1714" height="282" rx="16" fill="#f0f4fa" stroke="#e3eaf3" />
 <text x="36" y="1297" font-size="10" fill="#52657a" font-weight="700" >04</text>
-<rect x="28" y="1589" width="1304" height="282" rx="16" fill="#f8fafd" stroke="#e3eaf3" />
+<rect x="28" y="1589" width="1714" height="282" rx="16" fill="#f8fafd" stroke="#e3eaf3" />
 <text x="36" y="1611" font-size="10" fill="#52657a" font-weight="700" >05</text>
-<path d="M 261 893 V 911 H 193.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 261 893 V 911 H 193.5 V 997" fill="none" stroke="#b72e77" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-0)"><title>unchanged: audio -&gt; apu | runtime-call: subscribes to PCM sample events
-GB.Emulator.Windows/WindowsAudioOutput.cs: SamplesReady subscription</title></path>
-<path d="M 193.5 579 V 603 H 216 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 193.5 579 V 603 H 216 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-1)"><title>unchanged: console -&gt; audio | project-reference: references platform audio library
+<path d="M 261 683 V 671 H 1401 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 261 683 V 671 H 1401 V 683" fill="none" stroke="#b72e77" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-0)"><title>unchanged: audio -&gt; hosting | project-reference: implements shared audio output contract
+GB.Emulator.Core.Win32/GB.Emulator.Core.Win32.csproj: ProjectReference</title></path>
+<path d="M 216 579 V 603 H 180 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 216 579 V 603 H 180 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-1)"><title>unchanged: console -&gt; audio | project-reference: references platform audio library
 GB.Emulator.Console/GB.Emulator.Console.csproj: ProjectReference</title></path>
-<path d="M 261 579 V 609 H 1000 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 261 579 V 609 H 1000 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-2)"><title>unchanged: console -&gt; gameboy | runtime-call: controls emulator execution
-GB.Emulator.Console/ConsoleEmulator.cs: RunStep</title></path>
-<path d="M 328.5 579 V 615 H 626 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 328.5 579 V 615 H 626 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-3)"><title>unchanged: console -&gt; renderer | runtime-call: renders video snapshots
-GB.Emulator.Console/ConsoleScreen.cs: DmgScreenRenderer</title></path>
-<path d="M 991 997 V 961 H 261 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 991 997 V 961 H 261 V 997" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-4)"><title>unchanged: cpu -&gt; apu | runtime-call: advances device timing
+<path d="M 306 579 V 609 H 1446 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 306 579 V 609 H 1446 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-2)"><title>unchanged: console -&gt; hosting | composition: composes shared playback host
+GB.Emulator.Console/ConsoleEmulator.cs: EmulationHost composition</title></path>
+<path d="M 991 997 V 967 H 193.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 991 997 V 967 H 193.5 V 997" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-3)"><title>unchanged: cpu -&gt; apu | runtime-call: advances device timing
 GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls</title></path>
-<path d="M 1036 1207 V 1225 H 626 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1036 1207 V 1225 H 626 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-5)"><title>unchanged: cpu -&gt; io | runtime-call: advances device timing
+<path d="M 1036 1207 V 1249 H 626 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1036 1207 V 1249 H 626 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-4)"><title>unchanged: cpu -&gt; io | runtime-call: advances device timing
 GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls</title></path>
-<path d="M 1081 1207 V 1231 H 1013.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1081 1207 V 1231 H 1013.5 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-6)"><title>unchanged: cpu -&gt; memory | runtime-call: fetches and executes via mapped memory
+<path d="M 1081 1207 V 1225 H 1000 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1081 1207 V 1225 H 1000 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-5)"><title>unchanged: cpu -&gt; memory | runtime-call: fetches and executes via mapped memory
 GB.Emulator.Core/Cpu.Memory.cs: memory access</title></path>
-<path d="M 1126 1207 V 1237 H 193.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1126 1207 V 1237 H 193.5 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-7)"><title>unchanged: cpu -&gt; serial | runtime-call: advances device timing
+<path d="M 1126 1207 V 1231 H 193.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1126 1207 V 1231 H 193.5 V 1311" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-6)"><title>unchanged: cpu -&gt; serial | runtime-call: advances device timing
 GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls</title></path>
-<path d="M 916 1105 H 836" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 916 1105 H 836" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-8)"><title>unchanged: cpu -&gt; video | runtime-call: advances device timing
+<path d="M 916 1099 H 836" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 916 1099 H 836" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-7)"><title>unchanged: cpu -&gt; video | runtime-call: advances device timing
 GB.Emulator.Core/Cpu.cs: ExecuteInstructionCore device Step calls</title></path>
-<path d="M 590 579 V 621 H 306 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 590 579 V 621 H 306 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-9)"><title>unchanged: debugger -&gt; audio | project-reference: references platform audio library
+<path d="M 581 579 V 615 H 234 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 581 579 V 615 H 234 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-8)"><title>unchanged: debugger -&gt; audio | project-reference: references platform audio library
 GB.Debugger/GB.Debugger.csproj: ProjectReference</title></path>
-<path d="M 644 579 V 597 H 1054 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 644 579 V 597 H 1054 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-10)"><title>unchanged: debugger -&gt; gameboy | runtime-call: controls emulator execution
-GB.Debugger/DebuggerForm.cs: stepping and tracing</title></path>
-<path d="M 698 579 V 603 H 484 V 1291 H 1081 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 698 579 V 603 H 484 V 1291 H 1081 V 1311" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-11)"><title>unchanged: debugger -&gt; memory | runtime-call: inspects both ROM windows and RAM bank selection
+<path d="M 626 579 V 621 H 1000 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 626 579 V 621 H 1000 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-9)"><title>unchanged: debugger -&gt; gameboy | composition: composes machine for deep diagnostics
+GB.Debugger/DebuggerForm.cs: machine composed into EmulationHost</title></path>
+<path d="M 671 579 V 597 H 1491 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 671 579 V 597 H 1491 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-10)"><title>unchanged: debugger -&gt; hosting | composition: composes shared playback host
+GB.Debugger/DebuggerForm.cs: EmulationHost composition</title></path>
+<path d="M 716 579 V 603 H 484 V 1291 H 1054 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 716 579 V 603 H 484 V 1291 H 1054 V 1311" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-11)"><title>unchanged: debugger -&gt; memory | runtime-call: inspects both ROM windows and RAM bank selection
 GB.Emulator.Core/MemoryMap.cs: SelectedLowerRomBank
 GB.Debugger/DebuggerForm.cs: memoryMapDiagram.ShowStep
 GB.Debugger/CartridgeInfoControl.cs: ShowBanks</title></path>
-<path d="M 752 579 V 609 H 716 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 752 579 V 609 H 716 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-12)"><title>unchanged: debugger -&gt; renderer | runtime-call: renders video snapshots
+<path d="M 761 579 V 609 H 626 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 761 579 V 609 H 626 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-12)"><title>unchanged: debugger -&gt; renderer | runtime-call: renders video snapshots
 GB.Debugger/DebuggerForm.cs: DmgScreenRenderer</title></path>
-<path d="M 1036 579 V 615 H 1108 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1036 579 V 615 H 1108 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-13)"><title>unchanged: experiments -&gt; gameboy | runtime-call: runs emulator in isolated worker processes
+<path d="M 1036 579 V 615 H 1054 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1036 579 V 615 H 1054 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-13)"><title>unchanged: experiments -&gt; gameboy | runtime-call: runs emulator in isolated worker processes
 GB.Experiments/GameboyWorkerPool.cs: Worker; GameboySerialServer.cs: Gameboy</title></path>
 <path d="M 1126 579 V 621 H 876 V 1273 H 261 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
 <path d="M 1126 579 V 621 H 876 V 1273 H 261 V 1311" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-14)"><title>unchanged: experiments -&gt; serial | runtime-call: exchanges request and response bytes
 GB.Experiments/GameboySerialServer.cs: serial exchange</title></path>
-<path d="M 979.75 893 V 911 H 328.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 979.75 893 V 911 H 328.5 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-15)"><title>unchanged: gameboy -&gt; apu | composition: creates and resets devices
+<path d="M 979.75 893 V 911 H 261 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 979.75 893 V 911 H 261 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-15)"><title>unchanged: gameboy -&gt; apu | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1013.5 893 V 917 H 894 V 1605 H 1036 V 1625" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1013.5 893 V 917 H 894 V 1605 H 1036 V 1625" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="2 5" marker-end="url(#edge-arrow-16)"><title>unchanged: gameboy -&gt; cartridge | data-consumption: stores polymorphic cartridge snapshot state
+<path d="M 1013.5 893 V 917 H 894 V 1605 H 1013.5 V 1625" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1013.5 893 V 917 H 894 V 1605 H 1013.5 V 1625" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="2 5" marker-end="url(#edge-arrow-16)"><title>unchanged: gameboy -&gt; cartridge | data-consumption: stores polymorphic cartridge snapshot state
 GB.Emulator.Core/GameboyState.cs: CartridgeMapperState CartridgeState
 GB.Emulator.Core/CartridgeMapper.cs: Snapshot / Restore
 GB.Emulator.Core/Mbc1.cs: State
@@ -95,8 +95,8 @@ GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
 <path d="M 1081 893 V 929 H 882 V 1279 H 716 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
 <path d="M 1081 893 V 929 H 882 V 1279 H 716 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-18)"><title>unchanged: gameboy -&gt; io | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1114.75 893 V 935 H 876 V 1273 H 1148.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1114.75 893 V 935 H 876 V 1273 H 1148.5 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-19)"><title>unchanged: gameboy -&gt; memory | composition: creates and resets devices
+<path d="M 1114.75 893 V 935 H 876 V 1273 H 1108 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1114.75 893 V 935 H 876 V 1273 H 1108 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-19)"><title>unchanged: gameboy -&gt; memory | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
 <path d="M 1148.5 893 V 911 H 900 V 1297 H 328.5 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
 <path d="M 1148.5 893 V 911 H 900 V 1297 H 328.5 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-20)"><title>unchanged: gameboy -&gt; serial | composition: creates and resets devices
@@ -104,32 +104,63 @@ GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
 <path d="M 1182.25 893 V 917 H 671 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
 <path d="M 1182.25 893 V 917 H 671 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-21)"><title>unchanged: gameboy -&gt; video | composition: creates and resets devices
 GB.Emulator.Core/Gameboy.cs: constructor and ResetHardware</title></path>
-<path d="M 1081 1521 V 1551 H 1126 V 1625" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 1081 1521 V 1551 H 1126 V 1625" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-22)"><title>unchanged: memory -&gt; cartridge | composition: creates a mapper through the factory and routes its windows
+<path d="M 1394.5714285714287 893 V 923 H 328.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1394.5714285714287 893 V 923 H 328.5 V 997" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-22)"><title>unchanged: hosting -&gt; apu | runtime-call: subscribes to PCM sample events
+GB.Emulator.Hosting/EmulationHost.cs: OnSamplesReady</title></path>
+<path d="M 1433.142857142857 683 V 653 H 288 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1433.142857142857 683 V 653 H 288 V 683" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-23)"><title>unchanged: hosting -&gt; audio | runtime-call: writes PCM through injected output contract
+GB.Emulator.Hosting/EmulationHost.cs: IAudioOutput dependency</title></path>
+<path d="M 1471.7142857142858 893 V 935 H 1286 V 1587 H 1081 V 1625" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1471.7142857142858 893 V 935 H 1286 V 1587 H 1081 V 1625" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-24)"><title>unchanged: hosting -&gt; cartridge | runtime-call: loads and assesses cartridge requirements
+GB.Emulator.Hosting/EmulationHost.cs: Load</title></path>
+<path d="M 1326 773 H 1246" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1326 773 H 1246" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-25)"><title>unchanged: hosting -&gt; gameboy | composition: coordinates one independent machine
+GB.Emulator.Hosting/EmulationHost.cs: Machine and Advance</title></path>
+<path d="M 1548.857142857143 893 V 917 H 1304 V 1291 H 1162 V 1311" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1548.857142857143 893 V 917 H 1304 V 1291 H 1162 V 1311" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-26)"><title>unchanged: hosting -&gt; memory | snapshot-consumption: captures read-only mapped memory
+GB.Emulator.Hosting/EmulationInspection.cs: ReadMemory</title></path>
+<path d="M 1587.4285714285713 683 V 659 H 716 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1587.4285714285713 683 V 659 H 716 V 683" fill="none" stroke="#006d72" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-27)"><title>unchanged: hosting -&gt; renderer | runtime-call: captures and renders owned frames
+GB.Emulator.Hosting/Presentation.cs: VideoFrame</title></path>
+<path d="M 1081 1521 V 1557 H 1148.5 V 1625" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1081 1521 V 1557 H 1148.5 V 1625" fill="none" stroke="#945508" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-28)"><title>unchanged: memory -&gt; cartridge | composition: creates a mapper through the factory and routes its windows
 GB.Emulator.Core/MemoryMap.cs: AddCartridgeDevices / RemoveCartridgeDevices
 GB.Emulator.Core/CartridgeMapperFactory.cs: Create
 GB.Emulator.Core/CartridgeMapper.cs: RomRange / RamRange</title></path>
-<path d="M 671 893 V 929 H 738.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 671 893 V 929 H 738.5 V 997" fill="none" stroke="#7044bb" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="2 5" marker-end="url(#edge-arrow-23)"><title>unchanged: renderer -&gt; video | data-consumption: reads immutable VideoState snapshots
+<path d="M 671 893 V 935 H 738.5 V 997" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 671 893 V 935 H 738.5 V 997" fill="none" stroke="#7044bb" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="2 5" marker-end="url(#edge-arrow-29)"><title>unchanged: renderer -&gt; video | data-consumption: reads immutable VideoState snapshots
 GB.Emulator.Core/Rendering/DmgScreenRenderer.cs: RenderScreen(VideoState)</title></path>
-<path d="M 193.5 1625 V 1587 H 56 V 621 H 261 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 193.5 1625 V 1587 H 56 V 621 H 261 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-24)"><title>unchanged: tests -&gt; console | project-reference: references console for renderer and input tests
+<path d="M 171 1625 V 1611 H 80 V 597 H 261 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 171 1625 V 1611 H 80 V 597 H 261 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-30)"><title>unchanged: tests -&gt; console | project-reference: references console for renderer and input tests
 GB.Emulator.Tests/GB.Emulator.Tests.csproj: ProjectReference</title></path>
-<path d="M 261 1625 V 1611 H 80 V 597 H 1081 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 261 1625 V 1611 H 80 V 597 H 1081 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-25)"><title>unchanged: tests -&gt; experiments | project-reference: references serial HTTP experiment
+<path d="M 216 1625 V 1605 H 74 V 603 H 1081 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 216 1625 V 1605 H 74 V 603 H 1081 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-31)"><title>unchanged: tests -&gt; experiments | project-reference: references serial HTTP experiment
 GB.Emulator.Tests/GB.Emulator.Tests.csproj: ProjectReference</title></path>
-<path d="M 328.5 1625 V 1605 H 74 V 917 H 1162 V 893" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
-<path d="M 328.5 1625 V 1605 H 74 V 917 H 1162 V 893" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-26)"><title>unchanged: tests -&gt; gameboy | runtime-call: checks execution and hardware boundaries
+<path d="M 261 1625 V 1599 H 68 V 923 H 1162 V 893" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 261 1625 V 1599 H 68 V 923 H 1162 V 893" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-32)"><title>unchanged: tests -&gt; gameboy | runtime-call: checks execution and hardware boundaries
 GB.Emulator.Tests/HardwareBoundaryTests.cs: Gameboy</title></path>
+<path d="M 306 1625 V 1593 H 62 V 929 H 1536 V 893" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 306 1625 V 1593 H 62 V 929 H 1536 V 893" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-33)"><title>unchanged: tests -&gt; hosting | project-reference: tests lifecycle and independent machines
+GB.Emulator.Hosting.Tests/GB.Emulator.Hosting.Tests.csproj: ProjectReference</title></path>
+<path d="M 351 1625 V 1587 H 56 V 621 H 1491 V 579" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 351 1625 V 1587 H 56 V 621 H 1491 V 579" fill="none" stroke="#317832" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-34)"><title>unchanged: tests -&gt; windows | project-reference: exercises player lifecycle and playback
+GB.Emulator.Windows.Tests/GB.Emulator.Windows.Tests.csproj: ProjectReference</title></path>
+<path d="M 1446 579 V 597 H 342 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1446 579 V 597 H 342 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-35)"><title>unchanged: windows -&gt; audio | project-reference: references platform audio library
+GB.Emulator.Windows/GB.Emulator.Windows.csproj: ProjectReference</title></path>
+<path d="M 1536 579 V 603 H 1581 V 683" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+<path d="M 1536 579 V 603 H 1581 V 683" fill="none" stroke="#245ed1" stroke-opacity="0.7" stroke-width="1.8" stroke-linejoin="round" stroke-dasharray="" marker-end="url(#edge-arrow-36)"><title>unchanged: windows -&gt; hosting | composition: composes shared playback host
+GB.Emulator.Windows/PlayerForm.cs: EmulationHost composition</title></path>
 <g><title>Console front end
 Boundary: Console executable
-Contracts: Gameboy control; ANSI frame display
+Contracts: EmulationHost lifecycle and input; IVideoOutput terminal presentation
 Confidence: high
 GB.Emulator.Console/ConsoleEmulator.cs: Console front end
 GB.Emulator.Console/ConsoleScreen.cs: Console front end
 GB.Emulator.Console/ConsoleVideoRenderer.cs: Console front end
 GB.Emulator.Console/ConsoleKeyboardInput.cs: Console front end
 GB.Emulator.Console/GB.Emulator.Console.csproj: Console front end
+GB.Emulator.Console/ConsoleEmulator.cs: explicit ROM argument or bundled SPRITE.GB
 </title>
 <rect x="98" y="374" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="96" y="369" width="330" height="210" rx="13" fill="#eaf1ff" stroke="#c7d9ff" stroke-width="1.5" stroke-dasharray=""/>
@@ -147,7 +178,7 @@ GB.Emulator.Console/GB.Emulator.Console.csproj: Console front end
 </g>
 <g><title>WinForms debugger
 Boundary: WinForms executable
-Contracts: Gameboy stepping and restore; Diagnostic views; Cartridge capability view and separate mapper-control activity
+Contracts: EmulationHost stepping, breakpoints and rewind; Diagnostic views over the composed machine; Cartridge capability view and separate mapper-control activity
 Confidence: high
 GB.Debugger/DebuggerForm.cs: WinForms debugger
 GB.Debugger/InteractionDiagramControl.cs: WinForms debugger
@@ -156,6 +187,7 @@ GB.Debugger/GB.Debugger.csproj: WinForms debugger
 GB.Debugger/CartridgeInfoControl.cs: ShowBanks
 GB.Debugger/InteractionDiagramControl.cs: ShowCartridge / ClassifyWrite
 GB.Debugger/InteractionDiagramControl.Cartridge.cs: DrawMapper / DrawCartridgeProfile
+GB.Debugger/DebuggerForm.cs: host.Debugging Step / StepBack and injected Gameboy
 </title>
 <rect x="508" y="374" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="506" y="369" width="330" height="210" rx="13" fill="#eaf1ff" stroke="#c7d9ff" stroke-width="1.5" stroke-dasharray=""/>
@@ -164,12 +196,12 @@ GB.Debugger/InteractionDiagramControl.Cartridge.cs: DrawMapper / DrawCartridgePr
 <text x="538" y="405" font-size="12" fill="#ffffff" font-weight="700" text-anchor="middle">02</text>
 <text x="562" y="404" font-size="11" fill="#245ed1" font-weight="700" letter-spacing="0.7">HOSTS</text>
 <text x="524" y="441" font-size="22" fill="#142840" font-weight="800" >WinForms debugger</text>
-<text x="524" y="472" font-size="14" fill="#24364d" font-weight="400" >Owns stepping, inspection and visual</text>
+<text x="524" y="472" font-size="14" fill="#24364d" font-weight="400" >Owns debugger controls and deep visual</text>
 <text x="524" y="492" font-size="14" fill="#24364d" font-weight="400" >diagnostics</text>
 <text x="524" y="520" font-size="9" fill="#245ed1" font-weight="700" letter-spacing="1">BOUNDARY</text>
 <text x="524" y="534" font-size="12" fill="#40556e" font-weight="400" >WinForms executable</text>
 <path d="M 524 550 H 818" stroke="#c7d9ff"/>
-<text x="524" y="568" font-size="11" fill="#40556e" font-weight="400" >8 source files  /  high confidence</text>
+<text x="524" y="568" font-size="11" fill="#40556e" font-weight="400" >7 source files  /  high confidence</text>
 </g>
 <g><title>HTTP / serial experiment
 Boundary: Host process plus worker processes
@@ -195,11 +227,10 @@ GB.Experiments/GameboySerialServer.cs: HTTP / serial experiment
 <text x="934" y="568" font-size="11" fill="#40556e" font-weight="400" >4 source files  /  high confidence</text>
 </g>
 <g><title>Windows audio adapter
-Boundary: Shared .NET library: GB.Emulator.Windows
-Contracts: APU SamplesReady to waveOut; TryCreate returns null when unavailable
+Boundary: Shared .NET library: GB.Emulator.Core.Win32
+Contracts: IAudioOutput Write / Flush / Dispose; TryCreate returns null when unavailable
 Confidence: high
-GB.Emulator.Windows/WindowsAudioOutput.cs: Windows audio adapter
-GB.Emulator.Windows/GB.Emulator.Windows.csproj: Windows audio adapter
+GB.Emulator.Core.Win32/WindowsAudioOutput.cs: standalone bounded waveOut adapter implementing IAudioOutput
 </title>
 <rect x="98" y="688" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="96" y="683" width="330" height="210" rx="13" fill="#fff0f7" stroke="#f5c5de" stroke-width="1.5" stroke-dasharray=""/>
@@ -211,7 +242,7 @@ GB.Emulator.Windows/GB.Emulator.Windows.csproj: Windows audio adapter
 <text x="114" y="786" font-size="14" fill="#24364d" font-weight="400" >Adapts APU stereo PCM to Windows</text>
 <text x="114" y="806" font-size="14" fill="#24364d" font-weight="400" >waveOut</text>
 <text x="114" y="834" font-size="9" fill="#b72e77" font-weight="700" letter-spacing="1">BOUNDARY</text>
-<text x="114" y="848" font-size="12" fill="#40556e" font-weight="400" >Shared .NET library: GB.Emulator.Windows</text>
+<text x="114" y="848" font-size="12" fill="#40556e" font-weight="400" >Shared .NET library: GB.Emulator.Core.Win32</text>
 <path d="M 114 864 H 408" stroke="#f5c5de"/>
 <text x="114" y="882" font-size="11" fill="#40556e" font-weight="400" >2 source files  /  high confidence</text>
 </g>
@@ -237,7 +268,7 @@ GB.Emulator.Core/Rendering/DmgScreenRenderer.cs: Snapshot pixel renderer
 </g>
 <g><title>Gameboy coordinator
 Boundary: Core library composition root
-Contracts: Load / RunStep / Step / CaptureState / RestoreState; Video and sound snapshots; CartridgeMapperState snapshot payload
+Contracts: Load / RunStep / Step / CaptureState / RestoreState; Video and sound snapshots; CartridgeMapperState snapshot payload; Bounded RunForCycles with instruction overshoot
 Confidence: high
 GB.Emulator.Core/Gameboy.cs: Gameboy coordinator
 GB.Emulator.Core/GameboyState.cs: Gameboy coordinator
@@ -305,16 +336,16 @@ GB.Emulator.Core/SpriteTileManager.cs: Video / LCD state
 <text x="524" y="1196" font-size="11" fill="#40556e" font-weight="400" >5 source files  /  high confidence</text>
 </g>
 <g><title>CPU execution
-Boundary: Core; static registers and memory reference
-Contracts: Instruction stepping and cycle accounting; Process isolation for multiple emulators
+Boundary: Core; per-machine CPU state
+Contracts: Instruction stepping and cycle accounting; Independent CPU state and instance-bound instruction handlers
 Confidence: high
 GB.Emulator.Core/Cpu.cs: CPU execution
 GB.Emulator.Core/Cpu.Operations.cs: CPU execution
 GB.Emulator.Core/Cpu.Memory.cs: CPU execution
-GB.Emulator.Core/Cpu.Registers.cs: CPU execution
-GB.Emulator.Core/Cpu.Instructions.cs: CPU execution
+GB.Emulator.Core/CpuRegisters.cs: CPU execution
 GB.Emulator.Core/Cpu.OpcodeTable.cs: CPU execution
 GB.Emulator.Core/CpuStepResult.cs: CPU execution
+GB.Emulator.Core/Cpu.cs: instance-owned Registers, Flags, Operations and memory
 </title>
 <rect x="918" y="1002" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="916" y="997" width="330" height="210" rx="13" fill="#fff5e5" stroke="#f0d6a7" stroke-width="1.5" stroke-dasharray=""/>
@@ -323,12 +354,11 @@ GB.Emulator.Core/CpuStepResult.cs: CPU execution
 <text x="948" y="1033" font-size="12" fill="#ffffff" font-weight="700" text-anchor="middle">09</text>
 <text x="972" y="1032" font-size="11" fill="#945508" font-weight="700" letter-spacing="0.7">HARDWARE</text>
 <text x="934" y="1069" font-size="22" fill="#142840" font-weight="800" >CPU execution</text>
-<text x="934" y="1100" font-size="14" fill="#24364d" font-weight="400" >Executes opcodes and advances device</text>
-<text x="934" y="1120" font-size="14" fill="#24364d" font-weight="400" >cycles</text>
+<text x="934" y="1100" font-size="14" fill="#24364d" font-weight="400" >Executes opcodes and clocks devices</text>
 <text x="934" y="1148" font-size="9" fill="#945508" font-weight="700" letter-spacing="1">BOUNDARY</text>
-<text x="934" y="1162" font-size="12" fill="#40556e" font-weight="400" >Core; static registers and memory reference</text>
+<text x="934" y="1162" font-size="12" fill="#40556e" font-weight="400" >Core; per-machine CPU state</text>
 <path d="M 934 1178 H 1228" stroke="#f0d6a7"/>
-<text x="934" y="1196" font-size="11" fill="#40556e" font-weight="400" >7 source files  /  high confidence</text>
+<text x="934" y="1196" font-size="11" fill="#40556e" font-weight="400" >6 source files  /  high confidence</text>
 </g>
 <g><title>Serial / link port
 Boundary: Core serial device and cable
@@ -400,8 +430,8 @@ GB.Emulator.Core/MemoryMap.cs: cartridgeMapper, CaptureCartridgeState, Snapshot,
 <text x="934" y="1510" font-size="11" fill="#40556e" font-weight="400" >4 source files  /  high confidence</text>
 </g>
 <g><title>Verification suite
-Boundary: MSTest project
-Contracts: Hardware and front end regression tests
+Boundary: MSTest projects
+Contracts: Hardware and front end regression tests; Windows player UI and pacing regression coverage; Independent machine state, host lifecycle, output and debugger contracts
 Confidence: high
 GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite
 GB.Emulator.Tests/HardwareBoundaryTests.cs: Verification suite
@@ -409,6 +439,8 @@ GB.Emulator.Tests/ConsoleVideoRendererTests.cs: Verification suite
 GB.Emulator.Tests/SerialExperimentTests.cs: Verification suite
 GB.Emulator.Tests/Mbc3Tests.cs: ROM/RAM and snapshot integration tests
 GB.Emulator.Tests/Mbc1Tests.cs: banking, CPU, DMA, snapshots and cartridge reload
+GB.Emulator.Windows.Tests/PlayerTests.cs: pacing, scaling, lifecycle and live playback
+GB.Emulator.Hosting.Tests/EmulationHostTests.cs: independent machines and host contract tests
 </title>
 <rect x="98" y="1630" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="96" y="1625" width="330" height="210" rx="13" fill="#eef8e9" stroke="#c4dfb7" stroke-width="1.5" stroke-dasharray=""/>
@@ -417,12 +449,12 @@ GB.Emulator.Tests/Mbc1Tests.cs: banking, CPU, DMA, snapshots and cartridge reloa
 <text x="128" y="1661" font-size="12" fill="#ffffff" font-weight="700" text-anchor="middle">13</text>
 <text x="152" y="1660" font-size="11" fill="#317832" font-weight="700" letter-spacing="0.7">TESTS</text>
 <text x="114" y="1697" font-size="22" fill="#142840" font-weight="800" >Verification suite</text>
-<text x="114" y="1728" font-size="14" fill="#24364d" font-weight="400" >Checks hardware, console and serial</text>
-<text x="114" y="1748" font-size="14" fill="#24364d" font-weight="400" >behavior</text>
+<text x="114" y="1728" font-size="14" fill="#24364d" font-weight="400" >Checks hardware, host contracts and</text>
+<text x="114" y="1748" font-size="14" fill="#24364d" font-weight="400" >front ends</text>
 <text x="114" y="1776" font-size="9" fill="#317832" font-weight="700" letter-spacing="1">BOUNDARY</text>
-<text x="114" y="1790" font-size="12" fill="#40556e" font-weight="400" >MSTest project</text>
+<text x="114" y="1790" font-size="12" fill="#40556e" font-weight="400" >MSTest projects</text>
 <path d="M 114 1806 H 408" stroke="#c4dfb7"/>
-<text x="114" y="1824" font-size="11" fill="#40556e" font-weight="400" >7 source files  /  high confidence</text>
+<text x="114" y="1824" font-size="11" fill="#40556e" font-weight="400" >11 source files  /  high confidence</text>
 </g>
 <g><title>Cartridge / MBC1 + MBC3
 Boundary: Core cartridge devices
@@ -452,9 +484,54 @@ GB.Emulator.Core/Mbc1.cs: cartridge storage, selection or banking
 <path d="M 934 1806 H 1228" stroke="#f0d6a7"/>
 <text x="934" y="1824" font-size="11" fill="#40556e" font-weight="400" >9 source files  /  high confidence</text>
 </g>
-<rect x="28" y="1892" width="1304" height="39" rx="9" fill="#e9eff8" stroke="none" />
+<g><title>Windows player
+Boundary: WinForms executable
+Contracts: EmulationHost commands and immutable frames; DPI-aware display, input and fullscreen; Read-only host inspection and statistics
+Confidence: high
+GB.Emulator.Windows/PlayerForm.cs: composition root and TickEmulation
+GB.Emulator.Windows/InspectorForm.cs: read-only live inspection
+GB.Emulator.Windows/ScreenControl.cs: snapshot painting and viewport scaling
+</title>
+<rect x="1328" y="374" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
+<rect x="1326" y="369" width="330" height="210" rx="13" fill="#eaf1ff" stroke="#c7d9ff" stroke-width="1.5" stroke-dasharray=""/>
+<rect x="1327" y="370" width="6" height="208" rx="3" fill="#245ed1" stroke="none" />
+<rect x="1344" y="386" width="28" height="28" rx="8" fill="#245ed1" stroke="none" />
+<text x="1358" y="405" font-size="12" fill="#ffffff" font-weight="700" text-anchor="middle">15</text>
+<text x="1382" y="404" font-size="11" fill="#245ed1" font-weight="700" letter-spacing="0.7">HOSTS</text>
+<text x="1344" y="441" font-size="22" fill="#142840" font-weight="800" >Windows player</text>
+<text x="1344" y="472" font-size="14" fill="#24364d" font-weight="400" >Owns scalable playback and optional</text>
+<text x="1344" y="492" font-size="14" fill="#24364d" font-weight="400" >live inspection</text>
+<text x="1344" y="520" font-size="9" fill="#245ed1" font-weight="700" letter-spacing="1">BOUNDARY</text>
+<text x="1344" y="534" font-size="12" fill="#40556e" font-weight="400" >WinForms executable</text>
+<path d="M 1344 550 H 1638" stroke="#c7d9ff"/>
+<text x="1344" y="568" font-size="11" fill="#40556e" font-weight="400" >6 source files  /  high confidence</text>
+</g>
+<g><title>Emulation host
+Boundary: Platform-independent hosting library
+Contracts: State, pacing and bounded execution; Owned frames and audio output lifetime; Read-only inspection, stepping and rewind
+Confidence: high
+GB.Emulator.Hosting/EmulationHost.cs: composition, lifecycle and Advance
+GB.Emulator.Hosting/Presentation.cs: output contracts and immutable frames
+GB.Emulator.Hosting/EmulationDebugger.cs: stepping, breakpoints and bounded history
+GB.Emulator.Hosting/CartridgeSource.cs: ICartridgeSource / FileCartridgeSource
+</title>
+<rect x="1328" y="688" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
+<rect x="1326" y="683" width="330" height="210" rx="13" fill="#e3f7f5" stroke="#aee2dd" stroke-width="1.5" stroke-dasharray=""/>
+<rect x="1327" y="684" width="6" height="208" rx="3" fill="#006d72" stroke="none" />
+<rect x="1344" y="700" width="28" height="28" rx="8" fill="#006d72" stroke="none" />
+<text x="1358" y="719" font-size="12" fill="#ffffff" font-weight="700" text-anchor="middle">16</text>
+<text x="1382" y="718" font-size="11" fill="#006d72" font-weight="700" letter-spacing="0.7">CORE</text>
+<text x="1344" y="755" font-size="22" fill="#142840" font-weight="800" >Emulation host</text>
+<text x="1344" y="786" font-size="14" fill="#24364d" font-weight="400" >Owns playback policy, outputs and</text>
+<text x="1344" y="806" font-size="14" fill="#24364d" font-weight="400" >inspection</text>
+<text x="1344" y="834" font-size="9" fill="#006d72" font-weight="700" letter-spacing="1">BOUNDARY</text>
+<text x="1344" y="848" font-size="12" fill="#40556e" font-weight="400" >Platform-independent hosting library</text>
+<path d="M 1344 864 H 1638" stroke="#aee2dd"/>
+<text x="1344" y="882" font-size="11" fill="#40556e" font-weight="400" >7 source files  /  high confidence</text>
+</g>
+<rect x="28" y="1892" width="1714" height="39" rx="9" fill="#e9eff8" stroke="none" />
 <text x="44" y="1917" font-size="19" fill="#142840" font-weight="700" >Relationship index</text>
-<rect x="28" y="1944" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<rect x="28" y="1944" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
 <text x="44" y="1961" font-size="13" fill="#245ed1" font-weight="700" >01</text>
 <text x="78" y="1961" font-size="13" fill="#245ed1" font-weight="600" >console -&gt; audio</text>
 <text x="415" y="1961" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
@@ -463,130 +540,186 @@ GB.Emulator.Core/Mbc1.cs: cartridge storage, selection or banking
 <text x="78" y="1985" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; audio</text>
 <text x="415" y="1985" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
 <text x="630" y="1985" font-size="13" fill="#24364d" font-weight="400" >references platform audio library</text>
-<rect x="28" y="1992" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
-<text x="44" y="2009" font-size="13" fill="#b72e77" font-weight="700" >03</text>
-<text x="78" y="2009" font-size="13" fill="#b72e77" font-weight="600" >audio -&gt; apu</text>
+<rect x="28" y="1992" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2009" font-size="13" fill="#245ed1" font-weight="700" >03</text>
+<text x="78" y="2009" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; renderer</text>
 <text x="415" y="2009" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2009" font-size="13" fill="#24364d" font-weight="400" >subscribes to PCM sample events</text>
+<text x="630" y="2009" font-size="13" fill="#24364d" font-weight="400" >renders video snapshots</text>
 <text x="44" y="2033" font-size="13" fill="#245ed1" font-weight="700" >04</text>
-<text x="78" y="2033" font-size="13" fill="#245ed1" font-weight="600" >console -&gt; renderer</text>
-<text x="415" y="2033" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2033" font-size="13" fill="#24364d" font-weight="400" >renders video snapshots</text>
-<rect x="28" y="2040" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="78" y="2033" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; gameboy</text>
+<text x="415" y="2033" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2033" font-size="13" fill="#24364d" font-weight="400" >composes machine for deep diagnostics</text>
+<rect x="28" y="2040" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
 <text x="44" y="2057" font-size="13" fill="#245ed1" font-weight="700" >05</text>
-<text x="78" y="2057" font-size="13" fill="#245ed1" font-weight="600" >console -&gt; gameboy</text>
+<text x="78" y="2057" font-size="13" fill="#245ed1" font-weight="600" >experiments -&gt; gameboy</text>
 <text x="415" y="2057" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2057" font-size="13" fill="#24364d" font-weight="400" >controls emulator execution</text>
+<text x="630" y="2057" font-size="13" fill="#24364d" font-weight="400" >runs emulator in isolated worker processes</text>
 <text x="44" y="2081" font-size="13" fill="#245ed1" font-weight="700" >06</text>
-<text x="78" y="2081" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; renderer</text>
+<text x="78" y="2081" font-size="13" fill="#245ed1" font-weight="600" >experiments -&gt; serial</text>
 <text x="415" y="2081" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2081" font-size="13" fill="#24364d" font-weight="400" >renders video snapshots</text>
-<rect x="28" y="2088" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
-<text x="44" y="2105" font-size="13" fill="#245ed1" font-weight="700" >07</text>
-<text x="78" y="2105" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; gameboy</text>
-<text x="415" y="2105" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2105" font-size="13" fill="#24364d" font-weight="400" >controls emulator execution</text>
-<text x="44" y="2129" font-size="13" fill="#245ed1" font-weight="700" >08</text>
-<text x="78" y="2129" font-size="13" fill="#245ed1" font-weight="600" >experiments -&gt; gameboy</text>
-<text x="415" y="2129" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2129" font-size="13" fill="#24364d" font-weight="400" >runs emulator in isolated worker processes</text>
-<rect x="28" y="2136" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
-<text x="44" y="2153" font-size="13" fill="#245ed1" font-weight="700" >09</text>
-<text x="78" y="2153" font-size="13" fill="#245ed1" font-weight="600" >experiments -&gt; serial</text>
-<text x="415" y="2153" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2153" font-size="13" fill="#24364d" font-weight="400" >exchanges request and response bytes</text>
-<text x="44" y="2177" font-size="13" fill="#7044bb" font-weight="700" >10</text>
-<text x="78" y="2177" font-size="13" fill="#7044bb" font-weight="600" >renderer -&gt; video</text>
-<text x="415" y="2177" font-size="11" fill="#52657a" font-weight="400" >data-consumption</text>
-<text x="630" y="2177" font-size="13" fill="#24364d" font-weight="400" >reads immutable VideoState snapshots</text>
-<rect x="28" y="2184" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="630" y="2081" font-size="13" fill="#24364d" font-weight="400" >exchanges request and response bytes</text>
+<rect x="28" y="2088" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2105" font-size="13" fill="#7044bb" font-weight="700" >07</text>
+<text x="78" y="2105" font-size="13" fill="#7044bb" font-weight="600" >renderer -&gt; video</text>
+<text x="415" y="2105" font-size="11" fill="#52657a" font-weight="400" >data-consumption</text>
+<text x="630" y="2105" font-size="13" fill="#24364d" font-weight="400" >reads immutable VideoState snapshots</text>
+<text x="44" y="2129" font-size="13" fill="#006d72" font-weight="700" >08</text>
+<text x="78" y="2129" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; cpu</text>
+<text x="415" y="2129" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2129" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
+<rect x="28" y="2136" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2153" font-size="13" fill="#006d72" font-weight="700" >09</text>
+<text x="78" y="2153" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; memory</text>
+<text x="415" y="2153" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2153" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
+<text x="44" y="2177" font-size="13" fill="#006d72" font-weight="700" >10</text>
+<text x="78" y="2177" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; apu</text>
+<text x="415" y="2177" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2177" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
+<rect x="28" y="2184" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
 <text x="44" y="2201" font-size="13" fill="#006d72" font-weight="700" >11</text>
-<text x="78" y="2201" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; cpu</text>
+<text x="78" y="2201" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; video</text>
 <text x="415" y="2201" font-size="11" fill="#52657a" font-weight="400" >composition</text>
 <text x="630" y="2201" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
 <text x="44" y="2225" font-size="13" fill="#006d72" font-weight="700" >12</text>
-<text x="78" y="2225" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; memory</text>
+<text x="78" y="2225" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; serial</text>
 <text x="415" y="2225" font-size="11" fill="#52657a" font-weight="400" >composition</text>
 <text x="630" y="2225" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
-<rect x="28" y="2232" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<rect x="28" y="2232" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
 <text x="44" y="2249" font-size="13" fill="#006d72" font-weight="700" >13</text>
-<text x="78" y="2249" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; apu</text>
+<text x="78" y="2249" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; io</text>
 <text x="415" y="2249" font-size="11" fill="#52657a" font-weight="400" >composition</text>
 <text x="630" y="2249" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
-<text x="44" y="2273" font-size="13" fill="#006d72" font-weight="700" >14</text>
-<text x="78" y="2273" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; video</text>
-<text x="415" y="2273" font-size="11" fill="#52657a" font-weight="400" >composition</text>
-<text x="630" y="2273" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
-<rect x="28" y="2280" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
-<text x="44" y="2297" font-size="13" fill="#006d72" font-weight="700" >15</text>
-<text x="78" y="2297" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; serial</text>
-<text x="415" y="2297" font-size="11" fill="#52657a" font-weight="400" >composition</text>
-<text x="630" y="2297" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
-<text x="44" y="2321" font-size="13" fill="#006d72" font-weight="700" >16</text>
-<text x="78" y="2321" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; io</text>
-<text x="415" y="2321" font-size="11" fill="#52657a" font-weight="400" >composition</text>
-<text x="630" y="2321" font-size="13" fill="#24364d" font-weight="400" >creates and resets devices</text>
-<rect x="28" y="2328" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2273" font-size="13" fill="#945508" font-weight="700" >14</text>
+<text x="78" y="2273" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; memory</text>
+<text x="415" y="2273" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
+<text x="630" y="2273" font-size="13" fill="#24364d" font-weight="400" >fetches and executes via mapped memory</text>
+<rect x="28" y="2280" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2297" font-size="13" fill="#945508" font-weight="700" >15</text>
+<text x="78" y="2297" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; apu</text>
+<text x="415" y="2297" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
+<text x="630" y="2297" font-size="13" fill="#24364d" font-weight="400" >advances device timing</text>
+<text x="44" y="2321" font-size="13" fill="#945508" font-weight="700" >16</text>
+<text x="78" y="2321" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; video</text>
+<text x="415" y="2321" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
+<text x="630" y="2321" font-size="13" fill="#24364d" font-weight="400" >advances device timing</text>
+<rect x="28" y="2328" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
 <text x="44" y="2345" font-size="13" fill="#945508" font-weight="700" >17</text>
-<text x="78" y="2345" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; memory</text>
+<text x="78" y="2345" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; serial</text>
 <text x="415" y="2345" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2345" font-size="13" fill="#24364d" font-weight="400" >fetches and executes via mapped memory</text>
+<text x="630" y="2345" font-size="13" fill="#24364d" font-weight="400" >advances device timing</text>
 <text x="44" y="2369" font-size="13" fill="#945508" font-weight="700" >18</text>
-<text x="78" y="2369" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; apu</text>
+<text x="78" y="2369" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; io</text>
 <text x="415" y="2369" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
 <text x="630" y="2369" font-size="13" fill="#24364d" font-weight="400" >advances device timing</text>
-<rect x="28" y="2376" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<rect x="28" y="2376" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
 <text x="44" y="2393" font-size="13" fill="#945508" font-weight="700" >19</text>
-<text x="78" y="2393" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; video</text>
-<text x="415" y="2393" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2393" font-size="13" fill="#24364d" font-weight="400" >advances device timing</text>
-<text x="44" y="2417" font-size="13" fill="#945508" font-weight="700" >20</text>
-<text x="78" y="2417" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; serial</text>
-<text x="415" y="2417" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2417" font-size="13" fill="#24364d" font-weight="400" >advances device timing</text>
-<rect x="28" y="2424" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
-<text x="44" y="2441" font-size="13" fill="#945508" font-weight="700" >21</text>
-<text x="78" y="2441" font-size="13" fill="#945508" font-weight="600" >cpu -&gt; io</text>
+<text x="78" y="2393" font-size="13" fill="#945508" font-weight="600" >memory -&gt; cartridge</text>
+<text x="415" y="2393" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2393" font-size="13" fill="#24364d" font-weight="400" >creates a mapper through the factory and routes its windows</text>
+<text x="44" y="2417" font-size="13" fill="#317832" font-weight="700" >20</text>
+<text x="78" y="2417" font-size="13" fill="#317832" font-weight="600" >tests -&gt; console</text>
+<text x="415" y="2417" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
+<text x="630" y="2417" font-size="13" fill="#24364d" font-weight="400" >references console for renderer and input tests</text>
+<rect x="28" y="2424" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2441" font-size="13" fill="#317832" font-weight="700" >21</text>
+<text x="78" y="2441" font-size="13" fill="#317832" font-weight="600" >tests -&gt; gameboy</text>
 <text x="415" y="2441" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2441" font-size="13" fill="#24364d" font-weight="400" >advances device timing</text>
-<text x="44" y="2465" font-size="13" fill="#945508" font-weight="700" >22</text>
-<text x="78" y="2465" font-size="13" fill="#945508" font-weight="600" >memory -&gt; cartridge</text>
-<text x="415" y="2465" font-size="11" fill="#52657a" font-weight="400" >composition</text>
-<text x="630" y="2465" font-size="13" fill="#24364d" font-weight="400" >creates a mapper through the factory and routes its windows</text>
-<rect x="28" y="2472" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
-<text x="44" y="2489" font-size="13" fill="#317832" font-weight="700" >23</text>
-<text x="78" y="2489" font-size="13" fill="#317832" font-weight="600" >tests -&gt; console</text>
-<text x="415" y="2489" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
-<text x="630" y="2489" font-size="13" fill="#24364d" font-weight="400" >references console for renderer and input tests</text>
-<text x="44" y="2513" font-size="13" fill="#317832" font-weight="700" >24</text>
-<text x="78" y="2513" font-size="13" fill="#317832" font-weight="600" >tests -&gt; gameboy</text>
+<text x="630" y="2441" font-size="13" fill="#24364d" font-weight="400" >checks execution and hardware boundaries</text>
+<text x="44" y="2465" font-size="13" fill="#317832" font-weight="700" >22</text>
+<text x="78" y="2465" font-size="13" fill="#317832" font-weight="600" >tests -&gt; experiments</text>
+<text x="415" y="2465" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
+<text x="630" y="2465" font-size="13" fill="#24364d" font-weight="400" >references serial HTTP experiment</text>
+<rect x="28" y="2472" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2489" font-size="13" fill="#006d72" font-weight="700" >23</text>
+<text x="78" y="2489" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; cartridge</text>
+<text x="415" y="2489" font-size="11" fill="#52657a" font-weight="400" >data-consumption</text>
+<text x="630" y="2489" font-size="13" fill="#24364d" font-weight="400" >stores polymorphic cartridge snapshot state</text>
+<text x="44" y="2513" font-size="13" fill="#245ed1" font-weight="700" >24</text>
+<text x="78" y="2513" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; memory</text>
 <text x="415" y="2513" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2513" font-size="13" fill="#24364d" font-weight="400" >checks execution and hardware boundaries</text>
-<rect x="28" y="2520" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
-<text x="44" y="2537" font-size="13" fill="#317832" font-weight="700" >25</text>
-<text x="78" y="2537" font-size="13" fill="#317832" font-weight="600" >tests -&gt; experiments</text>
+<text x="630" y="2513" font-size="13" fill="#24364d" font-weight="400" >inspects both ROM windows and RAM bank selection</text>
+<rect x="28" y="2520" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2537" font-size="13" fill="#245ed1" font-weight="700" >25</text>
+<text x="78" y="2537" font-size="13" fill="#245ed1" font-weight="600" >windows -&gt; audio</text>
 <text x="415" y="2537" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
-<text x="630" y="2537" font-size="13" fill="#24364d" font-weight="400" >references serial HTTP experiment</text>
-<text x="44" y="2561" font-size="13" fill="#006d72" font-weight="700" >26</text>
-<text x="78" y="2561" font-size="13" fill="#006d72" font-weight="600" >gameboy -&gt; cartridge</text>
-<text x="415" y="2561" font-size="11" fill="#52657a" font-weight="400" >data-consumption</text>
-<text x="630" y="2561" font-size="13" fill="#24364d" font-weight="400" >stores polymorphic cartridge snapshot state</text>
-<rect x="28" y="2568" width="1304" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="630" y="2537" font-size="13" fill="#24364d" font-weight="400" >references platform audio library</text>
+<text x="44" y="2561" font-size="13" fill="#317832" font-weight="700" >26</text>
+<text x="78" y="2561" font-size="13" fill="#317832" font-weight="600" >tests -&gt; windows</text>
+<text x="415" y="2561" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
+<text x="630" y="2561" font-size="13" fill="#24364d" font-weight="400" >exercises player lifecycle and playback</text>
+<rect x="28" y="2568" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
 <text x="44" y="2585" font-size="13" fill="#245ed1" font-weight="700" >27</text>
-<text x="78" y="2585" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; memory</text>
-<text x="415" y="2585" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
-<text x="630" y="2585" font-size="13" fill="#24364d" font-weight="400" >inspects both ROM windows and RAM bank selection</text>
-<rect x="28" y="2604" width="1304" height="39" rx="9" fill="#e9eff8" stroke="none" />
-<text x="44" y="2629" font-size="19" fill="#142840" font-weight="700" >Scope / evidence limits</text>
-<text x="44" y="2673" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2673" font-size="13" fill="#52657a" font-weight="400" >Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.</text>
-<text x="44" y="2700" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2700" font-size="13" fill="#52657a" font-weight="400" >Consumer -&gt; provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.</text>
-<text x="44" y="2727" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2727" font-size="13" fill="#52657a" font-weight="400" >CPU registers and memory references remain static; experiment workers use separate processes. Rendering reconstructs snapshots, not a cycle-accurate pixel</text>
-<text x="64" y="2746" font-size="13" fill="#52657a" font-weight="400" >pipeline.</text>
-<text x="44" y="2773" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2773" font-size="13" fill="#52657a" font-weight="400" >Standard MBC1 only; MBC1M wiring, persistent battery saves and MBC3 RTC remain outside this implementation.</text>
-<text x="44" y="2800" font-size="14" fill="#007d81" font-weight="700" >•</text>
-<text x="64" y="2800" font-size="13" fill="#52657a" font-weight="400" >Mapper selection, mapped windows and cartridge snapshots use the shared CartridgeMapper / CartridgeMapperState contracts; MBC1 and MBC3 own their banking</text>
-<text x="64" y="2819" font-size="13" fill="#52657a" font-weight="400" >rules. Debugger inspection reads mapper capabilities and live bank state.</text></g></svg>
+<text x="78" y="2585" font-size="13" fill="#245ed1" font-weight="600" >console -&gt; hosting</text>
+<text x="415" y="2585" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2585" font-size="13" fill="#24364d" font-weight="400" >composes shared playback host</text>
+<text x="44" y="2609" font-size="13" fill="#245ed1" font-weight="700" >28</text>
+<text x="78" y="2609" font-size="13" fill="#245ed1" font-weight="600" >windows -&gt; hosting</text>
+<text x="415" y="2609" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2609" font-size="13" fill="#24364d" font-weight="400" >composes shared playback host</text>
+<rect x="28" y="2616" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2633" font-size="13" fill="#245ed1" font-weight="700" >29</text>
+<text x="78" y="2633" font-size="13" fill="#245ed1" font-weight="600" >debugger -&gt; hosting</text>
+<text x="415" y="2633" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2633" font-size="13" fill="#24364d" font-weight="400" >composes shared playback host</text>
+<text x="44" y="2657" font-size="13" fill="#006d72" font-weight="700" >30</text>
+<text x="78" y="2657" font-size="13" fill="#006d72" font-weight="600" >hosting -&gt; gameboy</text>
+<text x="415" y="2657" font-size="11" fill="#52657a" font-weight="400" >composition</text>
+<text x="630" y="2657" font-size="13" fill="#24364d" font-weight="400" >coordinates one independent machine</text>
+<rect x="28" y="2664" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2681" font-size="13" fill="#006d72" font-weight="700" >31</text>
+<text x="78" y="2681" font-size="13" fill="#006d72" font-weight="600" >hosting -&gt; renderer</text>
+<text x="415" y="2681" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
+<text x="630" y="2681" font-size="13" fill="#24364d" font-weight="400" >captures and renders owned frames</text>
+<text x="44" y="2705" font-size="13" fill="#006d72" font-weight="700" >32</text>
+<text x="78" y="2705" font-size="13" fill="#006d72" font-weight="600" >hosting -&gt; apu</text>
+<text x="415" y="2705" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
+<text x="630" y="2705" font-size="13" fill="#24364d" font-weight="400" >subscribes to PCM sample events</text>
+<rect x="28" y="2712" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2729" font-size="13" fill="#006d72" font-weight="700" >33</text>
+<text x="78" y="2729" font-size="13" fill="#006d72" font-weight="600" >hosting -&gt; audio</text>
+<text x="415" y="2729" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
+<text x="630" y="2729" font-size="13" fill="#24364d" font-weight="400" >writes PCM through injected output contract</text>
+<text x="44" y="2753" font-size="13" fill="#b72e77" font-weight="700" >34</text>
+<text x="78" y="2753" font-size="13" fill="#b72e77" font-weight="600" >audio -&gt; hosting</text>
+<text x="415" y="2753" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
+<text x="630" y="2753" font-size="13" fill="#24364d" font-weight="400" >implements shared audio output contract</text>
+<rect x="28" y="2760" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2777" font-size="13" fill="#006d72" font-weight="700" >35</text>
+<text x="78" y="2777" font-size="13" fill="#006d72" font-weight="600" >hosting -&gt; cartridge</text>
+<text x="415" y="2777" font-size="11" fill="#52657a" font-weight="400" >runtime-call</text>
+<text x="630" y="2777" font-size="13" fill="#24364d" font-weight="400" >loads and assesses cartridge requirements</text>
+<text x="44" y="2801" font-size="13" fill="#006d72" font-weight="700" >36</text>
+<text x="78" y="2801" font-size="13" fill="#006d72" font-weight="600" >hosting -&gt; memory</text>
+<text x="415" y="2801" font-size="11" fill="#52657a" font-weight="400" >snapshot-consumption</text>
+<text x="630" y="2801" font-size="13" fill="#24364d" font-weight="400" >captures read-only mapped memory</text>
+<rect x="28" y="2808" width="1714" height="27" rx="4" fill="#f4f7fb" stroke="none" />
+<text x="44" y="2825" font-size="13" fill="#317832" font-weight="700" >37</text>
+<text x="78" y="2825" font-size="13" fill="#317832" font-weight="600" >tests -&gt; hosting</text>
+<text x="415" y="2825" font-size="11" fill="#52657a" font-weight="400" >project-reference</text>
+<text x="630" y="2825" font-size="13" fill="#24364d" font-weight="400" >tests lifecycle and independent machines</text>
+<rect x="28" y="2844" width="1714" height="39" rx="9" fill="#e9eff8" stroke="none" />
+<text x="44" y="2869" font-size="19" fill="#142840" font-weight="700" >Scope / evidence limits</text>
+<text x="44" y="2913" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2913" font-size="13" fill="#52657a" font-weight="400" >Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.</text>
+<text x="44" y="2940" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2940" font-size="13" fill="#52657a" font-weight="400" >Consumer -&gt; provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.</text>
+<text x="44" y="2967" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2967" font-size="13" fill="#52657a" font-weight="400" >Each machine owns its CPU registers, flags and memory references; experiment workers retain processes as a host policy. Rendering reconstructs snapshots, not a cycle-accurate pixel pipeline.</text>
+<text x="44" y="2994" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="2994" font-size="13" fill="#52657a" font-weight="400" >Standard MBC1 only; MBC1M wiring, persistent battery saves and MBC3 RTC remain outside this implementation.</text>
+<text x="44" y="3021" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="3021" font-size="13" fill="#52657a" font-weight="400" >Mapper selection, mapped windows and cartridge snapshots use the shared CartridgeMapper / CartridgeMapperState contracts; MBC1 and MBC3 own their banking rules. Debugger inspection reads mapper capabilities</text>
+<text x="64" y="3040" font-size="13" fill="#52657a" font-weight="400" >and live bank state.</text>
+<text x="44" y="3067" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="3067" font-size="13" fill="#52657a" font-weight="400" >Emulator overview updated for the Windows player and Win32 audio extraction; compiler/toolchain components remain outside this diagram. Windows playback and read-only inspection share one UI thread;</text>
+<text x="64" y="3086" font-size="13" fill="#52657a" font-weight="400" >inspector refresh is capped at 4 Hz.</text>
+<text x="44" y="3113" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="3113" font-size="13" fill="#52657a" font-weight="400" >Console and Windows playback share EmulationHost pacing, immutable frame publication, audio lifetime and inspection. Debugger stepping/rewind use the shared debugging service; rich debugger views still</text>
+<text x="64" y="3132" font-size="13" fill="#52657a" font-weight="400" >inspect composed core devices.</text>
+<text x="44" y="3159" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="3159" font-size="13" fill="#52657a" font-weight="400" >Hosting calls IAudioOutput supplied by the UI; the hosting-to-audio arrow is runtime dispatch only. Only the Win32 adapter references Hosting at compile time. Other audio adapters may implement the same</text>
+<text x="64" y="3178" font-size="13" fill="#52657a" font-weight="400" >contract.</text>
+<text x="44" y="3205" font-size="14" fill="#007d81" font-weight="700" >•</text>
+<text x="64" y="3205" font-size="13" fill="#52657a" font-weight="400" >The console defaults to the bundled SPRITE.GB demo and accepts explicit ROM paths; private ROMs are not automatically copied by its project. This is configuration behavior within the existing front-end</text>
+<text x="64" y="3224" font-size="13" fill="#52657a" font-weight="400" >boundary.</text></g></svg>

@@ -73,7 +73,7 @@ namespace GB.Emulator.Core
 
             if (this.FramesCompleted == TotalFrames)
             {
-                this.Handoff(memory);
+                this.Handoff(memory, cpu);
                 this.IsActive = false;
             }
         }
@@ -129,15 +129,15 @@ namespace GB.Emulator.Core
             memory.Write8(0x87, 0xFF14);
         }
 
-        private void Handoff(MemoryMap memory)
+        private void Handoff(MemoryMap memory, Cpu cpu)
         {
-            Cpu.Registers.A = 0x01;
-            Cpu.Registers.F = 0xB0;
-            Cpu.Registers.BC = 0x0013;
-            Cpu.Registers.DE = 0x00D8;
-            Cpu.Registers.HL = 0x014D;
-            Cpu.Registers.SP = 0xFFFE;
-            Cpu.Registers.PC = 0x0100;
+            cpu.Registers.A = 0x01;
+            cpu.Registers.F = 0xB0;
+            cpu.Registers.BC = 0x0013;
+            cpu.Registers.DE = 0x00D8;
+            cpu.Registers.HL = 0x014D;
+            cpu.Registers.SP = 0xFFFE;
+            cpu.Registers.PC = 0x0100;
             memory.Write8(0x91, 0xFF40);
             memory.Write8(0, 0xFF42);
             memory.Write8(0, 0xFF43);

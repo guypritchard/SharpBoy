@@ -157,7 +157,7 @@ public sealed class DisplayTests
             bad[0x4000] ^= 1;
             Assert.IsTrue(RomValidator.Validate(bad, sym, layout, assets: SampleAssets.Background).Any(d => d.StartsWith("GBR008:", StringComparison.Ordinal)));
 
-            // Cpu.Registers is static; assembly-level DoNotParallelize serializes these runs.
+            // Each machine owns its CPU state; these fixtures also use shared toolchain resources.
             foreach (var preEnabled in new[] { false, true })
             {
                 var gb = new Gameboy();

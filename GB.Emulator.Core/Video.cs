@@ -30,6 +30,6 @@ namespace GB.Emulator.Core
             return interrupts;
         }
 
-        internal VideoState CaptureState(MemoryMap memory) => new(memory.Snapshot());
+        internal VideoState CaptureState(MemoryMap memory) => new(memory);
     }
 }

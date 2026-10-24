@@ -8,10 +8,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Hosting\GB.Emulator.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GB.Emulator.Windows\GB.Emulator.Windows.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Core.Win32\GB.Emulator.Core.Win32.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,12 +22,6 @@
   <ItemGroup>
     <None Include="..\GB.Roms\SPRITE.GB" Link="SPRITE.GB">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\GB.Roms.Private\Tetris (World).gb"
-          Link="Tetris (World).gb"
-          Condition="Exists('..\GB.Roms.Private\Tetris (World).gb')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
   </ItemGroup>
 
