@@ -9,7 +9,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 using GB.Emulator.Core;
-using GB.Emulator.Windows;
+using GB.Emulator.Core.Win32;
+using GB.Emulator.Hosting;
 using GB.Emulator.Core.Rendering;
 
 namespace GB.Debugger;
@@ -53,7 +54,7 @@ public partial class DebuggerForm : Form
     private readonly CartridgeInfoControl cartridgeInfo = new();
     private readonly TextBox interactionDetails = new();
     private readonly FrameDisplayControl screenDisplay = new();
-    private WindowsAudioOutput? audioOutput;
+    private readonly EmulationHost host;
     private readonly Label screenLegendLabel = new();
     private readonly Panel tilesViewport = new();
     private readonly TabPage videoTab = new("Video");
@@ -67,24 +68,29 @@ public partial class DebuggerForm : Form
     private HashSet<int> lastMemoryHighlightRows = new();
     private bool memoryViewInitialized;
     private bool traceRunning;
-    private ushort stackStartPointer = Cpu.Registers.SP;
+    private ushort stackStartPointer = 0xFFFE;
     private Cartridge? cartridge;
     private string? romPath;
 
     public DebuggerForm()
     {
+        this.host = new EmulationHost(this.gameboy, WindowsAudioOutput.TryCreate(),
+            new EmulationHostOptions { AllowUnsupportedCartridges = true, HistoryCapacity = MaxStepHistory });
         InitializeComponent();
-        this.keyboardInput = new DebuggerKeyboardInput(this, this.gameboy.Input,
+        this.keyboardInput = new DebuggerKeyboardInput(this, this.host.Input,
             () => this.cartridge != null, this.RefreshInputView);
         this.InitializeInteractionView();
         Application.AddMessageFilter(this.keyboardInput);
         this.Disposed += (_, _) =>
         {
+            this.traceTimer.Stop();
+            this.traceTimer.Dispose();
             Application.RemoveMessageFilter(this.keyboardInput);
-            this.audioOutput?.Dispose();
+            this.host.Dispose();
         };
         this.Deactivate += (_, _) =>
         {
+            if (this.host.State == EmulationState.Disposed) return;
             this.keyboardInput.ReleaseAll();
             this.RefreshInputView();
         };
@@ -117,8 +123,7 @@ public partial class DebuggerForm : Form
         try
         {
             var loadedCartridge = await CartridgeLoader.Load(this.openRomDialog.FileName);
-            this.gameboy.Load(loadedCartridge);
-            this.audioOutput ??= WindowsAudioOutput.TryCreate(this.gameboy.Sound);
+            this.host.Load(loadedCartridge, this.openRomDialog.FileName);
             this.cartridge = loadedCartridge;
             this.romPath = this.openRomDialog.FileName;
             this.cartridgeInfo.SetCartridge(loadedCartridge, this.romPath);
@@ -131,7 +136,7 @@ public partial class DebuggerForm : Form
 
             this.recentWrites.Clear();
             this.recentReads.Clear();
-            this.stackStartPointer = Cpu.Registers.SP;
+            this.stackStartPointer = this.gameboy.Cpu.Registers.SP;
             this.ResetMemoryViewState();
             this.RefreshDebuggerViews();
             this.UpdateButtons(enableStep: true);
@@ -161,7 +166,7 @@ public partial class DebuggerForm : Form
         }
 
         this.StopTrace();
-        this.gameboy.Load(this.cartridge);
+        this.host.Reset();
         this.stepHistory.Clear();
         this.lastInteractionStep = null;
         this.interactionDiagram.ClearHistory();
@@ -169,7 +174,7 @@ public partial class DebuggerForm : Form
         this.screenDirty = this.tilesDirty = true;
         this.recentWrites.Clear();
         this.recentReads.Clear();
-        this.stackStartPointer = Cpu.Registers.SP;
+        this.stackStartPointer = this.gameboy.Cpu.Registers.SP;
         this.ResetMemoryViewState();
         this.RefreshDebuggerViews();
         this.UpdateButtons(enableStep: true);
@@ -589,7 +594,7 @@ public partial class DebuggerForm : Form
     private void UpdateInteractionView()
     {
         this.cartridgeInfo.ShowBanks(this.gameboy.Memory);
-        this.memoryMapDiagram.ShowStep(this.lastInteractionStep, Cpu.Registers.PC,
+        this.memoryMapDiagram.ShowStep(this.lastInteractionStep, this.gameboy.Cpu.Registers.PC,
             this.cartridge != null, this.recentReads, this.recentWrites, this.traceRunning,
             this.gameboy.Memory.SelectedRomBank, this.gameboy.Memory.SelectedCartridgeRamBank,
             this.gameboy.Memory.SelectedLowerRomBank);
@@ -598,7 +603,7 @@ public partial class DebuggerForm : Form
         byte scanline = this.gameboy.Scanline;
         this.interactionDiagram.ShowStep(
             this.lastInteractionStep,
-            Cpu.Registers.PC,
+            this.gameboy.Cpu.Registers.PC,
             scanline,
             this.lastInteractionStep == null ? scanline : this.scanlineBeforeLastStep,
             this.cartridge != null,
@@ -623,7 +628,7 @@ public partial class DebuggerForm : Form
         var lines = new List<string>
         {
             $"Executed  {this.lastInteractionStep.Disassembly.Replace('\t', ' ')}",
-            $"CPU       PC is now 0x{Cpu.Registers.PC:X4}. The opcode came from " +
+            $"CPU       PC is now 0x{this.gameboy.Cpu.Registers.PC:X4}. The opcode came from " +
                 (this.lastInteractionStep.Address < 0x8000 ? "cartridge ROM." : "mapped memory."),
             FormatAccesses("READ", this.recentReads),
             FormatAccesses("WRITE", this.recentWrites, mapperControls: true),
@@ -679,23 +684,23 @@ public partial class DebuggerForm : Form
             return;
         }
 
-        this.registerLabels["PC"].Text = $"0x{Cpu.Registers.PC:X4}";
-        this.registerLabels["SP"].Text = $"0x{Cpu.Registers.SP:X4}";
-        this.registerLabels["A"].Text = $"0x{Cpu.Registers.A:X2}";
-        this.registerLabels["B"].Text = $"0x{Cpu.Registers.B:X2}";
-        this.registerLabels["C"].Text = $"0x{Cpu.Registers.C:X2}";
-        this.registerLabels["D"].Text = $"0x{Cpu.Registers.D:X2}";
-        this.registerLabels["E"].Text = $"0x{Cpu.Registers.E:X2}";
-        this.registerLabels["H"].Text = $"0x{Cpu.Registers.H:X2}";
-        this.registerLabels["L"].Text = $"0x{Cpu.Registers.L:X2}";
+        this.registerLabels["PC"].Text = $"0x{this.gameboy.Cpu.Registers.PC:X4}";
+        this.registerLabels["SP"].Text = $"0x{this.gameboy.Cpu.Registers.SP:X4}";
+        this.registerLabels["A"].Text = $"0x{this.gameboy.Cpu.Registers.A:X2}";
+        this.registerLabels["B"].Text = $"0x{this.gameboy.Cpu.Registers.B:X2}";
+        this.registerLabels["C"].Text = $"0x{this.gameboy.Cpu.Registers.C:X2}";
+        this.registerLabels["D"].Text = $"0x{this.gameboy.Cpu.Registers.D:X2}";
+        this.registerLabels["E"].Text = $"0x{this.gameboy.Cpu.Registers.E:X2}";
+        this.registerLabels["H"].Text = $"0x{this.gameboy.Cpu.Registers.H:X2}";
+        this.registerLabels["L"].Text = $"0x{this.gameboy.Cpu.Registers.L:X2}";
         this.registerLabels["LY"].Text = $"0x{this.gameboy.Scanline:X2}";
         this.registerLabels["IF"].Text = $"0x{this.gameboy.Memory.Peek(0xFF0F):X2}";
         this.registerLabels["IE"].Text = $"0x{this.gameboy.Memory.Peek(0xFFFF):X2}";
-        this.registerLabels["Flags"].Text = $"0x{Cpu.Registers.Flags:X2}";
-        this.registerLabels["FlagZ"].Text = Cpu.Flags.Z ? "1" : "0";
-        this.registerLabels["FlagN"].Text = Cpu.Flags.N ? "1" : "0";
-        this.registerLabels["FlagH"].Text = Cpu.Flags.H ? "1" : "0";
-        this.registerLabels["FlagC"].Text = Cpu.Flags.C ? "1" : "0";
+        this.registerLabels["Flags"].Text = $"0x{this.gameboy.Cpu.Registers.Flags:X2}";
+        this.registerLabels["FlagZ"].Text = this.gameboy.Cpu.Flags.Z ? "1" : "0";
+        this.registerLabels["FlagN"].Text = this.gameboy.Cpu.Flags.N ? "1" : "0";
+        this.registerLabels["FlagH"].Text = this.gameboy.Cpu.Flags.H ? "1" : "0";
+        this.registerLabels["FlagC"].Text = this.gameboy.Cpu.Flags.C ? "1" : "0";
     }
 
     private void UpdateInterruptView()
@@ -759,7 +764,7 @@ public partial class DebuggerForm : Form
             return;
         }
 
-        ushort sp = Cpu.Registers.SP;
+        ushort sp = this.gameboy.Cpu.Registers.SP;
         ushort upperBound = this.stackStartPointer >= sp ? this.stackStartPointer : sp;
         int wordCount = (upperBound - sp) / 2 + 1;
 
@@ -800,7 +805,7 @@ public partial class DebuggerForm : Form
             return;
         }
 
-        int currentPcRow = Cpu.Registers.PC / MemoryBytesPerRow;
+        int currentPcRow = this.gameboy.Cpu.Registers.PC / MemoryBytesPerRow;
         HashSet<int> rowsWithWrite = this.BuildRowsForAddresses(this.recentWrites);
         HashSet<int> rowsWithRead = this.BuildRowsForAddresses(this.recentReads);
 
@@ -999,7 +1004,7 @@ public partial class DebuggerForm : Form
         IReadOnlyList<CpuStepResult> disassembly;
         try
         {
-            disassembly = this.gameboy.GetDisassembly();
+            disassembly = this.host.Debugging.GetDisassembly();
         }
         catch (Exception ex)
         {
@@ -1067,7 +1072,7 @@ public partial class DebuggerForm : Form
             }
         }
 
-        if (!this.disassemblyIndexByAddress.TryGetValue(Cpu.Registers.PC, out int currentIndex))
+        if (!this.disassemblyIndexByAddress.TryGetValue(this.gameboy.Cpu.Registers.PC, out int currentIndex))
         {
             if (this.lastCodeIndex >= 0 && this.lastCodeIndex < this.codeListBox.Items.Count)
             {
@@ -1139,7 +1144,7 @@ public partial class DebuggerForm : Form
 
         const int joypadRow = 0xFF00 / MemoryBytesPerRow;
         this.memoryListBox.Items[joypadRow] = this.BuildMemoryRow(0xFF00,
-            joypadRow == Cpu.Registers.PC / MemoryBytesPerRow,
+            joypadRow == this.gameboy.Cpu.Registers.PC / MemoryBytesPerRow,
             this.recentWrites.Any(write => write / MemoryBytesPerRow == joypadRow),
             this.recentReads.Any(read => read / MemoryBytesPerRow == joypadRow));
     }
@@ -1196,7 +1201,6 @@ public partial class DebuggerForm : Form
     private DebuggerSnapshot CaptureSnapshot()
     {
         return new DebuggerSnapshot(
-            this.gameboy.CaptureState(),
             new HashSet<ushort>(this.recentWrites),
             new HashSet<ushort>(this.recentReads),
             this.stackStartPointer,
@@ -1228,7 +1232,7 @@ public partial class DebuggerForm : Form
         DebuggerSnapshot snapshot = this.stepHistory[^1];
         this.stepHistory.RemoveAt(this.stepHistory.Count - 1);
 
-        this.gameboy.RestoreState(snapshot.GameboyState);
+        this.host.Debugging.StepBack();
         this.recentWrites.Clear();
         this.recentReads.Clear();
         this.recentWrites.UnionWith(snapshot.RecentWrites);
@@ -1255,12 +1259,12 @@ public partial class DebuggerForm : Form
         }
 
         DebuggerSnapshot snapshot = this.CaptureSnapshot();
-        this.PushSnapshot(snapshot);
         byte previousScanline = this.gameboy.Scanline;
 
         try
         {
-            CpuStepResult result = this.gameboy.Step();
+            CpuStepResult result = this.host.Debugging.Step();
+            this.PushSnapshot(snapshot);
             this.lastInteractionStep = result;
             this.scanlineBeforeLastStep = previousScanline;
             this.recentWrites.Clear();
@@ -1280,7 +1284,7 @@ public partial class DebuggerForm : Form
 
             if (result.Instruction.Value is 0x31 or 0xF9 or 0xE8)
             {
-                this.stackStartPointer = Cpu.Registers.SP;
+                this.stackStartPointer = this.gameboy.Cpu.Registers.SP;
             }
 
             return StepResult.Success;
@@ -1352,22 +1356,18 @@ public partial class DebuggerForm : Form
     private sealed class DebuggerSnapshot
     {
         public DebuggerSnapshot(
-            GameboyState gameboyState,
             HashSet<ushort> recentWrites,
             HashSet<ushort> recentReads,
             ushort stackStartPointer,
             CpuStepResult? lastInteractionStep,
             byte scanlineBeforeLastStep)
         {
-            this.GameboyState = gameboyState;
             this.RecentWrites = recentWrites;
             this.RecentReads = recentReads;
             this.StackStartPointer = stackStartPointer;
             this.LastInteractionStep = lastInteractionStep;
             this.ScanlineBeforeLastStep = scanlineBeforeLastStep;
         }
-
-        public GameboyState GameboyState { get; }
 
         public HashSet<ushort> RecentWrites { get; }
 

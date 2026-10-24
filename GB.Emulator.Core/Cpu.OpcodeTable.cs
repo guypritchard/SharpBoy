@@ -16,7 +16,7 @@ namespace GB.Emulator.Core
              8, 12,  8,  8, 12, 12, 12,  4,  8,  8,  8,  8,  4,  4,  8,  4
         };
 
-        private static int GetCycles(byte opcode, byte operand)
+        private int GetCycles(byte opcode, byte operand)
         {
             if (opcode < 0x40)
             {
@@ -217,14 +217,14 @@ namespace GB.Emulator.Core
             return table;
         }
 
-        private static byte ReadRegister(int index) => index switch
+        private byte ReadRegister(int index) => index switch
         {
             0 => Registers.B, 1 => Registers.C, 2 => Registers.D, 3 => Registers.E,
             4 => Registers.H, 5 => Registers.L, 6 => Memory.Read8(Registers.HL), 7 => Registers.A,
             _ => throw new ArgumentOutOfRangeException(nameof(index))
         };
 
-        private static void WriteRegister(int index, byte value)
+        private void WriteRegister(int index, byte value)
         {
             switch (index)
             {
@@ -240,13 +240,13 @@ namespace GB.Emulator.Core
             }
         }
 
-        private static ushort GetPair(int index) => index switch
+        private ushort GetPair(int index) => index switch
         {
             0 => Registers.BC, 1 => Registers.DE, 2 => Registers.HL, 3 => Registers.SP,
             _ => throw new ArgumentOutOfRangeException(nameof(index))
         };
 
-        private static void SetPair(int index, ushort value)
+        private void SetPair(int index, ushort value)
         {
             switch (index)
             {
@@ -258,29 +258,29 @@ namespace GB.Emulator.Core
             }
         }
 
-        private static bool Condition(int index) => index switch
+        private bool Condition(int index) => index switch
         {
             0 => !Flags.Z, 1 => Flags.Z, 2 => !Flags.C, 3 => Flags.C,
             _ => throw new ArgumentOutOfRangeException(nameof(index))
         };
 
-        private static void JumpRelative(byte offset) =>
+        private void JumpRelative(byte offset) =>
             Registers.PC = (ushort)(Registers.PC + 2 + (sbyte)offset);
 
-        private static void PushWord(ushort value)
+        private void PushWord(ushort value)
         {
             Registers.SP -= 2;
             Memory.Write16(value, Registers.SP);
         }
 
-        private static ushort PopWord()
+        private ushort PopWord()
         {
             ushort value = Memory.Read16(Registers.SP);
             Registers.SP += 2;
             return value;
         }
 
-        private static void PopPair(int pair)
+        private void PopPair(int pair)
         {
             ushort value = PopWord();
             if (pair == 3)
@@ -291,19 +291,19 @@ namespace GB.Emulator.Core
             else SetPair(pair, value);
         }
 
-        private static void PushPair(int pair) => PushWord(pair == 3
+        private void PushPair(int pair) => PushWord(pair == 3
             ? (ushort)((Registers.A << 8) | Registers.Flags)
             : GetPair(pair));
 
-        private static void Return() => Registers.PC = PopWord();
+        private void Return() => Registers.PC = PopWord();
 
-        private static void Call(ushort address)
+        private void Call(ushort address)
         {
             PushWord((ushort)(Registers.PC + 3));
             Registers.PC = address;
         }
 
-        private static void AddHl(ushort value)
+        private void AddHl(ushort value)
         {
             ushort old = Registers.HL;
             int sum = old + value;
@@ -313,7 +313,7 @@ namespace GB.Emulator.Core
             Registers.HL = (ushort)sum;
         }
 
-        private static ushort AddSignedToSp(byte offset)
+        private ushort AddSignedToSp(byte offset)
         {
             int signed = (sbyte)offset;
             ushort old = Registers.SP;
@@ -324,7 +324,7 @@ namespace GB.Emulator.Core
             return result;
         }
 
-        private static void DecimalAdjust()
+        private void DecimalAdjust()
         {
             int value = Registers.A;
             int adjust = 0;
@@ -348,7 +348,7 @@ namespace GB.Emulator.Core
             Flags.C = carry;
         }
 
-        private static void Arithmetic(int operation, byte value)
+        private void Arithmetic(int operation, byte value)
         {
             switch (operation)
             {
@@ -378,7 +378,7 @@ namespace GB.Emulator.Core
             return $"{names[(opcode >> 3) & 7]} {RegisterNames[register]}";
         }
 
-        private static void ExecuteCb(byte opcode)
+        private void ExecuteCb(byte opcode)
         {
             int register = opcode & 7;
             int bit = (opcode >> 3) & 7;

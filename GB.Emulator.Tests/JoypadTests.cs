@@ -92,7 +92,7 @@ namespace GB.Emulator.Tests
             gameboy.Step();
             gameboy.Step();
 
-            Assert.AreEqual(0xEE, Cpu.Registers.A);
+            Assert.AreEqual(0xEE, gameboy.Cpu.Registers.A);
         }
 
         [TestMethod]

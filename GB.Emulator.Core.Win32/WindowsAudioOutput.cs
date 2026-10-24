@@ -2,23 +2,22 @@
 using System;
 using System.Runtime.InteropServices;
 using GB.Emulator.Core.InputOutput;
+using GB.Emulator.Hosting;
 
-namespace GB.Emulator.Windows;
+namespace GB.Emulator.Core.Win32;
 
 /// <summary>Small bounded waveOut queue for the APU's signed 16-bit stereo PCM.</summary>
-public sealed class WindowsAudioOutput : IDisposable
+public sealed class WindowsAudioOutput : IAudioOutput
 {
     private const uint Mapper = 0xFFFFFFFF;
     private const uint HeaderDone = 1;
-    private readonly Apu apu;
     private readonly Slot[] slots = new Slot[8];
     private IntPtr device;
     private bool disposed;
     private int nextSlot;
 
-    private WindowsAudioOutput(Apu apu)
+    private WindowsAudioOutput()
     {
-        this.apu = apu;
         var format = new WaveFormat
         {
             FormatTag = 1,
@@ -33,21 +32,21 @@ public sealed class WindowsAudioOutput : IDisposable
         int headerSize = Marshal.SizeOf<WaveHeader>();
         for (int i = 0; i < this.slots.Length; i++)
             this.slots[i] = new Slot(Marshal.AllocHGlobal(2048), Marshal.AllocHGlobal(headerSize));
-        this.apu.SamplesReady += this.OnSamplesReady;
     }
 
     /// <summary>Returns null when Windows audio is unavailable; emulation can continue silently.</summary>
-    public static WindowsAudioOutput? TryCreate(Apu apu)
+    public static WindowsAudioOutput? TryCreate()
     {
         if (!OperatingSystem.IsWindows()) return null;
-        try { return new WindowsAudioOutput(apu); }
+        try { return new WindowsAudioOutput(); }
         catch (DllNotFoundException) { return null; }
         catch (InvalidOperationException) { return null; }
     }
 
-    private void OnSamplesReady(ReadOnlyMemory<short> samples)
+    public void Write(ReadOnlyMemory<short> samples)
     {
         if (this.disposed) return;
+        if (samples.Length > 1024) throw new ArgumentOutOfRangeException(nameof(samples), "Audio blocks must fit the bounded 1024-sample queue slots.");
         int headerSize = Marshal.SizeOf<WaveHeader>();
         for (int attempt = 0; attempt < this.slots.Length; attempt++)
         {
@@ -77,11 +76,15 @@ public sealed class WindowsAudioOutput : IDisposable
         // The CPU is running ahead of the speaker; discard this block instead of growing latency.
     }
 
+    public void Flush()
+    {
+        if (!this.disposed && this.device != IntPtr.Zero) WaveOutReset(this.device);
+    }
+
     public void Dispose()
     {
         if (this.disposed) return;
         this.disposed = true;
-        this.apu.SamplesReady -= this.OnSamplesReady;
         if (this.device != IntPtr.Zero)
         {
             WaveOutReset(this.device);

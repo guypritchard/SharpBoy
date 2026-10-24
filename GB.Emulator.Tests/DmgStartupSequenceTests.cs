@@ -82,6 +82,33 @@ public class DmgStartupSequenceTests
     }
 
     [TestMethod]
+    [DataRow(0x01)]
+    [DataRow(0x11)]
+    public void BankedRomBytesCannotOffsetStartupLogo(int cartridgeType)
+    {
+        var reference = CreateGameboy();
+        reference.RunStep();
+        byte[] expectedFirstFrame = Render(reference);
+        for (int i = 1; i < 200; i++) reference.RunStep();
+        byte[] expectedLandedFrame = Render(reference);
+
+        byte[] rom = MakeRom(validLogo: true);
+        Array.Resize(ref rom, 0x10000);
+        rom[0x147] = (byte)cartridgeType;
+        rom[0x148] = 1; // Four 16 KiB banks.
+        // Mimic nonzero bank data at the file offset that used to leak into SCX.
+        Array.Fill(rom, (byte)58, 0x8000, 0x8000);
+        var gb = new Gameboy(enableDmgStartup: true);
+        gb.Load(new Cartridge { Data = rom });
+        gb.RunStep();
+        Assert.AreEqual(0, gb.CaptureVideoState().ScrollX,
+            "Cartridge bank data must not become the renderer's horizontal scroll register.");
+        CollectionAssert.AreEqual(expectedFirstFrame, Render(gb));
+        for (int i = 1; i < 200; i++) gb.RunStep();
+        CollectionAssert.AreEqual(expectedLandedFrame, Render(gb));
+    }
+
+    [TestMethod]
     public void RegisteredSymbolUsesTileTwentyFiveBesideUpperLogoRow()
     {
         var gb = CreateGameboy();
@@ -156,7 +183,7 @@ public class DmgStartupSequenceTests
             Assert.AreEqual(i, gb.StartupFramesCompleted);
             Assert.HasCount(i, frameScroll);
             Assert.AreEqual(i * 70224L, gb.EmulatedCycles);
-            Assert.AreEqual(0x0100, Cpu.Registers.PC);
+            Assert.AreEqual(0x0100, gb.Cpu.Registers.PC);
             Assert.AreEqual(i < 264, gb.IsStartupSequenceActive);
             Assert.AreEqual(100 - Math.Min(i / 2, 100), gb.Memory.Read8(0xFF42));
             Assert.AreEqual(100 - Math.Min(i / 2, 100), frameScroll[i - 1], $"emitted frame {i}");
@@ -168,19 +195,19 @@ public class DmgStartupSequenceTests
         Assert.AreEqual(0x83, frameTone[195]);
         Assert.AreEqual(0x83, frameTone[198]);
         Assert.AreEqual(0xC1, frameTone[199]);
-        Assert.AreEqual(0x01, Cpu.Registers.A);
-        Assert.AreEqual(0xB0, Cpu.Registers.F);
-        Assert.AreEqual(0x0013, Cpu.Registers.BC);
-        Assert.AreEqual(0x00D8, Cpu.Registers.DE);
-        Assert.AreEqual(0x014D, Cpu.Registers.HL);
-        Assert.AreEqual(0xFFFE, Cpu.Registers.SP);
+        Assert.AreEqual(0x01, gb.Cpu.Registers.A);
+        Assert.AreEqual(0xB0, gb.Cpu.Registers.F);
+        Assert.AreEqual(0x0013, gb.Cpu.Registers.BC);
+        Assert.AreEqual(0x00D8, gb.Cpu.Registers.DE);
+        Assert.AreEqual(0x014D, gb.Cpu.Registers.HL);
+        Assert.AreEqual(0xFFFE, gb.Cpu.Registers.SP);
         Assert.AreEqual(0x91, gb.Memory.Read8(0xFF40));
         Assert.AreEqual(0, gb.Memory.Read8(0xFF43));
         Assert.AreEqual(0xFC, gb.Memory.Read8(0xFF47));
         Assert.AreEqual(0, gb.Memory.Read8(0xFFFF));
         Assert.AreEqual(1, gb.Memory.Read8(0xFF0F));
         gb.RunStep();
-        Assert.AreEqual(0x0101, Cpu.Registers.PC);
+        Assert.AreEqual(0x0101, gb.Cpu.Registers.PC);
     }
 
     [TestMethod]
@@ -246,7 +273,7 @@ public class DmgStartupSequenceTests
                 }
                 while (gb.IsStartupSequenceActive) gb.RunStep();
                 gb.RunStep();
-                Assert.AreEqual(0x0101, Cpu.Registers.PC);
+                Assert.AreEqual(0x0101, gb.Cpu.Registers.PC);
             }
             finally { Trace.Listeners.Remove(listener); }
         }
@@ -284,7 +311,7 @@ public class DmgStartupSequenceTests
         gb.Load(new Cartridge { Data = MakeRom(validLogo: true) });
         Assert.IsFalse(gb.IsStartupSequenceActive);
         gb.RunStep();
-        Assert.AreEqual(0x0101, Cpu.Registers.PC);
+        Assert.AreEqual(0x0101, gb.Cpu.Registers.PC);
         Assert.AreEqual(4L, gb.EmulatedCycles);
     }
 
@@ -302,7 +329,7 @@ public class DmgStartupSequenceTests
 
         Assert.AreEqual(264, frames);
         Assert.IsFalse(gb.IsStartupSequenceActive);
-        Assert.AreEqual(0x0101, Cpu.Registers.PC);
+        Assert.AreEqual(0x0101, gb.Cpu.Registers.PC);
         Assert.AreEqual(264 * 70224L + 4, gb.EmulatedCycles);
     }
 

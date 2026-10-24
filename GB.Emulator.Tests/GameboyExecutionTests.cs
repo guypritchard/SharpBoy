@@ -12,8 +12,8 @@ namespace GB.Emulator.Tests
         public void InstructionWindowFollowsVariableLengthInstructionsWithoutExecutingThem()
         {
             var gameboy = CreateGameboy(0x00, 0x3E, 0x42, 0x21, 0x34, 0x12, 0xCB, 0x11, 0x00);
-            Cpu.Registers.PC = 0x0103;
-            Cpu.Registers.A = 0x77;
+            gameboy.Cpu.Registers.PC = 0x0103;
+            gameboy.Cpu.Registers.A = 0x77;
 
             var window = gameboy.GetInstructionWindow(2, 2);
 
@@ -22,8 +22,8 @@ namespace GB.Emulator.Tests
             Assert.AreEqual(0x34, window[2].Operand1);
             Assert.AreEqual(0x12, window[2].Operand2);
             Assert.AreEqual("RL C", window[3].Instruction.Name);
-            Assert.AreEqual(0x0103, Cpu.Registers.PC);
-            Assert.AreEqual(0x77, Cpu.Registers.A);
+            Assert.AreEqual(0x0103, gameboy.Cpu.Registers.PC);
+            Assert.AreEqual(0x77, gameboy.Cpu.Registers.A);
             Assert.AreEqual(0L, gameboy.EmulatedCycles);
         }
 
@@ -31,7 +31,7 @@ namespace GB.Emulator.Tests
         public void InstructionWindowIsEmptyWhenProgramCounterIsInsideAnOperand()
         {
             var gameboy = CreateGameboy(0x21, 0x34, 0x12);
-            Cpu.Registers.PC = 0x0101;
+            gameboy.Cpu.Registers.PC = 0x0101;
 
             Assert.IsEmpty(gameboy.GetInstructionWindow(2, 2));
         }
@@ -69,30 +69,30 @@ namespace GB.Emulator.Tests
         public void RestoringStateReplaysAnInstructionWithTheSameRegistersMemoryAndTiming()
         {
             var gameboy = CreateGameboy(0x22); // LD (HL+),A
-            Cpu.Registers.A = 0x5A;
-            Cpu.Registers.BC = 0x1234;
-            Cpu.Registers.DE = 0x5678;
-            Cpu.Registers.HL = 0xC000;
-            Cpu.Registers.F = 0xB0;
-            Cpu.Registers.SP = 0xFFFC;
+            gameboy.Cpu.Registers.A = 0x5A;
+            gameboy.Cpu.Registers.BC = 0x1234;
+            gameboy.Cpu.Registers.DE = 0x5678;
+            gameboy.Cpu.Registers.HL = 0xC000;
+            gameboy.Cpu.Registers.F = 0xB0;
+            gameboy.Cpu.Registers.SP = 0xFFFC;
             GameboyState saved = gameboy.CaptureState();
 
             CpuStepResult first = gameboy.Step();
             long cycles = gameboy.EmulatedCycles;
-            Cpu.Registers.A = 0;
-            Cpu.Registers.BC = 0;
-            Cpu.Registers.DE = 0;
-            Cpu.Registers.F = 0;
-            Cpu.Registers.SP = 0;
+            gameboy.Cpu.Registers.A = 0;
+            gameboy.Cpu.Registers.BC = 0;
+            gameboy.Cpu.Registers.DE = 0;
+            gameboy.Cpu.Registers.F = 0;
+            gameboy.Cpu.Registers.SP = 0;
             gameboy.RestoreState(saved);
 
-            Assert.AreEqual(0x5A, Cpu.Registers.A);
-            Assert.AreEqual(0x1234, Cpu.Registers.BC);
-            Assert.AreEqual(0x5678, Cpu.Registers.DE);
-            Assert.AreEqual(0xC000, Cpu.Registers.HL);
-            Assert.AreEqual(0xB0, Cpu.Registers.F);
-            Assert.AreEqual(0xFFFC, Cpu.Registers.SP);
-            Assert.AreEqual(0x0100, Cpu.Registers.PC);
+            Assert.AreEqual(0x5A, gameboy.Cpu.Registers.A);
+            Assert.AreEqual(0x1234, gameboy.Cpu.Registers.BC);
+            Assert.AreEqual(0x5678, gameboy.Cpu.Registers.DE);
+            Assert.AreEqual(0xC000, gameboy.Cpu.Registers.HL);
+            Assert.AreEqual(0xB0, gameboy.Cpu.Registers.F);
+            Assert.AreEqual(0xFFFC, gameboy.Cpu.Registers.SP);
+            Assert.AreEqual(0x0100, gameboy.Cpu.Registers.PC);
             Assert.AreEqual(0, gameboy.Memory.Read8(0xC000));
             Assert.AreEqual(0L, gameboy.EmulatedCycles);
 
@@ -102,7 +102,7 @@ namespace GB.Emulator.Tests
             Assert.AreEqual(first.Disassembly, replayed.Disassembly);
             CollectionAssert.AreEquivalent(first.WrittenAddresses.ToArray(), replayed.WrittenAddresses.ToArray());
             Assert.AreEqual(0x5A, gameboy.Memory.Read8(0xC000));
-            Assert.AreEqual(0xC001, Cpu.Registers.HL);
+            Assert.AreEqual(0xC001, gameboy.Cpu.Registers.HL);
             Assert.AreEqual(cycles, gameboy.EmulatedCycles);
         }
 

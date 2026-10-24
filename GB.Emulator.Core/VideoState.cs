@@ -9,6 +9,13 @@ namespace GB.Emulator.Core
         private readonly byte[] oam = new byte[0xA0];
         private readonly byte[] registers = new byte[0x0C];
 
+        internal VideoState(MemoryMap memory)
+        {
+            for (int i = 0; i < this.vram.Length; i++) this.vram[i] = memory.Peek((ushort)(0x8000 + i));
+            for (int i = 0; i < this.oam.Length; i++) this.oam[i] = memory.Peek((ushort)(0xFE00 + i));
+            for (int i = 0; i < this.registers.Length; i++) this.registers[i] = memory.Peek((ushort)(0xFF40 + i));
+        }
+
         public VideoState(ReadOnlySpan<byte> memory)
         {
             if (memory.Length < 0x10000)

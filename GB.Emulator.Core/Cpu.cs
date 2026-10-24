@@ -16,9 +16,16 @@ namespace GB.Emulator.Core
         private bool haltBug;
         private long totalCycles;
 
+        private readonly Dictionary<byte, Instruction> instructions;
+        public CpuRegisters Registers { get; } = new();
+        public CpuFlags Flags { get; }
+        public CpuOperations Operations { get; }
+
         public Cpu(MemoryMap memory, Video video, SerialPort serial, Apu apu, Timer timer)
         {
-            Cpu.memory = memory;
+            this.memory = memory;
+            this.Flags = new CpuFlags(this.Registers);
+            this.Operations = new CpuOperations(this.Flags);
             this.video = video;
             this.serial = serial;
             this.apu = apu;
@@ -31,7 +38,7 @@ namespace GB.Emulator.Core
         {
             try
             {
-                while (Cpu.Registers.PC < ushort.MaxValue)
+                while (this.Registers.PC < ushort.MaxValue)
                 {
                     if (this.halted || this.stopped)
                     {
@@ -72,7 +79,8 @@ namespace GB.Emulator.Core
 
         internal void ExecuteNextInstructionFast(byte[] data) => this.ExecuteInstruction(data);
 
-        internal bool IsStopped => this.stopped;
+        public bool IsStopped => this.stopped;
+        public bool IsHalted => this.halted;
 
         private Instruction GetInstruction(byte instruction)
         {
@@ -81,7 +89,7 @@ namespace GB.Emulator.Core
                 return result;
             }
 
-            throw new NotImplementedException($"0x{instruction.ToString("X2")} not implemented at 0x{Cpu.Registers.PC:X4}.");
+            throw new NotImplementedException($"0x{instruction.ToString("X2")} not implemented at 0x{this.Registers.PC:X4}.");
         }
 
         private bool TryGetInstruction(byte instruction, out Instruction result)
@@ -150,6 +158,7 @@ namespace GB.Emulator.Core
             bool enableInterruptsNow = this.enableInterruptsDelay == 1;
 
             instruction.Execute(execution.Operand1, execution.Operand2);
+            if (instruction.IncrementPc) Registers.PC = (ushort)(Registers.PC + instruction.Length);
             this.UpdateDelayedInterruptEnable(opcode, enableInterruptsNow);
             this.AdvanceHardware(cycles);
 
@@ -272,15 +281,15 @@ namespace GB.Emulator.Core
 
         private void AdvanceHardware(int cycles = 4)
         {
+            this.totalCycles += cycles;
             byte interruptRequest = this.timer.Step(cycles);
             interruptRequest |= this.video.Step(cycles);
             this.serial.Step(cycles);
             this.apu.Step(cycles);
-            this.totalCycles += cycles;
             if (interruptRequest != 0)
             {
-                byte flags = Cpu.Memory.Peek(0xFF0F);
-                Cpu.Memory.Write8((byte)(flags | interruptRequest), 0xFF0F);
+                byte flags = this.Memory.Peek(0xFF0F);
+                this.Memory.Write8((byte)(flags | interruptRequest), 0xFF0F);
             }
         }
 
@@ -297,22 +306,22 @@ namespace GB.Emulator.Core
 
         private void HandleExecutionFailure(ArgumentOutOfRangeException exception)
         {
-            Trace.WriteLine(Cpu.Registers.Dump());
-            Trace.WriteLine(Cpu.Flags.Dump());
+            Trace.WriteLine(this.Registers.Dump());
+            Trace.WriteLine(this.Flags.Dump());
             Trace.WriteLine(exception.Message);
         }
 
         private void HandleExecutionFailure(byte[] data, Exception exception)
         {
             Instruction instruction;
-            byte opcode = this.ReadInstructionByte(data, Cpu.Registers.PC);
+            byte opcode = this.ReadInstructionByte(data, this.Registers.PC);
             if (!TryGetInstruction(opcode, out instruction))
             {
                 instruction = new Instruction(opcode, $"NOTIMPL 0x{opcode:X2}", (p1, p2) => { }, 1);
             }
-            Trace.WriteLine(instruction.Disassemble());
-            Trace.WriteLine(Cpu.Registers.Dump());
-            Trace.WriteLine(Cpu.Flags.Dump());
+            Trace.WriteLine(new CpuStepResult(instruction, this.Registers.PC, 0, 0).Disassembly);
+            Trace.WriteLine(this.Registers.Dump());
+            Trace.WriteLine(this.Flags.Dump());
             Trace.WriteLine(exception.Message);
         }
 

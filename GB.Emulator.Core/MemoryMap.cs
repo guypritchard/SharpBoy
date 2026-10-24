@@ -18,6 +18,7 @@ namespace GB.Emulator.Core
         private readonly SerialPort serial;
         private readonly Apu apu;
         private readonly Timer timer;
+        private readonly Lcd lcd;
         private CartridgeMapper cartridgeMapper;
         private IMemoryAccessRecorder accessRecorder = new RecordingMemoryAccessRecorder();
 
@@ -29,6 +30,7 @@ namespace GB.Emulator.Core
             this.serial = devices.OfType<SerialPort>().FirstOrDefault();
             this.apu = devices.OfType<Apu>().FirstOrDefault();
             this.timer = devices.OfType<Timer>().FirstOrDefault();
+            this.lcd = devices.OfType<Lcd>().FirstOrDefault();
             this.RebuildDeviceMap();
         }
 
@@ -42,7 +44,9 @@ namespace GB.Emulator.Core
         {
             this.RemoveCartridgeDevices();
 
-            int copyLength = Math.Min(romData.Length, this.memory.Length);
+            // Only $0000-$7FFF is cartridge ROM. Extra banks belong to the mapper;
+            // copying them beyond that window corrupts RAM and I/O snapshot values.
+            int copyLength = Math.Min(romData.Length, 0x8000);
             Array.Copy(romData, 0, this.memory, 0, copyLength);
             this.AddCartridgeDevices(romData);
             this.RebuildDeviceMap();
@@ -243,6 +247,9 @@ namespace GB.Emulator.Core
                 throw new ArgumentOutOfRangeException(nameof(address));
             }
 
+            if (address is >= 0xFF40 and <= 0xFF45 && this.lcd != null)
+                return this.lcd.Read8(address);
+
             // Live registers may change between bus accesses. Inspect them without
             // updating the backing memory or recording debugger activity.
             if (address == 0xFF00 && this.joypad != null)
@@ -281,6 +288,9 @@ namespace GB.Emulator.Core
             this.CopyDeviceRegisters(this.serial, copy);
             this.CopyDeviceRegisters(this.apu, copy);
             this.CopyDeviceRegisters(this.timer, copy);
+            if (this.lcd != null)
+                for (ushort address = 0xFF40; address <= 0xFF45; address++)
+                    copy[address] = this.lcd.Read8(address);
             this.CopyDeviceRegisters(this.cartridgeMapper?.Rom, copy);
             this.CopyDeviceRegisters(this.cartridgeMapper?.Ram, copy);
             return copy;

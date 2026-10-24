@@ -43,7 +43,7 @@ namespace GB.Emulator.Tests
             {
                 var gameboy = CreateGameboy(0xCB, (byte)opcode);
                 CpuStepResult step = gameboy.Step();
-                Assert.AreEqual(0x102, Cpu.Registers.PC, $"CB 0x{opcode:X2}");
+                Assert.AreEqual(0x102, gameboy.Cpu.Registers.PC, $"CB 0x{opcode:X2}");
                 Assert.AreNotEqual("PREFIX CB", step.Instruction.Name, $"CB 0x{opcode:X2}");
             }
         }
@@ -60,11 +60,11 @@ namespace GB.Emulator.Tests
         {
             var gameboy = CreateGameboy(0x01, 0x34, 0x12, 0x12);
             gameboy.Step();
-            Assert.AreEqual(0x1234, Cpu.Registers.BC);
-            Assert.AreEqual(0x103, Cpu.Registers.PC);
+            Assert.AreEqual(0x1234, gameboy.Cpu.Registers.BC);
+            Assert.AreEqual(0x103, gameboy.Cpu.Registers.PC);
 
-            Cpu.Registers.DE = 0xC000;
-            Cpu.Registers.A = 0x5A;
+            gameboy.Cpu.Registers.DE = 0xC000;
+            gameboy.Cpu.Registers.A = 0x5A;
             gameboy.Step();
             Assert.AreEqual(0x5A, gameboy.Memory.Peek(0xC000));
         }
@@ -73,26 +73,26 @@ namespace GB.Emulator.Tests
         public void ArithmeticAndCompareSetAllFlags()
         {
             var gameboy = CreateGameboy(0xDE, 0x01, 0xFE, 0xFF);
-            Cpu.Registers.A = 0;
-            Cpu.Flags.C = true;
+            gameboy.Cpu.Registers.A = 0;
+            gameboy.Cpu.Flags.C = true;
             gameboy.Step();
-            Assert.AreEqual(0xFE, Cpu.Registers.A);
-            Assert.AreEqual(0x70, Cpu.Registers.Flags);
+            Assert.AreEqual(0xFE, gameboy.Cpu.Registers.A);
+            Assert.AreEqual(0x70, gameboy.Cpu.Registers.Flags);
 
             gameboy.Step();
-            Assert.AreEqual(0xFE, Cpu.Registers.A);
-            Assert.AreEqual(0x70, Cpu.Registers.Flags);
+            Assert.AreEqual(0xFE, gameboy.Cpu.Registers.A);
+            Assert.AreEqual(0x70, gameboy.Cpu.Registers.Flags);
         }
 
         [TestMethod]
         public void ConditionalCallAndReturnPreserveStackAndPc()
         {
             var gameboy = CreateGameboy(0xC4, 0x20, 0x01);
-            Cpu.Registers.SP = 0xFFFE;
-            Cpu.Flags.Z = false;
+            gameboy.Cpu.Registers.SP = 0xFFFE;
+            gameboy.Cpu.Flags.Z = false;
             gameboy.Step();
-            Assert.AreEqual(0x120, Cpu.Registers.PC);
-            Assert.AreEqual(0xFFFC, Cpu.Registers.SP);
+            Assert.AreEqual(0x120, gameboy.Cpu.Registers.PC);
+            Assert.AreEqual(0xFFFC, gameboy.Cpu.Registers.SP);
             Assert.AreEqual(0x0103, gameboy.Memory.Read16(0xFFFC));
         }
 
@@ -100,27 +100,27 @@ namespace GB.Emulator.Tests
         public void CbBitResAndSetPreserveExpectedFlags()
         {
             var gameboy = CreateGameboy(0xCB, 0x7C, 0xCB, 0xBC, 0xCB, 0xFC);
-            Cpu.Registers.H = 0x00;
-            Cpu.Flags.C = true;
+            gameboy.Cpu.Registers.H = 0x00;
+            gameboy.Cpu.Flags.C = true;
             gameboy.Step();
-            Assert.AreEqual(0xB0, Cpu.Registers.Flags);
+            Assert.AreEqual(0xB0, gameboy.Cpu.Registers.Flags);
             gameboy.Step();
-            Assert.AreEqual(0x00, Cpu.Registers.H);
-            Assert.AreEqual(0xB0, Cpu.Registers.Flags);
+            Assert.AreEqual(0x00, gameboy.Cpu.Registers.H);
+            Assert.AreEqual(0xB0, gameboy.Cpu.Registers.Flags);
             gameboy.Step();
-            Assert.AreEqual(0x80, Cpu.Registers.H);
-            Assert.AreEqual(0xB0, Cpu.Registers.Flags);
+            Assert.AreEqual(0x80, gameboy.Cpu.Registers.H);
+            Assert.AreEqual(0xB0, gameboy.Cpu.Registers.Flags);
         }
 
         [TestMethod]
         public void PopAfMasksUnusedFlagBits()
         {
             var gameboy = CreateGameboy(0xF1);
-            Cpu.Registers.SP = 0xFFFC;
+            gameboy.Cpu.Registers.SP = 0xFFFC;
             gameboy.Memory.Write16(0x12FF, 0xFFFC);
             gameboy.Step();
-            Assert.AreEqual(0x12, Cpu.Registers.A);
-            Assert.AreEqual(0xF0, Cpu.Registers.Flags);
+            Assert.AreEqual(0x12, gameboy.Cpu.Registers.A);
+            Assert.AreEqual(0xF0, gameboy.Cpu.Registers.Flags);
         }
 
         [TestMethod]
@@ -131,12 +131,12 @@ namespace GB.Emulator.Tests
             gameboy.Memory.Write8(0x01, 0xFF0F);
 
             gameboy.Step();
-            Assert.AreEqual(0x101, Cpu.Registers.PC);
+            Assert.AreEqual(0x101, gameboy.Cpu.Registers.PC);
             gameboy.Step();
-            Assert.AreEqual(0x102, Cpu.Registers.PC);
+            Assert.AreEqual(0x102, gameboy.Cpu.Registers.PC);
             gameboy.Step();
-            Assert.AreEqual(0x40, Cpu.Registers.PC);
-            Assert.AreEqual(0x0102, gameboy.Memory.Read16(Cpu.Registers.SP));
+            Assert.AreEqual(0x40, gameboy.Cpu.Registers.PC);
+            Assert.AreEqual(0x0102, gameboy.Memory.Read16(gameboy.Cpu.Registers.SP));
         }
 
         [TestMethod]
@@ -147,9 +147,9 @@ namespace GB.Emulator.Tests
             gameboy.Memory.Write8(1, 0xFF0F);
             gameboy.Step();
             gameboy.Step();
-            Assert.AreEqual(0x102, Cpu.Registers.PC);
+            Assert.AreEqual(0x102, gameboy.Cpu.Registers.PC);
             gameboy.Step();
-            Assert.AreEqual(0x40, Cpu.Registers.PC);
+            Assert.AreEqual(0x40, gameboy.Cpu.Registers.PC);
         }
 
         [TestMethod]
@@ -157,15 +157,15 @@ namespace GB.Emulator.Tests
         {
             var halt = CreateGameboy(0x76, 0x00);
             halt.Step();
-            Assert.AreEqual(0x101, Cpu.Registers.PC);
+            Assert.AreEqual(0x101, halt.Cpu.Registers.PC);
             halt.Step();
-            Assert.AreEqual(0x101, Cpu.Registers.PC);
+            Assert.AreEqual(0x101, halt.Cpu.Registers.PC);
 
             var stop = CreateGameboy(0x10, 0x00, 0x00);
             stop.Step();
-            Assert.AreEqual(0x102, Cpu.Registers.PC);
+            Assert.AreEqual(0x102, stop.Cpu.Registers.PC);
             stop.Step();
-            Assert.AreEqual(0x102, Cpu.Registers.PC);
+            Assert.AreEqual(0x102, stop.Cpu.Registers.PC);
         }
 
         [TestMethod]
@@ -176,42 +176,42 @@ namespace GB.Emulator.Tests
             gameboy.Memory.Write8(1, 0xFF0F);
             gameboy.Step();
             gameboy.Step();
-            Assert.AreEqual(1, Cpu.Registers.B);
-            Assert.AreEqual(0x101, Cpu.Registers.PC);
+            Assert.AreEqual(1, gameboy.Cpu.Registers.B);
+            Assert.AreEqual(0x101, gameboy.Cpu.Registers.PC);
             gameboy.Step();
-            Assert.AreEqual(2, Cpu.Registers.B);
-            Assert.AreEqual(0x102, Cpu.Registers.PC);
+            Assert.AreEqual(2, gameboy.Cpu.Registers.B);
+            Assert.AreEqual(0x102, gameboy.Cpu.Registers.PC);
         }
 
         [TestMethod]
         public void DaaConvertsBinarySumToBcd()
         {
             var gameboy = CreateGameboy(0xC6, 0x27, 0x27);
-            Cpu.Registers.A = 0x15;
+            gameboy.Cpu.Registers.A = 0x15;
             gameboy.Step();
             gameboy.Step();
-            Assert.AreEqual(0x42, Cpu.Registers.A);
-            Assert.AreEqual(0x00, Cpu.Registers.Flags);
+            Assert.AreEqual(0x42, gameboy.Cpu.Registers.A);
+            Assert.AreEqual(0x00, gameboy.Cpu.Registers.Flags);
         }
 
         [TestMethod]
         public void SignedSpAdditionSetsHalfCarryAndCarry()
         {
             var gameboy = CreateGameboy(0xE8, 0x01);
-            Cpu.Registers.SP = 0x00FF;
+            gameboy.Cpu.Registers.SP = 0x00FF;
             gameboy.Step();
-            Assert.AreEqual(0x0100, Cpu.Registers.SP);
-            Assert.AreEqual(0x30, Cpu.Registers.Flags);
+            Assert.AreEqual(0x0100, gameboy.Cpu.Registers.SP);
+            Assert.AreEqual(0x30, gameboy.Cpu.Registers.Flags);
         }
 
         [TestMethod]
         public void NegativeSpOffsetUsesSignedCarryRules()
         {
             var gameboy = CreateGameboy(0xF8, 0xFE);
-            Cpu.Registers.SP = 0x0100;
+            gameboy.Cpu.Registers.SP = 0x0100;
             gameboy.Step();
-            Assert.AreEqual(0x00FE, Cpu.Registers.HL);
-            Assert.AreEqual(0x00, Cpu.Registers.Flags);
+            Assert.AreEqual(0x00FE, gameboy.Cpu.Registers.HL);
+            Assert.AreEqual(0x00, gameboy.Cpu.Registers.Flags);
         }
 
         [TestMethod]

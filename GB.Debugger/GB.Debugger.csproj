@@ -2,10 +2,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Hosting\GB.Emulator.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GB.Emulator.Windows\GB.Emulator.Windows.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Core.Win32\GB.Emulator.Core.Win32.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -3,61 +3,60 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using GB.Emulator.Core;
-using GB.Emulator.Windows;
+using GB.Emulator.Core.Win32;
+using GB.Emulator.Hosting;
 
 namespace GB.Emulator;
 
 /// <summary>Connects the Game Boy hardware to terminal video, audio, and input.</summary>
 internal sealed class ConsoleEmulator : IDisposable
 {
-    private readonly Gameboy gameboy;
+    private readonly EmulationHost host;
     private readonly ConsoleScreen screen;
     private readonly ConsoleKeyboardInput keyboard;
-    private readonly WindowsAudioOutput? audio;
+    private bool disposed;
 
-    private ConsoleEmulator(Gameboy gameboy)
+    private ConsoleEmulator(EmulationHost host)
     {
-        this.gameboy = gameboy;
-        this.screen = new ConsoleScreen(gameboy);
-        this.keyboard = new ConsoleKeyboardInput(gameboy.Input);
-        this.audio = WindowsAudioOutput.TryCreate(gameboy.Sound);
+        this.host = host;
+        this.screen = new ConsoleScreen(host);
+        this.keyboard = new ConsoleKeyboardInput(host.Input);
     }
 
     public static async Task<ConsoleEmulator> LoadAsync(string[] args)
     {
         string romPath = args.Length > 0
             ? Path.GetFullPath(args[0])
-            : DefaultRomPath();
-        var gameboy = new Gameboy(enableDmgStartup: true);
-        gameboy.Load(await CartridgeLoader.Load(romPath));
-        return new ConsoleEmulator(gameboy);
-    }
-
-    private static string DefaultRomPath()
-    {
-        string tetris = Path.Combine(AppContext.BaseDirectory, "Tetris (World).gb");
-        return File.Exists(tetris)
-            ? tetris
             : Path.Combine(AppContext.BaseDirectory, "SPRITE.GB");
+        var host = new EmulationHost(audio: WindowsAudioOutput.TryCreate());
+        try
+        {
+            await host.LoadAsync(romPath);
+            host.Resume();
+            return new ConsoleEmulator(host);
+        }
+        catch { host.Dispose(); throw; }
     }
 
     public void Run(CancellationToken stopping)
     {
-        var clock = new GameboyClock();
-        this.screen.Redraw(clear: true);
+        var clock = Stopwatch.StartNew();
+        long previous = clock.ElapsedTicks;
+        VideoFrame? presented = null;
         while (!stopping.IsCancellationRequested)
         {
-            if (this.gameboy.RunStep())
+            this.PollInput();
+            long now = clock.ElapsedTicks;
+            this.host.Advance(TimeSpan.FromSeconds((now - previous) / (double)Stopwatch.Frequency));
+            previous = now;
+            if (this.host.LatestFrame is VideoFrame frame && !ReferenceEquals(frame, presented))
             {
-                this.PollInput();
-                clock.WaitForButton();
+                this.screen.Present(frame);
+                presented = frame;
             }
-            else if (this.gameboy.IsStartupSequenceActive || clock.InputPollDue())
-            {
-                this.PollInput();
-                clock.Pace(this.gameboy.EmulatedCycles, stopping);
-            }
+            Thread.Sleep(1);
         }
     }
 
@@ -68,8 +67,9 @@ internal sealed class ConsoleEmulator : IDisposable
 
     public void Dispose()
     {
+        if (this.disposed) return;
+        this.disposed = true;
         this.keyboard.Dispose();
-        this.screen.Dispose();
-        this.audio?.Dispose();
+        this.host.Dispose();
     }
 }

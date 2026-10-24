@@ -208,8 +208,8 @@ public class Mbc1Tests
         var gameboy = new Gameboy();
         gameboy.Load(new Cartridge { Data = rom });
         for (int i = 0; i < 4; i++) gameboy.RunStep();
-        Assert.AreEqual(0x77, Cpu.Registers.A);
-        Assert.AreEqual(0x4002, Cpu.Registers.PC);
+        Assert.AreEqual(0x77, gameboy.Cpu.Registers.A);
+        Assert.AreEqual(0x4002, gameboy.Cpu.Registers.PC);
     }
 
     [TestMethod]
