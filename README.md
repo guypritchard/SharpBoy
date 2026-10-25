@@ -54,7 +54,17 @@ All screenshots use demo ROMs from [GB.Roms](GB.Roms). ROMs from `GB.Roms.Privat
 
 Without a path, the console uses the bundled `SPRITE.GB` demo.
 
-### Windows player
+#### Desktop 3D Game Boy
+
+Run `dotnet run --project GB.Emulator.Windows -c Release -- --desktop` for a transparent,
+borderless 3D DMG on your desktop. **Ctrl-drag rotates**, dragging the shell moves it, the mouse
+wheel resizes it, and **Ctrl+O** loads a ROM. Right-click for pause, audio, rear view and exit.
+The screen runs the shared emulator; the rear cartridge follows the loaded ROM and accepts
+local `.label.png` artwork. See [controls, artwork and renderer details](Docs/desktop-gameboy.md).
+The bundled detailed model is by Lokeig under **CC BY-NC 4.0 (noncommercial use)**; see
+[asset attribution](GB.Emulator.Windows/Desktop/Assets/ATTRIBUTION.md).
+
+## Windows player
 
 The player reuses `GB.Emulator.Core` for hardware, startup and rendering, and
 `GB.Emulator.Core.Win32` for audio. Resize freely: the display stays centered with
