@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "Working tree on b66909e15b2ec5be86d4b90d00b4acf26d612230; pre-documentation manifest 6274ec4eb6b326f7f33f730445bb4e58ed34a89a7731f50e8a3c963a6250471e",
+  "source": "Working tree on 4995032af6b6b6f8853068cc962f4b96412e78bf; pre-architecture manifest 02af4c38ab470a2ca0ea4d46c0ac6374cc14fb6f47434810313b9c03e50b883f",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
@@ -25,7 +25,9 @@
     "LifeCluster initializes territories once, then routes 116-cell toroidal boundaries over localhost TCP. Native SM83 ROMs compute Conway B3/S23 cells and draw their LCDs; only validated returned cells form the next world. Life v2 supports 1,000 machines with 16-bit node IDs and process groups. NetworkNodeWindow is shared between fractal and Life views. GameNetworkStream preserves TCP remainders across application reads.",
     "LifeProcessPool starts bounded OS worker groups. Pipes carry assignments, LCD selections and detached inspection; simulation cell results remain on per-node TCP sockets. WPF pages 16 LCDs, renders visible/inspected machines on demand, and retains every final native LCD. Life awaits transport operations with its guest clock parked; other experiments preserve their existing scheduling.",
     "GB.Emulator.Windows owns regular/3D ROM playback only; it has no experiment reference, menu items or launch modes. GB.Experiments.Windows owns launcher, DHCP and WPF labs, with a separate test project and published ZIP. Both front ends reuse GB.Emulator.Presentation.WinForms for LCD painting; neither references the other executable.",
-    "Life shutdown cancels worker groups cooperatively before closing collectors, observes every worker, and publishes stopped snapshots after cancellation."
+    "Life shutdown cancels worker groups cooperatively before closing collectors, observes every worker, and publishes stopped snapshots after cancellation.",
+    "Life host JSON places bounded groups locally or over OpenSSH; reverse forwards keep both cartridge endpoints loopback-only. Cells use forwarded TCP channels; detached frames/inspection/control use the exec channel. Worker-side samples identify host/PID. Explicit drained events precede collector closure and SSH exit.",
+    "Remote deployment and SSH key/known-host provisioning are operator responsibilities. Real SSH exec, encrypted forwarding, native equivalence and transport-loss cleanup are tested on loopback; physical multi-host LAN execution has not been verified in this workspace."
   ],
   "nodes": [
     {
@@ -401,7 +403,9 @@
         "GB.Emulator.Tests/LifeClusterTests.cs",
         "GB.Experiments.Windows.Tests/LifeClusterWindowTests.cs",
         "GB.Experiments.Windows.Tests/GB.Experiments.Windows.Tests.csproj",
-        "GB.Experiments.Windows.Tests/ExperimentLauncherTests.cs"
+        "GB.Experiments.Windows.Tests/ExperimentLauncherTests.cs",
+        "GB.Emulator.Tests/LifeHostTests.cs",
+        "Tools/LifeCluster/ssh_smoke.py"
       ],
       "evidence": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite",
@@ -418,7 +422,8 @@
         "GB.Experiments.Windows.Tests/DhcpWindowTests.cs: live window screenshots and close during acquisition",
         "GB.Compiler.Tests/TextAndMemoryTests.cs: native execution, text validation and firmware reproducibility",
         "GB.Emulator.Windows.Tests/PlayerTests.cs: RegularPlayerDoesNotReferenceTheExperimentAssembly",
-        "GB.Experiments.Windows.Tests/ExperimentLauncherTests.cs: independent launcher modes and UI"
+        "GB.Experiments.Windows.Tests/ExperimentLauncherTests.cs: independent launcher modes and UI",
+        "GB.Emulator.Tests/LifeHostTests.cs; Tools/LifeCluster/ssh_smoke.py: native equivalence, real SSH forwards, disconnect cleanup"
       ],
       "confidence": "high",
       "row": 4,
@@ -738,7 +743,7 @@
     },
     {
       "id": "network-cluster",
-      "label": "Local Game Boy cluster",
+      "label": "Game Boy cluster",
       "group": "Hosts",
       "role": "Partitions and validates native worker jobs",
       "boundary": "Independent host/machine/device tasks",
@@ -746,17 +751,20 @@
         "Private native tasks or isolated worker processes",
         "Bounded UDP retries / TCP record framing",
         "Guest arithmetic; host validates and reduces",
-        "Conway barriers; 16-bit IDs and boundary routing"
+        "Conway barriers; 16-bit IDs and boundary routing",
+        "Life host placement; whole-world validated barriers"
       ],
       "files": [
         "GB.Experiments/NetworkCartridge/GameboyNetworkCluster.cs",
         "GB.Experiments/NetworkCartridge/FractalCluster.cs",
-        "GB.Experiments/NetworkCartridge/LifeCluster.cs"
+        "GB.Experiments/NetworkCartridge/LifeCluster.cs",
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs"
       ],
       "evidence": [
         "GB.Experiments/NetworkCartridge/GameboyNetworkCluster.cs: RunAsync",
         "GB.Experiments/NetworkCartridge/FractalCluster.cs: RunAsync / ReferencePixel",
-        "GB.Experiments/NetworkCartridge/LifeCluster.cs: RunAsync / BuildHalo / ReferenceStep"
+        "GB.Experiments/NetworkCartridge/LifeCluster.cs: RunAsync / BuildHalo / ReferenceStep",
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: Load / Validate"
       ],
       "confidence": "high",
       "row": 6,
@@ -856,7 +864,8 @@
       "contracts": [
         "16-bit identity; immutable frames and inspection",
         "Optional parked clock during socket I/O",
-        "On-demand LCD / final native frame capture"
+        "On-demand LCD / final native frame capture",
+        "Detached machine hostname and process identity"
       ],
       "files": [
         "GB.Experiments/NetworkCartridge/NativeNetworkNode.cs",
@@ -874,17 +883,20 @@
       "label": "Life worker processes",
       "group": "Hosts",
       "role": "Runs bounded groups of independent machines",
-      "boundary": "Child OS processes; no UI or collector",
+      "boundary": "Local or SSH-launched remote OS processes",
       "contracts": [
-        "Control/inspection pipes; cells use TCP",
-        "Dynamic LCD selection; drained shutdown",
-        "Process CPU / working-set measurements"
+        "Exec control / inspection; cells use TCP",
+        "Dynamic LCD selection; explicit drained shutdown",
+        "Worker-side CPU / RAM and host identity",
+        "Firmware checksum agreement"
       ],
       "files": [
-        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs"
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs",
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs"
       ],
       "evidence": [
-        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: LifeWorkerGroup / LifeProcessPool"
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: LifeWorkerGroup / LifeProcessPool",
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: resources / drained events and SSH launch"
       ],
       "confidence": "high",
       "row": 7,
@@ -936,6 +948,27 @@
       "confidence": "high",
       "row": 7,
       "col": 2
+    },
+    {
+      "id": "ssh-transport",
+      "label": "SSH worker transport",
+      "group": "Platform",
+      "role": "Executes remote workers and encrypts TCP forwards",
+      "boundary": "OpenSSH client and remote SSH server",
+      "contracts": [
+        "Key authentication and known host keys",
+        "Loopback reverse TCP forwards",
+        "Exec channel carries control / inspection"
+      ],
+      "files": [
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: CreateSshStart"
+      ],
+      "confidence": "high",
+      "row": 8,
+      "col": 3
     }
   ],
   "edges": [
@@ -1689,7 +1722,7 @@
       "from": "network-cluster",
       "to": "life-processes",
       "kind": "composition",
-      "label": "spawns groups; controls display selection and consumes inspection pipes",
+      "label": "places local or remote groups; selects LCDs and consumes inspection",
       "evidence": [
         "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: LifeProcessPool.StartAsync"
       ],
@@ -1769,6 +1802,18 @@
       "label": "exercises launcher, DHCP and lab lifecycle",
       "evidence": [
         "GB.Experiments.Windows.Tests/GB.Experiments.Windows.Tests.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "life-ssh-transport",
+      "from": "life-processes",
+      "to": "ssh-transport",
+      "kind": "process-invocation",
+      "label": "launches remote groups with separate per-node TCP reverse forwards",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: Group.StartAsync",
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: CreateSshStart"
       ],
       "confidence": "high"
     }

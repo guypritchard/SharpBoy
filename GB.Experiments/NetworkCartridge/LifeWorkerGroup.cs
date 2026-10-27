@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,12 +8,14 @@ using GB.Emulator.Hosting;
 namespace GB.Experiments.NetworkCartridge;
 
 internal sealed record LifeWorkerAssignment(ushort NodeId, ushort Port);
-internal sealed record LifeWorkerLaunch(LifeWorkerAssignment[] Nodes, bool Frames, bool Inspection, ushort[] DisplayNodes);
+internal sealed record LifeWorkerLaunch(LifeWorkerAssignment[] Nodes, bool Frames, bool Inspection, ushort[] DisplayNodes, string FirmwareSha256);
+internal sealed record LifeWorkerResources(string Host, int ProcessId, long WorkingSetBytes, long PeakWorkingSetBytes, double CpuSeconds);
 internal sealed record LifeWorkerEvent(string Kind, ushort NodeId = 0, NativeNodeSnapshot? Inspection = null,
-    byte[]? Pixels = null, long FrameNumber = 0, long Cycles = 0, NativeNodeResult? Result = null, string? Error = null);
+    byte[]? Pixels = null, long FrameNumber = 0, long Cycles = 0, NativeNodeResult? Result = null, string? Error = null, LifeWorkerResources? Resources = null);
 
 internal static class LifeWorkerProtocol
 {
+    internal static readonly string FirmwareSha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(NativeNetworkNode.Firmware("Life")));
     internal static readonly JsonSerializerOptions Json = CreateOptions();
     private static JsonSerializerOptions CreateOptions()
     {
@@ -48,10 +49,20 @@ public static class LifeWorkerGroup
         using var stop = new CancellationTokenSource();
         var output = Channel.CreateUnbounded<LifeWorkerEvent>(new() { SingleReader = true });
         Task? writer = null;
+        Task resources = Task.CompletedTask;
+        using var process = Process.GetCurrentProcess();
+        void PublishResources()
+        {
+            process.Refresh();
+            output.Writer.TryWrite(new("resources", Resources: new(Environment.MachineName, process.Id,
+                process.WorkingSet64, process.PeakWorkingSet64, process.TotalProcessorTime.TotalSeconds)));
+        }
         try
         {
             string first = await Console.In.ReadLineAsync() ?? throw new EndOfStreamException("Missing Life worker configuration.");
             var launch = JsonSerializer.Deserialize<LifeWorkerLaunch>(first) ?? throw new InvalidDataException("Invalid worker configuration.");
+            if (launch.FirmwareSha256 != LifeWorkerProtocol.FirmwareSha256)
+                throw new InvalidDataException("Life firmware differs between hosts. Deploy the same build to every worker host.");
             if (launch.Nodes.Length is < 1 or > 1000 || launch.Nodes.Any(n => n.NodeId is < 1 or > 1000 || n.Port == 0) ||
                 launch.Nodes.Select(n => n.NodeId).Distinct().Count() != launch.Nodes.Length) throw new InvalidDataException("Invalid worker assignments.");
             ushort[] displayed = launch.DisplayNodes;
@@ -63,6 +74,12 @@ public static class LifeWorkerGroup
                     { await Console.Out.WriteLineAsync(JsonSerializer.Serialize(message, LifeWorkerProtocol.Json)); await Console.Out.FlushAsync(); }
                 }
                 catch { stop.Cancel(); throw; }
+            });
+            PublishResources();
+            resources = Task.Run(async () =>
+            {
+                try { while (true) { await Task.Delay(1000, stop.Token); PublishResources(); } }
+                catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
             });
             _ = Task.Run(async () =>
             {
@@ -98,7 +115,11 @@ public static class LifeWorkerGroup
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex.Message); return 1; }
-        finally { output.Writer.TryComplete(); if (writer != null) { try { await writer; } catch { } } }
+        finally
+        {
+            stop.Cancel(); await resources; PublishResources(); output.Writer.TryWrite(new("drained")); output.Writer.TryComplete();
+            if (writer != null) { try { await writer; } catch { } }
+        }
     }
 }
 
@@ -112,23 +133,33 @@ internal sealed class LifeProcessPool : IAsyncDisposable
     internal long WorkingSetBytes => groups.Sum(g => g.WorkingSetBytes);
     internal long PeakWorkingSetBytes => groups.Sum(g => g.PeakWorkingSetBytes);
     internal double CpuSeconds => groups.Sum(g => g.CpuSeconds);
-    internal int[] ProcessIds => groups.Select(g => g.ProcessId).ToArray();
+    internal int[] ProcessIds => groups.Where(g => !g.Remote).Select(g => g.ProcessId).ToArray();
+    internal LifeWorkerLocation[] Locations => groups.Select(g => g.Location).ToArray();
+    internal Task DrainAsync(CancellationToken token) => Task.WhenAll(groups.Select(g => g.DrainAsync(token)));
+    internal Task CompleteAsync(CancellationToken token) => Task.WhenAll(groups.Select(g => g.CompleteAsync(token)));
 
     private LifeProcessPool(Task<NativeNodeResult>[] nodes) => Nodes = nodes;
     internal static async Task<LifeProcessPool> StartAsync(IReadOnlyList<LocalRecordListener> listeners, int processes,
-        Action<ushort, VideoFrame>? onFrame, Action<NativeNodeSnapshot>? onSnapshot, Func<ushort, bool>? wantsFrames, CancellationToken token)
+        Action<ushort, VideoFrame>? onFrame, Action<NativeNodeSnapshot>? onSnapshot, Func<ushort, bool>? wantsFrames, CancellationToken token,
+        LifeHostConfiguration? placement = null)
     {
         var completions = Enumerable.Range(0, listeners.Count).Select(_ => new TaskCompletionSource<NativeNodeResult>(TaskCreationOptions.RunContinuationsAsynchronously)).ToArray();
         var pool = new LifeProcessPool(completions.Select(c => c.Task).ToArray());
         try
         {
-            for (int groupIndex = 0; groupIndex < processes; groupIndex++)
+            int hostStart = 0;
+            foreach (var host in placement?.Hosts ?? [new LifeHost(null, null, listeners.Count, processes)])
             {
-                int start = listeners.Count * groupIndex / processes, end = listeners.Count * (groupIndex + 1) / processes;
-                var assignments = Enumerable.Range(start, end - start).Select(i => new LifeWorkerAssignment((ushort)(i + 1), listeners[i].Port)).ToArray();
-                ushort[] selection = assignments.Where(n => onFrame != null && (wantsFrames?.Invoke(n.NodeId) ?? true)).Select(n => n.NodeId).Take(128).ToArray();
-                var group = new Group(assignments, completions, onFrame, onSnapshot); pool.groups.Add(group);
-                await group.StartAsync(new(assignments, onFrame != null, onSnapshot != null, selection), token);
+                for (int groupIndex = 0; groupIndex < host.Processes; groupIndex++)
+                {
+                    int offset = host.Nodes * groupIndex / host.Processes;
+                    int start = hostStart + offset, end = hostStart + host.Nodes * (groupIndex + 1) / host.Processes;
+                    var assignments = Enumerable.Range(start, end - start).Select(i => new LifeWorkerAssignment((ushort)(i + 1), listeners[i].Port)).ToArray();
+                    ushort[] selection = assignments.Where(n => onFrame != null && (wantsFrames?.Invoke(n.NodeId) ?? true)).Select(n => n.NodeId).Take(128).ToArray();
+                    var group = new Group(assignments, completions, onFrame, onSnapshot, host, placement?.SshConfigFile); pool.groups.Add(group);
+                    await group.StartAsync(new(assignments, onFrame != null, onSnapshot != null, selection, LifeWorkerProtocol.FirmwareSha256), offset, token);
+                }
+                hostStart += host.Nodes;
             }
             pool.controlTask = Task.Run(async () =>
             {
@@ -151,10 +182,16 @@ internal sealed class LifeProcessPool : IAsyncDisposable
         }
         catch { await pool.DisposeAsync(); throw; }
     }
-    public async ValueTask DisposeAsync()
+    internal async Task StopAsync()
     {
         controls.Cancel(); try { await controlTask; } catch { }
         foreach (var group in groups) group.CloseInput();
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+        try { await DrainAsync(deadline.Token); } catch { /* Broken or unresponsive children use the disposal fallback. */ }
+    }
+    public async ValueTask DisposeAsync()
+    {
+        await StopAsync();
         await Task.WhenAll(groups.Select(g => g.DisposeAsync().AsTask())); controls.Dispose();
     }
     private sealed class Group : IAsyncDisposable
@@ -168,18 +205,29 @@ internal sealed class LifeProcessPool : IAsyncDisposable
         private ushort[] selected = [];
         private long peak;
         private double cpu;
+        private readonly LifeHost host;
+        private readonly string? sshConfigFile;
+        private readonly TaskCompletionSource drained = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private Exception? readFailure;
+        private LifeWorkerResources? resources;
+        internal bool Remote => host.Destination != null;
+        internal LifeWorkerLocation Location => new(resources?.Host ?? host.Destination ?? Environment.MachineName, resources?.ProcessId ?? (Remote ? 0 : ProcessId), Remote);
         internal LifeWorkerAssignment[] Assignments { get; }
         internal int ProcessId => process?.Id ?? 0;
         internal long WorkingSetBytes
         {
-            get { try { process!.Refresh(); long value = process.WorkingSet64; peak = Math.Max(peak, process.PeakWorkingSet64); cpu = process.TotalProcessorTime.TotalSeconds; return value; } catch (InvalidOperationException) { return 0; } }
+            get
+            {
+                if (Remote) { var sample = Volatile.Read(ref resources); return sample?.WorkingSetBytes ?? 0; }
+                try { process!.Refresh(); long value = process.WorkingSet64; peak = Math.Max(peak, process.PeakWorkingSet64); cpu = process.TotalProcessorTime.TotalSeconds; return value; } catch (InvalidOperationException) { return 0; }
+            }
         }
-        internal long PeakWorkingSetBytes { get { _ = WorkingSetBytes; return peak; } }
-        internal double CpuSeconds { get { _ = WorkingSetBytes; return cpu; } }
+        internal long PeakWorkingSetBytes { get { _ = WorkingSetBytes; return Remote ? resources?.PeakWorkingSetBytes ?? 0 : peak; } }
+        internal double CpuSeconds { get { _ = WorkingSetBytes; return Remote ? resources?.CpuSeconds ?? 0 : cpu; } }
         internal Group(LifeWorkerAssignment[] assignments, TaskCompletionSource<NativeNodeResult>[] completions,
-            Action<ushort, VideoFrame>? onFrame, Action<NativeNodeSnapshot>? onSnapshot)
-        { Assignments = assignments; this.completions = completions; this.onFrame = onFrame; this.onSnapshot = onSnapshot; }
-        internal async Task StartAsync(LifeWorkerLaunch launch, CancellationToken token)
+            Action<ushort, VideoFrame>? onFrame, Action<NativeNodeSnapshot>? onSnapshot, LifeHost host, string? sshConfigFile)
+        { Assignments = assignments; this.completions = completions; this.onFrame = onFrame; this.onSnapshot = onSnapshot; this.host = host; this.sshConfigFile = sshConfigFile; }
+        internal async Task StartAsync(LifeWorkerLaunch launch, int offset, CancellationToken token)
         {
             string assembly = typeof(LifeWorkerGroup).Assembly.Location;
             string appHost = Path.ChangeExtension(assembly, OperatingSystem.IsWindows() ? ".exe" : null);
@@ -187,7 +235,13 @@ internal sealed class LifeProcessPool : IAsyncDisposable
             { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
             if (!File.Exists(appHost)) start.ArgumentList.Add(assembly);
             start.ArgumentList.Add("--life-worker-group");
-            process = Process.Start(start) ?? throw new IOException("Could not start a Life worker group.");
+            if (Remote)
+            {
+                start = LifeHostConfiguration.CreateSshStart(host, Assignments, offset, sshConfigFile);
+                launch = launch with { Nodes = Assignments.Select((n, i) => n with { Port = (ushort)(host.FirstPort + offset + i) }).ToArray() };
+            }
+            try { process = Process.Start(start) ?? throw new IOException("Could not start a Life worker group."); }
+            catch { drained.TrySetResult(); throw; } // Nothing was launched; cleanup need not wait for a drain event.
             process.StandardInput.AutoFlush = true;
             errors = process.StandardError.ReadToEndAsync();
             reader = ReadAsync(); selected = launch.DisplayNodes;
@@ -201,6 +255,13 @@ internal sealed class LifeProcessPool : IAsyncDisposable
                 while (await process!.StandardOutput.ReadLineAsync() is { } line)
                 {
                     var message = JsonSerializer.Deserialize<LifeWorkerEvent>(line, LifeWorkerProtocol.Json) ?? throw new InvalidDataException("Empty worker event.");
+                    if (message.Kind == "drained") { drained.TrySetResult(); continue; }
+                    if (message.Kind == "resources" && message.Resources is { } sample)
+                    {
+                        if (sample.ProcessId <= 0 || sample.WorkingSetBytes < 0 || sample.PeakWorkingSetBytes < 0 || !double.IsFinite(sample.CpuSeconds) || sample.CpuSeconds < 0)
+                            throw new InvalidDataException("Invalid worker resource sample.");
+                        Volatile.Write(ref resources, sample); continue;
+                    }
                     if (!owned.Contains(message.NodeId)) throw new InvalidDataException("Worker published an unassigned node ID.");
                     switch (message.Kind)
                     {
@@ -217,11 +278,14 @@ internal sealed class LifeProcessPool : IAsyncDisposable
                 await process.WaitForExitAsync();
                 _ = WorkingSetBytes;
                 string error = errors == null ? "" : await errors;
-                if (Assignments.Any(n => !completions[n.NodeId - 1].Task.IsCompletedSuccessfully))
+                if (process.ExitCode != 0 || Assignments.Any(n => !completions[n.NodeId - 1].Task.IsCompletedSuccessfully))
                     throw new IOException($"Life process {process.Id} exited before its workers completed (exit {process.ExitCode}): {error}");
+                if (!drained.Task.IsCompleted) throw new IOException("Life worker exited without draining its native machines; deploy the same build on every host.");
             }
             catch (Exception ex)
             {
+                readFailure = ex;
+                drained.TrySetException(ex);
                 foreach (var node in Assignments) completions[node.NodeId - 1].TrySetException(ex);
                 // Continue draining cancellation/final-frame events so a child can flush and exit gracefully.
                 try { while (await process!.StandardOutput.ReadLineAsync() != null) { } } catch (IOException) { }
@@ -233,6 +297,12 @@ internal sealed class LifeProcessPool : IAsyncDisposable
             await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(selection).AsMemory(), token); selected = selection;
         }
         internal void CloseInput() { try { process?.StandardInput.Close(); } catch (InvalidOperationException) { } }
+        internal Task DrainAsync(CancellationToken token) => drained.Task.WaitAsync(token);
+        internal async Task CompleteAsync(CancellationToken token)
+        {
+            await reader.WaitAsync(token);
+            if (readFailure != null) throw new IOException("Life worker transport did not complete cleanly.", readFailure);
+        }
         public async ValueTask DisposeAsync()
         {
             if (process == null) return;

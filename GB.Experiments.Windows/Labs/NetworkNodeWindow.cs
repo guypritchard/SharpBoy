@@ -82,7 +82,7 @@ internal sealed class NetworkNodeWindow : Window
             $"WRAM: 8,192 bytes capacity\nWRAM with non-zero data: {s.NonZeroWorkRamBytes:N0} bytes\n" +
             $"VRAM: 8,192 bytes · HRAM: 127 bytes\nCartridge RAM: {s.Cartridge.DeclaredRamBytes.GetValueOrDefault():N0} bytes\n" +
             "Static guest storage · no managed heap.\nNon-zero bytes do not measure allocation.";
-        network.Text = $"{s.Transport} · local PC / loopback\nLocal: {s.Tcp.LocalEndpoint ?? "not connected"}\nCollector: {s.Tcp.RemoteEndpoint}\n" +
+        network.Text = $"Host: {s.HostName ?? "unknown"} · process {s.ProcessId}\n{s.Transport} · host loopback endpoint\nLocal: {s.Tcp.LocalEndpoint ?? "not connected"}\nCollector: {s.Tcp.RemoteEndpoint}\n" +
             $"Payload sent: {s.Tcp.SentBytes:N0} bytes\nPayload received: {s.Tcp.ReceivedBytes:N0} bytes\n" +
             $"Socket: {((s.NetworkStatus & NetworkCartridgeDevice.Connected) != 0 ? "connected" : "closed")} · error: {s.NetworkError}\n" +
             $"Cartridge buffers: {s.NetworkBufferBytes:N0} bytes each\nEndpoints retained after socket closes.";
@@ -92,6 +92,7 @@ internal sealed class NetworkNodeWindow : Window
         UpdateMachine(snapshot);
         job.Text = $"TERRITORY {index % settings.Columns + 1}:{index / settings.Columns + 1}       32 x 24 cells\n" +
             $"World generation {generation} / {settings.Generations} committed\nConway B3/S23   toroidal boundaries   TCP halo exchange";
+        if (settings.HostsFile != null) job.Text += "\nRemote groups connect through encrypted SSH forwards.";
     }
 
     internal void Capture(string path)

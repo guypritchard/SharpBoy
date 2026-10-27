@@ -4,7 +4,7 @@ using GB.Emulator.Hosting;
 
 namespace GB.Experiments.NetworkCartridge;
 
-public sealed record LifeSettings(int Columns = 4, int Rows = 4, int Generations = 80, int TickDelayMs = 50, int Seed = 314159, int WorkerProcesses = -1)
+public sealed record LifeSettings(int Columns = 4, int Rows = 4, int Generations = 80, int TickDelayMs = 50, int Seed = 314159, int WorkerProcesses = -1, string? HostsFile = null)
 {
     public LifeLayout Layout => LifeLayout.ForGrid(Columns, Rows);
     public int ProcessCount => WorkerProcesses < 0 ? (Layout.Workers > 64 ? Math.Min(16, (Layout.Workers + 63) / 64) : 0) : Math.Min(WorkerProcesses, Layout.Workers);
@@ -20,13 +20,15 @@ public sealed record LifeSettings(int Columns = 4, int Rows = 4, int Generations
         var settings = new LifeSettings();
         for (int i = 0; i < args.Length; i += 2)
         {
+            if (args[i] == "--hosts" && i + 1 < args.Length && !string.IsNullOrWhiteSpace(args[i + 1]))
+            { settings = settings with { HostsFile = Path.GetFullPath(args[i + 1]) }; continue; }
             if (i + 1 >= args.Length || !int.TryParse(args[i + 1], out int value)) throw new ArgumentException("Life options require whole-number values.");
             settings = args[i] switch
             {
                 "--columns" => settings with { Columns = value }, "--rows" => settings with { Rows = value },
                 "--generations" => settings with { Generations = value }, "--tick-delay-ms" => settings with { TickDelayMs = value },
                 "--seed" => settings with { Seed = value }, "--processes" => settings with { WorkerProcesses = value },
-                _ => throw new ArgumentException("Usage: --life [--columns 4] [--rows 4] [--generations 80] [--tick-delay-ms 50] [--seed 314159] [--processes -1]")
+                _ => throw new ArgumentException("Usage: --life [--columns 4] [--rows 4] [--generations 80] [--tick-delay-ms 50] [--seed 314159] [--processes -1] [--hosts hosts.json]")
             };
         }
         settings.Validate(); return settings;
@@ -47,8 +49,9 @@ public sealed record LifeLayout(int Workers, int Columns, int Rows)
 
 public sealed record LifeGeneration(int Generation, int Width, int Height, ReadOnlyMemory<byte> Cells, int Alive, double ElapsedSeconds, long WorkerMemoryBytes = 0, int WorkerProcesses = 0);
 public sealed record LifeClusterResult(LifeSettings Settings, LifeGeneration Final, IReadOnlyList<NativeNodeResult> Nodes, LifeRunMetrics? Metrics = null);
+public sealed record LifeWorkerLocation(string Host, int ProcessId, bool Remote);
 public sealed record LifeRunMetrics(int WorkerProcesses, int[] WorkerProcessIds, double CoordinatorCpuSeconds,
-    double WorkerCpuSeconds, long CoordinatorPeakMemoryBytes, long SumWorkerPeakMemoryBytes);
+    double WorkerCpuSeconds, long CoordinatorPeakMemoryBytes, long SumWorkerPeakMemoryBytes, LifeWorkerLocation[]? Locations = null);
 
 /// <summary>Barrier-synchronized native Conway workers. TCP initializes territories, then routes boundary cells.
 /// The reference implementation validates results, but only received guest cells form the next world.</summary>
@@ -62,6 +65,7 @@ public static class LifeCluster
     {
         token.ThrowIfCancellationRequested();
         settings.Validate(); var layout = settings.Layout;
+        var placement = settings.HostsFile == null ? null : LifeHostConfiguration.Load(settings.HostsFile, layout.Workers);
         if (fragmentSize is < 1 or > 1024) throw new ArgumentOutOfRangeException(nameof(fragmentSize));
         byte[] world = initialWorld?.ToArray() ?? CreateSeed(settings);
         if (world.Length != layout.Width * layout.Height || world.Any(v => v > 1)) throw new ArgumentException("World must contain one 0/1 byte per cell.", nameof(initialWorld));
@@ -71,6 +75,7 @@ public static class LifeCluster
         var nodes = new List<Task<NativeNodeResult>>();
         var wall = Stopwatch.StartNew();
         Task? allNodes = null;
+        Exception? nodeFailure = null;
         LifeProcessPool? pool = null;
         using var coordinator = Process.GetCurrentProcess();
         double cpuStart = coordinator.TotalProcessorTime.TotalSeconds;
@@ -82,9 +87,9 @@ public static class LifeCluster
         try
         {
             for (int i = 0; i < layout.Workers; i++) listeners.Add(new LocalRecordListener(LocalNetworkTransport.Tcp));
-            if (settings.ProcessCount > 0)
+            if (placement != null || settings.ProcessCount > 0)
             {
-                pool = await LifeProcessPool.StartAsync(listeners, settings.ProcessCount, onFrame, onSnapshot, wantsFrames, lifetime.Token);
+                pool = await LifeProcessPool.StartAsync(listeners, settings.ProcessCount, onFrame, onSnapshot, wantsFrames, lifetime.Token, placement);
                 nodes.AddRange(pool.Nodes);
             }
             else for (int index = 0; index < layout.Workers; index++)
@@ -99,7 +104,7 @@ public static class LifeCluster
             async Task MonitorNode(Task<NativeNodeResult> task)
             {
                 try { if ((await task).Result != 1) throw new IOException("Native Life worker failed."); }
-                catch { lifetime.Cancel(); throw; }
+                catch (Exception ex) { Interlocked.CompareExchange(ref nodeFailure, ex, null); lifetime.Cancel(); throw; }
             }
             allNodes = Task.WhenAll(nodes.Select(MonitorNode));
             // Observe monitor exceptions even if a socket failure causes us to leave before awaiting it.
@@ -137,23 +142,29 @@ public static class LifeCluster
             }
             await Task.WhenAll(listeners.Select((listener, index) => listener.SendAsync(Header((ushort)(index + 1), 3, settings.Generations + 1, 0), fragmentSize, lifetime.Token)));
             await allNodes;
+            if (pool != null) await pool.DrainAsync(lifetime.Token);
+            // OpenSSH waits for forwarded TCP channels as well as the remote command. All
+            // native machines have finished; close collectors before waiting for SSH exit.
+            foreach (var listener in listeners) listener.Dispose();
+            if (pool != null) await pool.CompleteAsync(lifetime.Token);
             coordinator.Refresh();
             return new(settings, final, await Task.WhenAll(nodes), new(pool?.Count ?? 0, pool?.ProcessIds ?? [],
-                coordinator.TotalProcessorTime.TotalSeconds - cpuStart, pool?.CpuSeconds ?? 0, coordinator.PeakWorkingSet64, pool?.PeakWorkingSetBytes ?? 0));
+                coordinator.TotalProcessorTime.TotalSeconds - cpuStart, pool?.CpuSeconds ?? 0, coordinator.PeakWorkingSet64, pool?.PeakWorkingSetBytes ?? 0, pool?.Locations ?? []));
         }
         catch (OperationCanceledException) when (!token.IsCancellationRequested)
         {
-            throw new IOException("A Life worker failed or timed out before its generation barrier completed.", allNodes?.Exception?.GetBaseException());
+            throw new IOException("A Life worker failed or timed out before its generation barrier completed. " + nodeFailure?.Message, nodeFailure ?? allNodes?.Exception?.GetBaseException());
         }
         finally
         {
             lifetime.Cancel();
             // Request cooperative cancellation before closing TCP collectors. Otherwise an
             // EOF can reach a guest first and turn a user stop into a transport failure.
-            if (pool != null) await pool.DisposeAsync();
+            if (pool != null) await pool.StopAsync();
             // Observe every worker before disposing the shared cancellation source.
             try { await Task.WhenAll(nodes); } catch { /* original protocol/cancellation exception is preserved */ }
             foreach (var listener in listeners) listener.Dispose();
+            if (pool != null) await pool.DisposeAsync();
         }
     }
 

@@ -73,7 +73,7 @@ internal sealed class LifeClusterWindow : Window
         root.RowDefinitions.Add(new() { Height = GridLength.Auto }); root.RowDefinitions.Add(new()); root.RowDefinitions.Add(new() { Height = GridLength.Auto });
         var header = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
         header.Children.Add(Text($"{layout.Workers} Game Boys. One living world.", 30, "#F0F5FA", true));
-        header.Children.Add(Text($"{layout.Workers} native Game Boys · {layout.Width} × {layout.Height} cells · Conway B3/S23 · localhost TCP", 13, "#6FE6CA")); root.Children.Add(header);
+        header.Children.Add(Text($"{layout.Workers} native Game Boys · {layout.Width} × {layout.Height} cells · Conway B3/S23 · {(settings.HostsFile == null ? "local TCP" : "distributed TCP over SSH")}", 13, "#6FE6CA")); root.Children.Add(header);
         var body = new Grid(); Grid.SetRow(body, 1); root.Children.Add(body);
         body.ColumnDefinitions.Add(new() { Width = new GridLength(1.5, GridUnitType.Star) }); body.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star), MinWidth = 350 });
         tiles = new UniformGrid { Columns = pageColumns, Rows = Math.Min(4, (Math.Min(PageSize, nodeCount) + pageColumns - 1) / pageColumns),
@@ -134,12 +134,17 @@ internal sealed class LifeClusterWindow : Window
         }
         var columns = Field("Columns", settings.Columns); var rows = Field("Rows", settings.Rows); var generations = Field("Ticks", settings.Generations);
         var delay = Field("Delay ms", settings.TickDelayMs); var seed = Field("Seed", settings.Seed); var processes = Field("Processes", settings.WorkerProcesses); right.Children.Add(editors);
+        right.Children.Add(Text("Hosts JSON (optional; overrides Processes)", 11, "#9BB0C6"));
+        var hosts = new TextBox { Text = settings.HostsFile ?? "", Padding = new Thickness(6), Margin = new Thickness(0, 6, 0, 8),
+            Background = Brush("#172B3F"), Foreground = Brush("#F0F5FA") };
+        right.Children.Add(hosts);
         var apply = Action("Apply & run"); right.Children.Add(apply);
         apply.Click += (_, _) =>
         {
             try
             {
                 string[] nextArgs = ["--columns", columns.Text, "--rows", rows.Text, "--generations", generations.Text, "--tick-delay-ms", delay.Text, "--seed", seed.Text, "--processes", processes.Text];
+                if (!string.IsNullOrWhiteSpace(hosts.Text)) nextArgs = [.. nextArgs, "--hosts", hosts.Text];
                 _ = LifeSettings.Parse(nextArgs); var next = new LifeClusterWindow(nextArgs); next.Show(); Close();
             }
             catch (ArgumentException ex) { status.Text = ex.Message.Split('\n')[0]; }
@@ -258,7 +263,7 @@ internal sealed class LifeClusterWindow : Window
     {
         var result = Result ?? throw new InvalidOperationException("Wait for the experiment to complete.");
         path = Path.GetFullPath(path); Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(new { Settings = settings, Transport = "localhost TCP / routed halo", Rule = "B3/S23", Boundary = "toroidal",
+        File.WriteAllText(path, JsonSerializer.Serialize(new { Settings = settings, Transport = settings.HostsFile == null ? "localhost TCP / routed halo" : "TCP over SSH / routed halo", Rule = "B3/S23", Boundary = "toroidal",
             result.Final.Generation, result.Final.Width, result.Final.Height, result.Final.Alive, result.Final.ElapsedSeconds,
             Cells = result.Final.Cells.ToArray().Select(v => (int)v), Nodes = snapshots, result.Metrics, History = history }, new JsonSerializerOptions { WriteIndented = true }));
         File.WriteAllLines(Path.ChangeExtension(path, ".generations.csv"), new[] { "generation,alive,elapsed_seconds" }.Concat(history.Select(t => FormattableString.Invariant($"{t.Generation},{t.Alive},{t.ElapsedSeconds:F6}"))));

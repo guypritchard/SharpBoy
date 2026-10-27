@@ -307,6 +307,9 @@ Each guest calculates and displays its territory; TCP routes neighbouring cells 
 The grid, generation count, pacing and seed are configurable (up to 1,000 machines, with automatic process grouping).
 Click an LCD for inspection and collect population/timing results. See the [living-world experiment](Docs/network-life-experiment.md)
 for the boundary-only protocol, 16-screen paging, headless runner and measured 1,000-node runs.
+Life workers can also span Windows/Linux hosts using `--hosts hosts.json`, with encrypted SSH
+launch/control and cartridge TCP forwarding. Start with the [host placement example](Samples/LifeCluster/hosts.example.json)
+and the deployment instructions in the guide.
 
 ## Link-port web experiment
 

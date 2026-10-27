@@ -118,6 +118,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & Tools/ci/Assert-TrxNoSkipped.ps1 (Join-Path $results 'experiments-windows.trx')
 
+      - name: Verify distributed Life over real SSH transport
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $venv = Join-Path $env:RUNNER_TEMP 'sharpboy-life-ssh-venv'
+          python -m venv $venv
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $python = Join-Path $venv 'Scripts/python.exe'
+          & $python -m pip install -r Tools/LifeCluster/requirements.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $python Tools/LifeCluster/ssh_smoke.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Smoke-build C# scrolling background ROM
         shell: pwsh
         run: |

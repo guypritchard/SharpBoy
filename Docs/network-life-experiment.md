@@ -52,7 +52,89 @@ Windows capture automation accepts `--capture path.png` and optional `--capture-
 The experiment has a ten-minute deadline. At large counts, start with a few generations before
 choosing a longer run. This is a synchronized correctness experiment, not a claim that 1,000 Game
 Boys run at physical hardware speed or outperform one host processor. Live painting, fault injection,
-remote worker hosts and asynchronous simulation are future extensions.
+asynchronous simulation are future extensions. Remote worker hosts are supported through SSH placement below.
+
+## Several hosts
+
+The coordinator can place worker groups on Windows or Linux hosts through OpenSSH. Native machines
+still run the embedded Life ROM and return all simulation cells through their cartridge TCP interface.
+SSH runs the worker command and forwards each remote loopback cartridge socket to its coordinator
+collector. Control/inspection uses the SSH exec channel; simulation bytes use separate TCP forwarding
+channels. Both travel inside the encrypted SSH connection. Collectors remain loopback-only, with no
+LAN collector ports, Npcap, DHCP lease, or extra service specific to SharpBoy.
+
+1. Build/deploy the **same revision** of `GB.Experiments` to each worker machine. Use the published
+   Windows experiment package's worker files, or publish the headless executable for the remote OS:
+
+   ```powershell
+   dotnet publish GB.Experiments -c Release -r win-x64 --self-contained true -o artifacts/life-worker/win-x64
+   dotnet publish GB.Experiments -c Release -r linux-x64 --self-contained true -o artifacts/life-worker/linux-x64
+   ```
+
+   Copy the complete output directory. On Linux, ensure the `GB.Experiments` apphost is executable.
+   Place it at a path without spaces or shell syntax, such as `C:/SharpBoy/GB.Experiments.exe` or
+   `/opt/sharpboy/GB.Experiments`. Remote command launching supports POSIX shells and Windows OpenSSH's
+   default `cmd.exe` shell. A custom PowerShell SSH shell needs a compatible exec wrapper/command setup.
+   No .NET installation is needed for a self-contained deployment. Firmware checksums are checked
+   before native machines start; deploy every host together when the worker protocol changes too.
+
+2. Configure working SSH key authentication and known host keys from the coordinator. Use SSH aliases
+   for usernames, nonstandard SSH ports, identity files and jump hosts. Remote SSH servers must allow
+   remote TCP forwarding and exec sessions. Confirm with `ssh gameboy-a C:/SharpBoy/GB.Experiments.exe --life-worker-group`;
+   the worker waits for configuration, so Ctrl+C exits this check. The coordinator uses batch mode,
+   strict host-key checking, forwarding-failure detection and keepalives. It never prompts for passwords
+   or accepts unknown host keys automatically. Only the SSH server port needs to be reachable.
+
+3. Copy [hosts.example.json](../Samples/LifeCluster/hosts.example.json), then edit its destinations,
+   executable paths and node counts. The example assigns **4 local + 6 Windows + 6 Linux nodes** to a
+   4x4 world. Omit `Destination` for a local child-process group. `Nodes` must total the grid size.
+   `Processes` specifies groups on that host; `--processes` is overridden when `--hosts` is present.
+   There may be at most 32 groups total, with at most 128 nodes per SSH group. `FirstPort` reserves
+   `Nodes` remote loopback ports starting at that number; choose free ranges, and distinct ranges
+   for concurrent runs or repeated entries on one physical host. Aliases for the same physical host
+   must also use distinct ranges. A binding failure aborts the run instead of connecting to another job.
+
+   ```powershell
+   # Visual cluster, with the same native LCDs, paging and inspectors.
+   dotnet run --project GB.Experiments.Windows -c Release -- --life --columns 4 --rows 4 --hosts hosts.json
+
+   # Headless coordinator and a collected result/report.
+   dotnet run --project GB.Experiments -c Release -- --life --columns 4 --rows 4 --generations 20 --hosts hosts.json --report artifacts/life-cluster/distributed.json
+   ```
+
+   The visual lab also has a **Hosts JSON** field under world configuration. Apply retains the chosen
+   host file. Optional top-level `SshConfigFile` selects a dedicated OpenSSH config; relative paths are
+   resolved beside the host JSON. Without it, OpenSSH uses its ordinary user configuration.
+
+Inspectors identify the actual machine hostname and worker PID. Reports include `Metrics.Locations`
+for local/remote host and PID pairs, while `WorkerProcessIds` retains local native worker PIDs only;
+PIDs on different hosts are separate namespaces. Remote CPU and memory come from worker-side samples,
+rather than the coordinator's SSH client processes. Samples arrive roughly once per second and at
+shutdown. Peak RAM remains a sum of per-worker peaks, not simultaneous cluster usage.
+
+The coordinator is the single barrier owner. A host failure aborts the generation and shuts down the
+remaining groups; there is no partial-generation commit, automatic retry, host discovery, deployment
+or recovery/checkpoint scheduler. Graceful stop drains worker snapshots before closing the forwarded
+collectors, then waits for SSH exit. On connection loss, worker stdin EOF cancels the remote group;
+the existing ten-minute worker deadline is the final limit if a broken SSH server never delivers EOF.
+
+### SSH transport smoke test
+
+```powershell
+dotnet build GB.Experiments -c Release
+python -m venv artifacts/toolchains/life-ssh
+artifacts/toolchains/life-ssh/Scripts/python.exe -m pip install -r Tools/LifeCluster/requirements.txt
+artifacts/toolchains/life-ssh/Scripts/python.exe Tools/LifeCluster/ssh_smoke.py
+```
+
+The test starts a temporary key-authenticated SSH server on loopback and uses the real OpenSSH client.
+It compares six native nodes across two SSH aliases plus local placement with a local reference run,
+checks remote process identities/cleanup, then drops a connection and verifies barrier failure and
+worker shutdown. Keys/config/reports remain in ignored `artifacts/life-cluster/ssh-smoke`; user SSH
+files, services and firewall rules are untouched. On Linux the venv interpreter is `bin/python`.
+This verifies encrypted exec/forwarding and process lifetimes on one machine; it does not claim a
+physical multi-host LAN run. The normal .NET suite also covers placement validation, local grouped
+equivalence, firmware mismatch and cancellation.
 
 ## State, transport and scheduling
 

@@ -50,7 +50,7 @@ public static class NativeNetworkNode
             onSnapshot(new(nodeId, state, seconds, cycles, hz, host.Inspection.CaptureCpu(),
                 host.Inspection.CaptureHardware(), host.Inspection.CaptureCartridge()!, nonZero,
                 transport, tcp.CaptureStatistics(), device.Peek(NetworkCartridgeDevice.Status),
-                (NetworkError)device.Peek(NetworkCartridgeDevice.Error), device.BufferCapacity));
+                (NetworkError)device.Peek(NetworkCartridgeDevice.Error), device.BufferCapacity, Environment.MachineName, Environment.ProcessId));
             lastSample = seconds; lastCycles = cycles;
         }
         int batches = 0;
