@@ -5,9 +5,9 @@ using GB.Emulator.Core;
 using GB.Emulator.Core.Rendering;
 using GB.Emulator.Hosting;
 
-namespace GB.Emulator.Windows;
+namespace GB.Emulator.Presentation.WinForms;
 
-internal sealed class ScreenControl : Control, IVideoOutput
+public sealed class ScreenControl : Control, IVideoOutput
 {
     private readonly Bitmap bitmap = new(Video.Width, Video.Height, PixelFormat.Format32bppArgb);
     private readonly int[] pixels = new int[Video.Width * Video.Height];
@@ -58,7 +58,7 @@ internal sealed class ScreenControl : Control, IVideoOutput
         base.OnPaint(e);
         if (!this.hasFrame)
         {
-            TextRenderer.DrawText(e.Graphics, "SHARPBOY\n\nOpen a ROM to play\nCtrl+O  ·  or drop a .gb file here",
+            TextRenderer.DrawText(e.Graphics, string.IsNullOrEmpty(this.Text) ? "SHARPBOY" : this.Text,
                 this.Font, this.ClientRectangle, this.ForeColor,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             return;

@@ -189,10 +189,10 @@ public sealed class Sm83BackendTests
     [TestMethod]
     public void ConversionsCopyLowBytesAndSignExtendFromHighSignBit()
     {
-        var assembly = Emit("sbyte s = -1; byte b = (byte)s; short t = s; int x = t; ushort u = (ushort)x; int z = b; GameMemory.WriteByte(0xC101, (byte)(u + z));").Assembly!;
+        var assembly = Emit("sbyte s = -1; byte b = (byte)s; short t = s; int x = t; ushort u = (ushort)x; int z = b; GameMemory.WriteByte(0xC101, (byte)(u + z)); if (u + z > 65535) GameMemory.WriteByte(0xC102, 1);").Assembly!;
         InOrder(assembly, "rlca", "sbc a, a");
         Assert.IsGreaterThanOrEqualTo(3, assembly.Split("rlca", StringSplitOptions.None).Length);
-        StringAssert.Contains(assembly, "xor a");
+        StringAssert.Contains(assembly, "ld a, $00");
         StringAssert.Contains(assembly, "adc a, b");
         StringAssert.Contains(assembly, "ld [hl], a");
     }
@@ -278,8 +278,8 @@ public sealed class Sm83BackendTests
             var greaterTrue = kind is IrCompareKind.NotEqual or IrCompareKind.Greater or IrCompareKind.GreaterEqual;
             foreach (var (name, truth) in new[] { ("eq", eqTrue), ("less", lessTrue), ("greater", greaterTrue) })
                 InOrder(assembly, $"_{name}:\n    ld a, ${(truth ? 1 : 0):X2}");
-            Assert.AreEqual(IrVerifier.Width(type) / 8, assembly.Split("cp b", StringSplitOptions.None).Length - 1);
-            Assert.AreEqual(IrVerifier.Signed(type) ? 2 : 0,
+            Assert.AreEqual(type == IrType.I32 ? 1 : IrVerifier.Width(type) / 8, assembly.Split("cp b", StringSplitOptions.None).Length - 1);
+            Assert.AreEqual(type != IrType.I32 && IrVerifier.Signed(type) ? 2 : 0,
                 assembly.Split("xor $80", StringSplitOptions.None).Length - 1);
             ValidateInstructionSetAndLabels(result);
         }

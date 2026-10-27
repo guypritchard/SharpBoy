@@ -1,18 +1,34 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "Working tree on f84b9d67f10050f5a54f59d7c5a41356986edd1b; desktop-only pre-diagram manifest adb2c51e1fd704c58e81f3060a5ac175e779c13c47ab98c8f74b2a4ecee37e97",
+  "source": "Working tree on 402ee65b83a9db36ac3b731a871fe3d11f5586e5; pre-documentation manifest 78bae11f8f1b73b88c5df2e2711767b7fbaf54a82ac5b079b4e70fe45a536ebd",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
     "Each machine owns its CPU registers, flags and memory references; experiment workers retain processes as a host policy. Rendering reconstructs snapshots, not a cycle-accurate pixel pipeline.",
     "Standard MBC1 only; MBC1M wiring, persistent battery saves and MBC3 RTC remain outside this implementation.",
     "Mapper selection, mapped windows and cartridge snapshots use the shared CartridgeMapper / CartridgeMapperState contracts; MBC1 and MBC3 own their banking rules. Debugger inspection reads mapper capabilities and live bank state.",
-    "Emulator overview updated for the Windows player and Win32 audio extraction; compiler/toolchain components remain outside this diagram. Windows playback and read-only inspection share one UI thread; inspector refresh is capped at 4 Hz.",
+    "Emulator overview updated for the Windows player and Win32 audio extraction; the SDK/compiler firmware path is now included as a focused build-time boundary. Windows playback and read-only inspection share one UI thread; inspector refresh is capped at 4 Hz.",
     "Console and Windows playback share EmulationHost pacing, immutable frame publication, audio lifetime and inspection. Debugger stepping/rewind use the shared debugging service; rich debugger views still inspect composed core devices.",
     "Hosting calls IAudioOutput supplied by the UI; the hosting-to-audio arrow is runtime dispatch only. Only the Win32 adapter references Hosting at compile time. Other audio adapters may implement the same contract.",
     "The console defaults to the bundled SPRITE.GB demo and accepts explicit ROM paths; private ROMs are not automatically copied by its project. This is configuration behavior within the existing front-end boundary.",
-    "The optional desktop frontend reuses EmulationHost and Win32 audio. WPF presentation owns rotation, live screen transitions and model hit testing. Local GLB and cartridge label loading introduce no browser or network dependency. The model is separately licensed CC BY-NC 4.0."
+    "The network cartridge is explicitly attached to an experiment-only ROM. TCP uses host sockets; UDP selects a virtual DHCP segment or an optional Ethernet backend. Native SM83 instructions acquire and validate the lease; no host address configuration changes. Snapshot values support inspection, not network rewind.",
+    "DHCP covers initial acquisition with a native on-screen display. Optional Ethernet/Npcap transport is implemented; live LAN behavior depends on an installed driver and adapter; CI covers deterministic packet fixtures. Renewal/expiry, ARP conflict detection, application routing and production retransmission timing remain future work.",
+    "The separate Windows experiments DHCP window and headless runner share DhcpSession/EmulationHost. Normal ROM loading still does not attach experimental cartridge hardware. Ethernet mode injects DHCP frames; it does not create an OS bridge or configure a host address.",
+    "DHCP packet processing and visuals are constrained C# compiled through GB.Compiler/RGBDS. GB.Experiments embeds the resulting 32 KiB ROM; it has no runtime compiler dependency. Native completion is a published mailbox result after drawing. Compiler-managed WRAM begins at C100, above the guest mailbox.",
+    "The optional desktop frontend is a native WPF window inside GB.Emulator.Windows. It reuses EmulationHost and Win32 audio; no browser or alternate emulator core is used. Model assets have a separate CC BY-NC 4.0 license. Printed cartridge art is local user input; a ROM does not contain it.",
+    "Local telemetry and clustering use OS TCP/UDP offload, not a guest TCP/IP implementation. Virtual DHCP addresses are payload data; loopback sockets do not use or install those addresses. The Ethernet backend remains DHCP-only. Workers are headless independent native SM83 machines; no desktop-player integration or speed-up claim.",
+    "The WPF parallel lab in GB.Experiments.Windows uses a selectable 3x3, 4x4 or 8x4 Mandelbrot partition. Guest SDK firmware calculates Q5 escape counts and draws native LCD pixels. The collector verifies received values independently and exports numerical data; it does not substitute host-rendered fractal tiles. Cycle counts include polling and network waits.",
+    "The parallel lab displays enlarged native 160x144 LCD bitmaps directly and does not load model assets. The separate 3D desktop player is unchanged.",
+    "FractalSettings validates rectangular grids up to 64 nodes, 1-64 guest iterations and 0-1000 ms row pacing. The UI edits a draft; Apply starts a fresh cluster. Shared JSON configurations can be loaded from the CLI. The guest receives its iteration limit through read-only bootstrap byte A038.",
+    "Per-node inspectors consume detached NativeNodeSnapshot values sampled by each machine owner. Actual TCP payload counters and retained endpoints are transport-owned; the UI never reads live machine memory. Final snapshots survive machine disposal. WRAM non-zero bytes describe contents, not allocation; speed includes network waits and scheduling.",
+    "LifeCluster initializes territories once, then routes 116-cell toroidal boundaries over localhost TCP. Native SM83 ROMs compute Conway B3/S23 cells and draw their LCDs; only validated returned cells form the next world. Life v2 supports 1,000 machines with 16-bit node IDs and process groups. NetworkNodeWindow is shared between fractal and Life views. GameNetworkStream preserves TCP remainders across application reads.",
+    "LifeProcessPool starts bounded OS worker groups. Pipes carry assignments, LCD selections and detached inspection; simulation cell results remain on per-node TCP sockets. WPF pages 16 LCDs, renders visible/inspected machines on demand, and retains every final native LCD. Life awaits transport operations with its guest clock parked; other experiments preserve their existing scheduling.",
+    "GB.Emulator.Windows owns regular/3D ROM playback only; it has no experiment reference, menu items or launch modes. GB.Experiments.Windows owns launcher, DHCP and WPF labs, with a separate test project and published ZIP. Both front ends reuse GB.Emulator.Presentation.WinForms for LCD painting; neither references the other executable.",
+    "Life shutdown cancels worker groups cooperatively before closing collectors, observes every worker, and publishes stopped snapshots after cancellation.",
+    "Life host JSON places bounded groups locally or over OpenSSH; reverse forwards keep both cartridge endpoints loopback-only. Cells use forwarded TCP channels; detached frames/inspection/control use the exec channel. Worker-side samples identify host/PID. Explicit drained events precede collector closure and SSH exit.",
+    "Remote deployment and SSH key/known-host provisioning are operator responsibilities. Real SSH exec, encrypted forwarding, native equivalence and transport-loss cleanup are tested on loopback; a physical Windows/Linux-NAS 8+8-node visual run passed eight generations with a matching local checksum and clean worker exit.",
+    "Optional password-environment authentication uses the GB.Experiments apphost as a noninteractive SSH_ASKPASS callback. Credentials stay outside JSON, command arguments and guest machines. Strict host-key checking remains default; deployment-specific opt-out is explicit. SSH config may reach a container through a gateway."
   ],
   "nodes": [
     {
@@ -80,25 +96,40 @@
     },
     {
       "id": "experiments",
-      "label": "HTTP / serial experiment",
+      "label": "Experiment hosts",
       "group": "Hosts",
-      "role": "Owns HTTP requests and isolated emulator workers",
-      "boundary": "Host process plus worker processes",
+      "role": "Runs cartridge networking and serial workers",
+      "boundary": "Experiment host; optional worker processes",
       "contracts": [
         "HTTP to emulated serial protocol",
-        "One emulator per worker process"
+        "One emulator per worker process",
+        "Native ROM drives an explicitly attached socket-offload cartridge",
+        "Loads SDK-built guest firmware with bounded DHCP acquisition retries",
+        "Native VRAM status/IP display; DHCP session schedules through EmulationHost"
       ],
       "files": [
         "GB.Experiments/Program.cs",
         "GB.Experiments/GameboyWorkerPool.cs",
         "GB.Experiments/GameboyWorkerHost.cs",
-        "GB.Experiments/GameboySerialServer.cs"
+        "GB.Experiments/GameboySerialServer.cs",
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeExperiment.cs",
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeRom.cs",
+        "GB.Experiments/NetworkCartridge/DhcpExperiment.cs",
+        "GB.Experiments/NetworkCartridge/DhcpCartridgeRom.cs",
+        "GB.Experiments/NetworkCartridge/DhcpSession.cs",
+        "GB.Experiments/GB.Experiments.csproj",
+        "GB.Experiments/NetworkCartridge/LocalNetworkExperiment.cs"
       ],
       "evidence": [
         "GB.Experiments/Program.cs: HTTP / serial experiment",
         "GB.Experiments/GameboyWorkerPool.cs: HTTP / serial experiment",
         "GB.Experiments/GameboyWorkerHost.cs: HTTP / serial experiment",
-        "GB.Experiments/GameboySerialServer.cs: HTTP / serial experiment"
+        "GB.Experiments/GameboySerialServer.cs: HTTP / serial experiment",
+        "GB.Experiments/Program.cs: --network-cartridge dispatch",
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeExperiment.cs: private machine, device attachment and pumping",
+        "GB.Experiments/NetworkCartridge/DhcpSession.cs: host, machine and device lifetime",
+        "GB.Experiments/GB.Experiments.csproj: NetworkDhcp.gb EmbeddedResource",
+        "GB.Experiments/NetworkCartridge/DhcpCartridgeRom.cs: embedded SDK firmware loading"
       ],
       "confidence": "high",
       "row": 0,
@@ -314,20 +345,23 @@
         "Mapped reads and writes",
         "Silent / recording access observers",
         "Polymorphic mapper lifecycle and snapshots",
-        "Active lower / upper ROM bank inspection"
+        "Active lower / upper ROM bank inspection",
+        "Opt-in device priority and non-destructive IInspectableMemoryRange inspection"
       ],
       "files": [
         "GB.Emulator.Core/MemoryMap.cs",
         "GB.Emulator.Core/MemoryAccessRecorder.cs",
         "GB.Emulator.Core/InputOutput/IMemoryRange.cs",
-        "GB.Emulator.Core/Ram.cs"
+        "GB.Emulator.Core/Ram.cs",
+        "GB.Emulator.Core/InputOutput/IInspectableMemoryRange.cs"
       ],
       "evidence": [
         "GB.Emulator.Core/MemoryMap.cs: Memory bus / observers",
         "GB.Emulator.Core/MemoryAccessRecorder.cs: Memory bus / observers",
         "GB.Emulator.Core/InputOutput/IMemoryRange.cs: Memory bus / observers",
         "GB.Emulator.Core/Ram.cs: Memory bus / observers",
-        "GB.Emulator.Core/MemoryMap.cs: cartridgeMapper, CaptureCartridgeState, Snapshot, SelectedLowerRomBank"
+        "GB.Emulator.Core/MemoryMap.cs: cartridgeMapper, CaptureCartridgeState, Snapshot, SelectedLowerRomBank",
+        "GB.Emulator.Core/MemoryMap.cs: AddDevice priority overload, Peek and Snapshot peripheral inspection"
       ],
       "confidence": "high",
       "row": 3,
@@ -343,7 +377,8 @@
         "Hardware and front end regression tests",
         "Windows player UI and pacing regression coverage",
         "Independent machine state, host lifecycle, output and debugger contracts",
-        "Transparent captures, bezel visibility, rotated input, view transitions and disposal"
+        "Native text/reads and byte-identical SDK firmware rebuild",
+        "Transparent front/rear/edge captures and rotated button hit tests"
       ],
       "files": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj",
@@ -357,7 +392,21 @@
         "GB.Emulator.Windows.Tests/GB.Emulator.Windows.Tests.csproj",
         "GB.Emulator.Hosting.Tests/EmulationHostTests.cs",
         "GB.Emulator.Hosting.Tests/GB.Emulator.Hosting.Tests.csproj",
-        "GB.Emulator.Windows.Tests/DesktopPlayerTests.cs"
+        "GB.Emulator.Tests/NetworkCartridgeTests.cs",
+        "GB.Emulator.Tests/DhcpExperimentTests.cs",
+        "GB.Emulator.Tests/DhcpScreenAndEthernetTests.cs",
+        "GB.Experiments.Windows.Tests/DhcpWindowTests.cs",
+        "GB.Compiler.Tests/TextAndMemoryTests.cs",
+        "GB.Emulator.Windows.Tests/DesktopPlayerTests.cs",
+        "GB.Emulator.Tests/LocalNetworkStackTests.cs",
+        "GB.Emulator.Tests/FractalClusterTests.cs",
+        "GB.Experiments.Windows.Tests/FractalClusterWindowTests.cs",
+        "GB.Emulator.Tests/LifeClusterTests.cs",
+        "GB.Experiments.Windows.Tests/LifeClusterWindowTests.cs",
+        "GB.Experiments.Windows.Tests/GB.Experiments.Windows.Tests.csproj",
+        "GB.Experiments.Windows.Tests/ExperimentLauncherTests.cs",
+        "GB.Emulator.Tests/LifeHostTests.cs",
+        "Tools/LifeCluster/ssh_smoke.py"
       ],
       "evidence": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite",
@@ -367,7 +416,15 @@
         "GB.Emulator.Tests/Mbc3Tests.cs: ROM/RAM and snapshot integration tests",
         "GB.Emulator.Tests/Mbc1Tests.cs: banking, CPU, DMA, snapshots and cartridge reload",
         "GB.Emulator.Windows.Tests/PlayerTests.cs: pacing, scaling, lifecycle and live playback",
-        "GB.Emulator.Hosting.Tests/EmulationHostTests.cs: independent machines and host contract tests"
+        "GB.Emulator.Hosting.Tests/EmulationHostTests.cs: independent machines and host contract tests",
+        "GB.Emulator.Tests/NetworkCartridgeTests.cs: native ROM, partial TCP replies, cancellation and bus inspection",
+        "GB.Emulator.Tests/DhcpExperimentTests.cs: native lease acquisition, malformed replies, retry recovery and datagram semantics",
+        "GB.Emulator.Tests/DhcpScreenAndEthernetTests.cs: native text/pixels and framed DHCP exchange",
+        "GB.Experiments.Windows.Tests/DhcpWindowTests.cs: live window screenshots and close during acquisition",
+        "GB.Compiler.Tests/TextAndMemoryTests.cs: native execution, text validation and firmware reproducibility",
+        "GB.Emulator.Windows.Tests/PlayerTests.cs: RegularPlayerDoesNotReferenceTheExperimentAssembly",
+        "GB.Experiments.Windows.Tests/ExperimentLauncherTests.cs: independent launcher modes and UI",
+        "GB.Emulator.Tests/LifeHostTests.cs; Tools/LifeCluster/ssh_smoke.py: native equivalence, real SSH forwards, disconnect cleanup"
       ],
       "confidence": "high",
       "row": 4,
@@ -415,28 +472,25 @@
       "label": "Windows player",
       "group": "Hosts",
       "role": "Owns windowed and desktop playback",
-      "boundary": "WinForms executable",
+      "boundary": "ROM player executable (WinForms / WPF)",
       "contracts": [
         "EmulationHost commands and immutable frames",
         "DPI-aware display, input and fullscreen",
         "Read-only host inspection and statistics",
-        "Optional borderless, transparent WPF desktop DMG player",
-        "Successful desktop launch closes the original player"
+        "Optional borderless, transparent WPF desktop DMG player"
       ],
       "files": [
         "GB.Emulator.Windows/GB.Emulator.Windows.csproj",
         "GB.Emulator.Windows/Program.cs",
         "GB.Emulator.Windows/PlayerForm.cs",
-        "GB.Emulator.Windows/ScreenControl.cs",
         "GB.Emulator.Windows/InspectorForm.cs",
         "GB.Emulator.Windows/PlayerKeyboardInput.cs"
       ],
       "evidence": [
         "GB.Emulator.Windows/PlayerForm.cs: composition root and TickEmulation",
         "GB.Emulator.Windows/InspectorForm.cs: read-only live inspection",
-        "GB.Emulator.Windows/ScreenControl.cs: snapshot painting and viewport scaling",
         "GB.Emulator.Windows/Program.cs: --desktop composition",
-        "GB.Emulator.Windows/PlayerForm.cs: desktop process launch and Close"
+        "GB.Emulator.Windows/PlayerForm.cs: launches desktop view with the current ROM"
       ],
       "confidence": "high",
       "row": 0,
@@ -451,7 +505,8 @@
       "contracts": [
         "State, pacing and bounded execution",
         "Owned frames and audio output lifetime",
-        "Read-only inspection, stepping and rewind"
+        "Read-only inspection, stepping and rewind",
+        "On-demand detached LCDs / copied frame transfer"
       ],
       "files": [
         "GB.Emulator.Hosting/EmulationHost.cs",
@@ -466,11 +521,176 @@
         "GB.Emulator.Hosting/EmulationHost.cs: composition, lifecycle and Advance",
         "GB.Emulator.Hosting/Presentation.cs: output contracts and immutable frames",
         "GB.Emulator.Hosting/EmulationDebugger.cs: stepping, breakpoints and bounded history",
-        "GB.Emulator.Hosting/CartridgeSource.cs: ICartridgeSource / FileCartridgeSource"
+        "GB.Emulator.Hosting/CartridgeSource.cs: ICartridgeSource / FileCartridgeSource",
+        "GB.Emulator.Hosting/EmulationInspection.cs: CaptureFrame; Presentation.cs: FromPixels"
       ],
       "confidence": "high",
       "row": 1,
       "col": 3
+    },
+    {
+      "id": "network-cartridge",
+      "label": "Network cartridge device",
+      "group": "Hardware",
+      "role": "Maps socket commands and fixed-size buffers",
+      "boundary": "Experiment-only memory peripheral",
+      "contracts": [
+        "IInspectableMemoryRange at A000-BFFF",
+        "Non-blocking queued commands and Pump completion",
+        "TCP v1: 256-byte buffers; UDP v2: 1024-byte datagrams",
+        "Closed-only TCP/UDP selection with version-2 buffers",
+        "Read-only per-node bootstrap identity and receiver"
+      ],
+      "files": [
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeDevice.cs",
+        "GB.Experiments/NetworkCartridge/DatagramBackend.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeDevice.cs: Submit / Pump / ExecuteAsync / Peek",
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeDevice.cs: versioned endpoint registers and datagram completion"
+      ],
+      "confidence": "high",
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "network-backend",
+      "label": "Network backends",
+      "group": "Platform",
+      "role": "Provides TCP, virtual UDP or Ethernet",
+      "boundary": "Experiment library; optional installed Npcap",
+      "contracts": [
+        "INetworkCartridgeBackend async operations",
+        "Host-configured endpoint and cancellation",
+        "Isolated virtual UDP segment with simulated DHCP server",
+        "Explicit UDP endpoint metadata and bounded receive queue",
+        "Ethernet/IPv4/UDP encoding and checked decoding",
+        "Optional explicit adapter selection and Npcap capture/injection",
+        "Real loopback UDP after virtual DHCP; no leased host IP"
+      ],
+      "files": [
+        "GB.Experiments/NetworkCartridge/NetworkBackends.cs",
+        "GB.Experiments/NetworkCartridge/VirtualDhcpNetwork.cs",
+        "GB.Experiments/NetworkCartridge/DhcpPacket.cs",
+        "GB.Experiments/NetworkCartridge/DatagramBackend.cs",
+        "GB.Experiments/NetworkCartridge/EthernetUdp.cs",
+        "GB.Experiments/NetworkCartridge/NpcapEthernetLink.cs",
+        "GB.Experiments/NetworkCartridge/LocalDatagramBackend.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NetworkBackends.cs: LoopbackNetworkBackend / TcpNetworkBackend",
+        "GB.Experiments/NetworkCartridge/VirtualDhcpNetwork.cs: lease offer/ACK and loss/NAK simulation",
+        "GB.Experiments/NetworkCartridge/EthernetUdp.cs: IEthernetLink and EthernetDhcpBackend",
+        "GB.Experiments/NetworkCartridge/NpcapEthernetLink.cs: optional driver and adapter selection",
+        "GB.Experiments/NetworkCartridge/LocalDatagramBackend.cs: LocalDatagramBackend / LocalDhcpBackend"
+      ],
+      "confidence": "high",
+      "row": 4,
+      "col": 3
+    },
+    {
+      "id": "physical-network",
+      "label": "Physical LAN / DHCP",
+      "group": "Platform",
+      "role": "Provides DHCP replies on the selected LAN",
+      "boundary": "External adapter, driver and DHCP server",
+      "contracts": [
+        "Optional Ethernet frame capture and injection"
+      ],
+      "files": [],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NpcapEthernetLink.cs: pcap_open_live / pcap_next_ex / pcap_sendpacket"
+      ],
+      "confidence": "medium",
+      "row": 5,
+      "col": 3
+    },
+    {
+      "id": "rom-compiler",
+      "label": "C# ROM compiler",
+      "group": "Build",
+      "role": "Validates C# and generates native ROMs",
+      "boundary": "Build host: Roslyn / RGBDS 0.9.0",
+      "contracts": [
+        "Typed observable hardware IR",
+        "Width-aware SM83 code / asset validation",
+        "Explicit lower WRAM reservation"
+      ],
+      "files": [
+        "GB.Compiler/SubsetValidator.cs",
+        "GB.Compiler/IrLowerer.cs",
+        "GB.Compiler/IrModel.cs",
+        "GB.Compiler/Sm83Backend.cs",
+        "GB.Compiler/GameAssetBundle.cs",
+        "GB.Compiler/RomCompiler.cs",
+        "GB.Compiler.Cli/Program.cs"
+      ],
+      "evidence": [
+        "GB.Compiler/RomCompiler.cs: CompileAsync",
+        "GB.Compiler/Sm83Backend.cs: AnalyzeDemands and CompareWidth"
+      ],
+      "confidence": "high",
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "target-sdk",
+      "label": "Game Boy SDK",
+      "group": "Build",
+      "role": "Defines native APIs and reusable font/text",
+      "boundary": "Host declarations + target C# sources",
+      "contracts": [
+        "Symbol-verified memory / display / text intrinsics",
+        "Host font asset generation",
+        "Target decimal / IPv4 source inclusion",
+        "Native cartridge commands and fixed-record TCP/UDP framing"
+      ],
+      "files": [
+        "GB.Sdk/GameMemory.cs",
+        "GB.Sdk/GameDisplay.cs",
+        "GB.Sdk/GameText.cs",
+        "GB.Sdk/GameFont.cs",
+        "GB.Sdk/Target/GameTextNumbers.cs",
+        "GB.Sdk/GB.Sdk.csproj",
+        "GB.Sdk/Target/GameNetwork.cs",
+        "GB.Sdk/Target/GameNetworkStream.cs"
+      ],
+      "evidence": [
+        "GB.Compiler/DisplayIntrinsic.cs: exact SDK assembly/type/signature",
+        "GB.Sdk/GameFont.cs: CreateTiles",
+        "GB.Sdk/Target/GameTextNumbers.cs: WriteDecimal / WriteIpv4",
+        "GB.Sdk/Target/GameNetwork.cs: OpenConfigured / Receive / Send",
+        "GB.Sdk/Target/GameNetworkStream.cs: Send / Receive"
+      ],
+      "confidence": "high",
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "dhcp-guest",
+      "label": "SDK DHCP firmware",
+      "group": "Build",
+      "role": "Executes DHCP and screen drawing on SM83",
+      "boundary": "Guest C# source / embedded native ROM",
+      "contracts": [
+        "1024-byte UDP cartridge buffers",
+        "C000..C05F result / parser mailbox",
+        "Native tiles and decimal IPv4 display",
+        "Reusable acquisition routine before application telemetry"
+      ],
+      "files": [
+        "Samples/NetworkDhcp/NetworkDhcp.cs",
+        "Samples/NetworkDhcp/Build.ps1",
+        "GB.Roms/NETWORK-DHCP.gb",
+        "Samples/NetworkDhcp/EntryPoint.cs"
+      ],
+      "evidence": [
+        "Samples/NetworkDhcp/NetworkDhcp.cs: Acquire / ValidateReply / Status",
+        "Samples/NetworkDhcp/Build.ps1: regular compiler CLI"
+      ],
+      "confidence": "high",
+      "row": 5,
+      "col": 2
     },
     {
       "id": "desktop-player",
@@ -481,9 +701,7 @@
       "contracts": [
         "Ctrl-drag rotation / native desktop movement",
         "160x144 reusable LCD texture / glass highlights",
-        "Shared host pacing, ROM load, input and audio lifetime",
-        "Live LCD quad unfolds into close-up; playback continues",
-        "Model power switch closes and disposes host"
+        "Shared host pacing, ROM load, input and audio lifetime"
       ],
       "files": [
         "GB.Emulator.Windows/Desktop/DesktopWindow.cs",
@@ -492,9 +710,7 @@
       ],
       "evidence": [
         "GB.Emulator.Windows/Desktop/DesktopWindow.cs: EmulationHost / Tick / input and disposal",
-        "GB.Emulator.Windows/Desktop/DesktopScene.cs: Present / model transform / hit testing",
-        "GB.Emulator.Windows/Desktop/ScreenTransitionView.cs: live screen quad",
-        "GB.Emulator.Windows/Desktop/DesktopWindow.cs: ToggleScreenCloseUp / AdvanceViewTransition"
+        "GB.Emulator.Windows/Desktop/DesktopScene.cs: Present / model transform / hit testing"
       ],
       "confidence": "high",
       "row": 2,
@@ -524,6 +740,237 @@
       ],
       "confidence": "high",
       "row": 3,
+      "col": 3
+    },
+    {
+      "id": "network-cluster",
+      "label": "Game Boy cluster",
+      "group": "Hosts",
+      "role": "Partitions and validates native worker jobs",
+      "boundary": "Independent host/machine/device tasks",
+      "contracts": [
+        "Private native tasks or isolated worker processes",
+        "Bounded UDP retries / TCP record framing",
+        "Guest arithmetic; host validates and reduces",
+        "Conway barriers; 16-bit IDs and boundary routing",
+        "Life host placement; whole-world validated barriers"
+      ],
+      "files": [
+        "GB.Experiments/NetworkCartridge/GameboyNetworkCluster.cs",
+        "GB.Experiments/NetworkCartridge/FractalCluster.cs",
+        "GB.Experiments/NetworkCartridge/LifeCluster.cs",
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/GameboyNetworkCluster.cs: RunAsync",
+        "GB.Experiments/NetworkCartridge/FractalCluster.cs: RunAsync / ReferencePixel",
+        "GB.Experiments/NetworkCartridge/LifeCluster.cs: RunAsync / BuildHalo / ReferenceStep",
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: Load / Validate"
+      ],
+      "confidence": "high",
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "network-firmware",
+      "label": "Telemetry / worker ROMs",
+      "group": "Build",
+      "role": "Builds packets, computes and draws on SM83",
+      "boundary": "Constrained SDK C# / embedded ROMs",
+      "contracts": [
+        "Lease telemetry from acquired guest values",
+        "16-byte stop-and-wait jobs and native sums",
+        "Static WRAM reservations; compiler checks bounds",
+        "Retained Conway interiors / boundary-only updates"
+      ],
+      "files": [
+        "Samples/NetworkTelemetry/NetworkTelemetry.cs",
+        "Samples/NetworkTelemetry/Build.ps1",
+        "Samples/NetworkWorker/NetworkWorker.cs",
+        "GB.Roms/NETWORK-TELEMETRY.gb",
+        "GB.Roms/NETWORK-WORKER.gb",
+        "Samples/NetworkFractal/NetworkFractal.cs",
+        "Samples/NetworkFractal/Build.ps1",
+        "GB.Roms/NETWORK-FRACTAL.gb",
+        "Samples/NetworkFractal/lab.json",
+        "Samples/NetworkLife/NetworkLife.cs",
+        "Samples/NetworkLife/Build.ps1",
+        "GB.Roms/NETWORK-LIFE.gb"
+      ],
+      "evidence": [
+        "Samples/NetworkTelemetry/NetworkTelemetry.cs: Start",
+        "Samples/NetworkWorker/NetworkWorker.cs: native range loop",
+        "Samples/NetworkFractal/NetworkFractal.cs: FractalPixel / FractalDrawRow / row ACK",
+        "Samples/NetworkLife/NetworkLife.cs: Start / DrawRow"
+      ],
+      "confidence": "high",
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "local-receiver",
+      "label": "Local telemetry receiver",
+      "group": "Hosts",
+      "role": "Decodes and verifies real socket records",
+      "boundary": "Loopback UDP/TCP; optional second process",
+      "contracts": [
+        "GBT1 32-byte lease record",
+        "Fixed-length TCP reads / exact UDP records",
+        "One-record receiver or self-contained check"
+      ],
+      "files": [
+        "GB.Experiments/NetworkCartridge/NetworkTelemetryExperiment.cs",
+        "GB.Experiments/NetworkCartridge/LocalNetworkExperiment.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NetworkTelemetryExperiment.cs: LeaseTelemetry.Decode / LocalRecordListener",
+        "GB.Experiments/NetworkCartridge/LocalNetworkExperiment.cs: RunReceiverAsync"
+      ],
+      "confidence": "high",
+      "row": 6,
+      "col": 2
+    },
+    {
+      "id": "visual-cluster",
+      "label": "Parallel Game Boy lab",
+      "group": "Hosts",
+      "role": "Presents native LCDs and collected values",
+      "boundary": "GB.Experiments.Windows WPF dispatcher",
+      "contracts": [
+        "Detached frames, generations and inspection",
+        "Paged LCDs; 1,000-node Conway world overview",
+        "Per-node inspector; JSON/CSV/PNG export",
+        "Fractal configuration / Conway process settings"
+      ],
+      "files": [
+        "GB.Experiments.Windows/Labs/FractalClusterWindow.cs",
+        "GB.Experiments.Windows/Labs/NetworkNodeWindow.cs",
+        "GB.Experiments.Windows/Labs/LifeClusterWindow.cs"
+      ],
+      "evidence": [
+        "GB.Experiments.Windows/Labs/FractalClusterWindow.cs: RunClusterAsync / RefreshPresentation / ExportResults",
+        "GB.Experiments.Windows/Labs/NetworkNodeWindow.cs: UpdateMachine / UpdateLife / UpdateFractal",
+        "GB.Experiments.Windows/Labs/LifeClusterWindow.cs: RunAsync / Refresh"
+      ],
+      "confidence": "high",
+      "row": 6,
+      "col": 3
+    },
+    {
+      "id": "native-network-node",
+      "label": "Native network node host",
+      "group": "Hosts",
+      "role": "Serializes CPU, I/O and detached inspection",
+      "boundary": "One private machine per execution task",
+      "contracts": [
+        "16-bit identity; immutable frames and inspection",
+        "Optional parked clock during socket I/O",
+        "On-demand LCD / final native frame capture",
+        "Detached machine hostname and process identity"
+      ],
+      "files": [
+        "GB.Experiments/NetworkCartridge/NativeNetworkNode.cs",
+        "GB.Experiments/NetworkCartridge/NativeNodeSnapshot.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NativeNetworkNode.cs: RunAsync / Publish / WaitForPendingOperationAsync"
+      ],
+      "confidence": "high",
+      "row": 7,
+      "col": 0
+    },
+    {
+      "id": "life-processes",
+      "label": "Life worker processes",
+      "group": "Hosts",
+      "role": "Runs bounded groups of independent machines",
+      "boundary": "Local or SSH-launched remote OS processes",
+      "contracts": [
+        "Exec control / inspection; cells use TCP",
+        "Dynamic LCD selection; explicit drained shutdown",
+        "Worker-side CPU / RAM and host identity",
+        "Firmware checksum agreement"
+      ],
+      "files": [
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs",
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: LifeWorkerGroup / LifeProcessPool",
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: resources / drained events and SSH launch"
+      ],
+      "confidence": "high",
+      "row": 7,
+      "col": 3
+    },
+    {
+      "id": "experiments-windows",
+      "label": "Experiment launcher",
+      "group": "Hosts",
+      "role": "Owns DHCP and parallel lab startup",
+      "boundary": "Separate Windows experiments executable",
+      "contracts": [
+        "Launcher / DHCP / Mandelbrot / Conway modes",
+        "Independent tests and deployment package",
+        "No dependency on the ROM player"
+      ],
+      "files": [
+        "GB.Experiments.Windows/Program.cs",
+        "GB.Experiments.Windows/ExperimentLauncherForm.cs",
+        "GB.Experiments.Windows/DhcpExperimentForm.cs",
+        "GB.Experiments.Windows/GB.Experiments.Windows.csproj"
+      ],
+      "evidence": [
+        "GB.Experiments.Windows/Program.cs: ExperimentLaunch / Main",
+        "GB.Experiments.Windows/GB.Experiments.Windows.csproj: ProjectReference"
+      ],
+      "confidence": "high",
+      "row": 7,
+      "col": 1
+    },
+    {
+      "id": "winforms-lcd",
+      "label": "Shared WinForms LCD",
+      "group": "Rendering",
+      "role": "Paints immutable native frames with scaling",
+      "boundary": "GB.Emulator.Presentation.WinForms library",
+      "contracts": [
+        "IVideoOutput native LCD presentation",
+        "DPI / integer viewport scaling",
+        "No player or experimental dependencies"
+      ],
+      "files": [
+        "GB.Emulator.Presentation.WinForms/ScreenControl.cs",
+        "GB.Emulator.Presentation.WinForms/GB.Emulator.Presentation.WinForms.csproj"
+      ],
+      "evidence": [
+        "GB.Emulator.Presentation.WinForms/ScreenControl.cs: Present / GetViewport"
+      ],
+      "confidence": "high",
+      "row": 7,
+      "col": 2
+    },
+    {
+      "id": "ssh-transport",
+      "label": "SSH worker transport",
+      "group": "Platform",
+      "role": "Executes remote workers and encrypts TCP forwards",
+      "boundary": "OpenSSH client and remote SSH server",
+      "contracts": [
+        "Key or opt-in password authentication",
+        "Loopback reverse TCP forwards",
+        "Exec channel carries control / inspection"
+      ],
+      "files": [
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs",
+        "GB.Experiments/Program.cs"
+      ],
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: CreateSshStart",
+        "GB.Experiments/Program.cs: GB_LIFE_ASKPASS callback; LifeHostConfiguration.CreateSshStart: SSH child environment"
+      ],
+      "confidence": "high",
+      "row": 8,
       "col": 3
     }
   ],
@@ -943,6 +1390,149 @@
       "confidence": "high"
     },
     {
+      "id": "experiments-network",
+      "from": "experiments",
+      "to": "network-cartridge",
+      "kind": "composition",
+      "label": "attaches and pumps the experimental device",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeExperiment.cs: RunRomAsync"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-network-backend",
+      "from": "experiments",
+      "to": "network-backend",
+      "kind": "composition",
+      "label": "selects echo or localhost TCP transport",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeExperiment.cs: RunAsync"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "network-memory",
+      "from": "network-cartridge",
+      "to": "memory",
+      "kind": "interface",
+      "label": "implements inspectable memory-device contract",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeDevice.cs: IInspectableMemoryRange"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "network-transport",
+      "from": "network-cartridge",
+      "to": "network-backend",
+      "kind": "runtime-call",
+      "label": "dispatches queued socket operations through injected backend",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NetworkCartridgeDevice.cs: ExecuteAsync"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-network",
+      "from": "tests",
+      "to": "network-cartridge",
+      "kind": "runtime-call",
+      "label": "checks protocol, native ROM and real TCP echo",
+      "evidence": [
+        "GB.Emulator.Tests/NetworkCartridgeTests.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-hosting",
+      "from": "experiments",
+      "to": "hosting",
+      "kind": "composition",
+      "label": "coordinates DHCP playback through the shared host",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/DhcpSession.cs: EmulationHost construction"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "network-physical",
+      "from": "network-backend",
+      "to": "physical-network",
+      "kind": "optional-runtime-call",
+      "label": "captures and injects frames on an explicitly selected adapter",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NpcapEthernetLink.cs: native capture/injection"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "compiler-sdk",
+      "from": "rom-compiler",
+      "to": "target-sdk",
+      "kind": "project-reference",
+      "label": "verifies exact SDK intrinsic symbols",
+      "evidence": [
+        "GB.Compiler/GB.Compiler.csproj; DisplayIntrinsic.Identify"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "guest-compiler",
+      "from": "dhcp-guest",
+      "to": "rom-compiler",
+      "kind": "build-invocation",
+      "label": "builds checked-in guest firmware through the compiler CLI",
+      "evidence": [
+        "Samples/NetworkDhcp/Build.ps1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "guest-sdk",
+      "from": "dhcp-guest",
+      "to": "target-sdk",
+      "kind": "source-inclusion",
+      "label": "compiles SDK API calls and shared numeric text source",
+      "evidence": [
+        "Samples/NetworkDhcp/Build.ps1: GameTextNumbers.cs / --text-font"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-firmware",
+      "from": "experiments",
+      "to": "dhcp-guest",
+      "kind": "embedded-resource",
+      "label": "loads generated firmware with no runtime compiler dependency",
+      "evidence": [
+        "GB.Experiments/GB.Experiments.csproj: EmbeddedResource"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "guest-peripheral",
+      "from": "dhcp-guest",
+      "to": "network-cartridge",
+      "kind": "runtime-mmio",
+      "label": "sends and receives UDP through cartridge registers",
+      "evidence": [
+        "Samples/NetworkDhcp/NetworkDhcp.cs: Command / BuildPacket / ReceiveLength"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-compiler",
+      "from": "tests",
+      "to": "rom-compiler",
+      "kind": "test-invocation",
+      "label": "compiles and checks source / native semantics",
+      "evidence": [
+        "GB.Compiler.Tests/TextAndMemoryTests.cs: RomCompiler.CompileAsync"
+      ],
+      "confidence": "high"
+    },
+    {
       "id": "windows-desktop",
       "from": "windows",
       "to": "desktop-player",
@@ -994,6 +1584,239 @@
       "label": "checks real playback, alpha output, input and cleanup",
       "evidence": [
         "GB.Emulator.Windows.Tests/DesktopPlayerTests.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-cluster",
+      "from": "experiments",
+      "to": "network-cluster",
+      "kind": "composition",
+      "label": "selects local cluster mode",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LocalNetworkExperiment.cs: cluster RunAsync"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cluster-host",
+      "from": "native-network-node",
+      "to": "hosting",
+      "kind": "composition",
+      "label": "owns separate shared hosts per worker",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NativeNetworkNode.cs: new EmulationHost"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cluster-device",
+      "from": "native-network-node",
+      "to": "network-cartridge",
+      "kind": "composition",
+      "label": "attaches and pumps each private peripheral",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NativeNetworkNode.cs: AddDevice / Pump"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cluster-firmware",
+      "from": "native-network-node",
+      "to": "network-firmware",
+      "kind": "runtime-asset",
+      "label": "loads embedded native worker firmware",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NativeNetworkNode.cs: Firmware"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "firmware-sdk",
+      "from": "network-firmware",
+      "to": "target-sdk",
+      "kind": "source-inclusion",
+      "label": "compiles shared native network helpers",
+      "evidence": [
+        "Samples/NetworkTelemetry/Build.ps1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "firmware-dhcp",
+      "from": "network-firmware",
+      "to": "dhcp-guest",
+      "kind": "source-inclusion",
+      "label": "telemetry reuses guest DHCP acquisition",
+      "evidence": [
+        "Samples/NetworkTelemetry/NetworkTelemetry.cs: NetworkDhcp.Run"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-receiver",
+      "from": "experiments",
+      "to": "local-receiver",
+      "kind": "composition",
+      "label": "starts local receiver or telemetry verification",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LocalNetworkExperiment.cs: RunReceiverAsync / telemetry"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "receiver-backends",
+      "from": "local-receiver",
+      "to": "network-backend",
+      "kind": "network-data",
+      "label": "receives application records through loopback sockets",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/NetworkTelemetryExperiment.cs: LocalRecordListener"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-cluster",
+      "from": "tests",
+      "to": "network-cluster",
+      "kind": "test-invocation",
+      "label": "checks real native computations and network lifecycle",
+      "evidence": [
+        "GB.Emulator.Tests/LocalNetworkStackTests.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "visual-cluster-host",
+      "from": "visual-cluster",
+      "to": "network-cluster",
+      "kind": "runtime-call",
+      "label": "consumes native frames, TCP rows and detached node inspection",
+      "evidence": [
+        "GB.Experiments.Windows/Labs/FractalClusterWindow.cs: FractalCluster.RunAsync",
+        "GB.Experiments.Windows/Labs/LifeClusterWindow.cs: LifeCluster.RunAsync"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-visual-cluster",
+      "from": "tests",
+      "to": "visual-cluster",
+      "kind": "test-invocation",
+      "label": "checks cancellation, restart, native output and collected exports",
+      "evidence": [
+        "GB.Experiments.Windows.Tests/FractalClusterWindowTests.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cluster-native-node",
+      "from": "network-cluster",
+      "to": "native-network-node",
+      "kind": "runtime-call",
+      "label": "runs private machines in process when selected",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LifeCluster.cs: RunAsync; FractalCluster.cs: RunAsync"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "cluster-life-processes",
+      "from": "network-cluster",
+      "to": "life-processes",
+      "kind": "composition",
+      "label": "places local or remote groups; selects LCDs and consumes inspection",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: LifeProcessPool.StartAsync"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "life-process-native-node",
+      "from": "life-processes",
+      "to": "native-network-node",
+      "kind": "composition",
+      "label": "runs grouped native nodes whose cells return over TCP",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: NativeNetworkNode.RunAsync"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "windows-lcd",
+      "from": "windows",
+      "to": "winforms-lcd",
+      "kind": "project-reference",
+      "label": "uses shared WinForms LCD for ROM playback",
+      "evidence": [
+        "GB.Emulator.Windows/GB.Emulator.Windows.csproj: ProjectReference; PlayerForm: ScreenControl"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-windows-lcd",
+      "from": "experiments-windows",
+      "to": "winforms-lcd",
+      "kind": "project-reference",
+      "label": "uses shared LCD for DHCP firmware frames",
+      "evidence": [
+        "GB.Experiments.Windows/GB.Experiments.Windows.csproj: ProjectReference; DhcpExperimentForm: ScreenControl"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "winforms-lcd-host",
+      "from": "winforms-lcd",
+      "to": "hosting",
+      "kind": "project-reference",
+      "label": "implements IVideoOutput and consumes owned native frames",
+      "evidence": [
+        "GB.Emulator.Presentation.WinForms/GB.Emulator.Presentation.WinForms.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-windows-runtime",
+      "from": "experiments-windows",
+      "to": "experiments",
+      "kind": "project-reference",
+      "label": "hosts experimental DHCP sessions and worker backends",
+      "evidence": [
+        "GB.Experiments.Windows/GB.Experiments.Windows.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "experiments-windows-labs",
+      "from": "experiments-windows",
+      "to": "visual-cluster",
+      "kind": "composition",
+      "label": "opens the native Mandelbrot and living-world labs",
+      "evidence": [
+        "GB.Experiments.Windows/Program.cs: experiment mode dispatch"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-experiments-windows",
+      "from": "tests",
+      "to": "experiments-windows",
+      "kind": "project-reference",
+      "label": "exercises launcher, DHCP and lab lifecycle",
+      "evidence": [
+        "GB.Experiments.Windows.Tests/GB.Experiments.Windows.Tests.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "life-ssh-transport",
+      "from": "life-processes",
+      "to": "ssh-transport",
+      "kind": "process-invocation",
+      "label": "launches remote groups with separate per-node TCP reverse forwards",
+      "evidence": [
+        "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: Group.StartAsync",
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: CreateSshStart"
       ],
       "confidence": "high"
     }

@@ -4,7 +4,7 @@
 
 A Game Boy emulator written in C#, with a scalable Windows player, a playable terminal front end and a Windows debugger that shows what happens inside the machine.
 
-The experimental C#-to-DMG compiler builds native ROMs with RGBDS 0.9.0: 32 KiB ROM-only cartridges and scoped 64-512 KiB MBC1 cartridges with banked read-only assets. Samples cover a [scrolling background](Samples/ScrollingBackground/README.md), [direct-OAM sprites](Samples/Sprites/README.md), and [MBC1 assets](Samples/BankedAssets/README.md). See the [clean-checkout Windows toolchain and source-to-ROM CLI guide](Docs/csharp-gameboy-toolchain.md), [independent PyBoy validation procedure](Docs/csharp-gameboy-independent-validation.md), and the plan's explicit [remaining implementation backlog](Docs/csharp-gameboy-compiler-plan.md#what-remains-to-implement). The compiler supports a [restricted C# subset](Docs/csharp-gameboy-language.md), not arbitrary .NET programs. Both software emulators run bootless in validation; neither is independent hardware proof. Compiler sprite writes do not use OAM DMA or model DMA timing/bus blocking.
+The experimental C#-to-DMG compiler builds native ROMs with RGBDS 0.9.0: 32 KiB ROM-only cartridges and scoped 64-512 KiB MBC1 cartridges with banked read-only assets. Samples cover a [scrolling background](Samples/ScrollingBackground/README.md), [direct-OAM sprites](Samples/Sprites/README.md), and [MBC1 assets](Samples/BankedAssets/README.md), and [SDK-built DHCP with text/IPv4 output](Samples/NetworkDhcp/README.md). See the [clean-checkout Windows toolchain and source-to-ROM CLI guide](Docs/csharp-gameboy-toolchain.md), [independent PyBoy validation procedure](Docs/csharp-gameboy-independent-validation.md), and the plan's explicit [remaining implementation backlog](Docs/csharp-gameboy-compiler-plan.md#what-remains-to-implement). The compiler supports a [restricted C# subset](Docs/csharp-gameboy-language.md), not arbitrary .NET programs. Both software emulators run bootless in validation; neither is independent hardware proof. Compiler sprite writes do not use OAM DMA or model DMA timing/bus blocking.
 
 The SDK distribution has three separate packages: `GB.Sdk` is the reference-only
 C# API for project validation and IntelliSense; `GB.Compiler.Cli` installs `gbc`,
@@ -54,7 +54,7 @@ All screenshots use demo ROMs from [GB.Roms](GB.Roms). ROMs from `GB.Roms.Privat
 
 Without a path, the console uses the bundled `SPRITE.GB` demo.
 
-#### Desktop 3D Game Boy
+### Desktop 3D Game Boy
 
 Run `dotnet run --project GB.Emulator.Windows -c Release -- --desktop` for a transparent,
 borderless 3D DMG on your desktop. **Ctrl-drag rotates**, dragging the shell moves it, the mouse
@@ -246,12 +246,70 @@ The [banked-assets sample](Samples/BankedAssets/README.md) extends this ROM-only
 | `GB.Emulator.Core.Win32` | Shared Windows audio output adapter implementing the host's audio contract. |
 | `GB.Emulator.Windows` | DPI-aware WinForms player, scaled display, ROM dialogs, playback controls and optional live inspector/statistics. |
 | `GB.Emulator.Windows.Tests` | Player pacing, scaling, input and Windows UI/lifecycle regression tests. |
-| `GB.Experiments` | HTTP-to-emulated-serial experiments and isolated emulator workers. |
+| `GB.Emulator.Presentation.WinForms` | Shared LCD control; depends on hosting, with no player or experiment logic. |
+| `GB.Experiments` | Headless networking, native firmware experiments and isolated worker processes. |
+| `GB.Experiments.Windows` | Separate launcher and Windows UI for DHCP, Mandelbrot and the living-world labs. |
+| `GB.Experiments.Windows.Tests` | Experiment launcher, native LCD, networking UI, cancellation and export tests. |
 | `GB.Emulator.Tests` | Hardware, execution, mapper, rendering, input and experiment regression tests. |
 
 `Gameboy` composes and resets the hardware. `MemoryMap` routes reads/writes and DMA; the cartridge factory selects a mapper from the header. The shared `CartridgeMapper` owns ROM/RAM storage and mapped windows, while MBC1/MBC3 own their banking rules and snapshots. Silent and recording memory observers allow continuous play and debugger tracing through the same CPU execution path.
 
 The core does not depend on terminal or drawing APIs. Each machine owns its CPU registers, flags, memory reference and instruction handlers; independent machines can run in one process. Console, Windows player and debugger compose the shared `EmulationHost`. It owns playback state, pacing, immutable frames, audio routing, statistics, inspection and bounded debugger rewind. Front ends provide presentation, physical input and scheduling. See [hosting another UI](Docs/emulation-host.md) for contracts, ownership and examples. Experiment workers retain process isolation as a host policy.
+
+## Network cartridge experiment
+
+A native ROM can drive an experimental network processor through cartridge memory registers. Run a self-contained demo that connects to a local TCP echo server, sends a message, collects fragmented replies and verifies the echoed bytes inside the emulated CPU:
+
+```powershell
+dotnet run --project GB.Experiments -c Release -- --network-cartridge --tcp
+```
+
+Omit `--tcp` for deterministic loopback. Both modes print `ROM result: PASS` and exit. TCP/IP runs on the host; the ROM uses connect/send/receive commands. See the [protocol, implementation boundaries and tests](Docs/network-cartridge-experiment.md). This is an explicitly attached experimental peripheral, separate from regular cartridge mapping and the serial web experiment.
+
+The native ROM can also acquire a DHCP lease on an isolated virtual UDP network:
+
+```powershell
+dotnet run --project GB.Experiments -c Release -- --network-cartridge --dhcp
+```
+
+The ROM performs DISCOVER/OFFER/REQUEST/ACK, validates the replies and stores its IP, mask, router, DNS and lease time. Add `--drop-first-offer`, `--drop-first-ack` or `--nak-first-request` to exercise recovery. This obtains a virtual lease without changing your host network settings. See [DHCP acquisition and remaining protocol work](Docs/dhcp-cartridge-experiment.md).
+
+Watch acquisition on the actual Game Boy screen with `dotnet run --project GB.Experiments.Windows -c Release -- --dhcp`, or choose **DHCP cartridge** in the separate experiments launcher. The ROM draws progress, failure and acquired IP/gateway/DNS/server values using native tiles. An optional installed-Npcap Ethernet backend is available through `--dhcp --list-adapters` and `--dhcp --adapter "NAME"` in the experiment CLI; the Windows window also accepts `--dhcp --adapter "NAME"`. See the [Ethernet setup and current limits](Docs/dhcp-cartridge-experiment.md#ethernet-adapter-backend).
+
+## Local network telemetry and a Game Boy cluster
+
+For a visual demo, run `dotnet run --project GB.Experiments.Windows -c Release -- --cluster --workers 32`,
+or choose **Parallel Mandelbrot** in the experiments launcher and configure a grid of up to 64 nodes. Enlarged Game Boy LCDs show separate Mandelbrot
+tiles on their SM83 CPUs while a collector assembles the picture. Progress, iteration counts,
+cycles and JSON/CSV/PNG export are available in the [parallel lab](Docs/visual-gameboy-cluster.md).
+Grid dimensions, iteration limit and row pacing can be edited in the UI or loaded from a JSON configuration.
+
+The SDK-built guest can emit its acquired DHCP values over real localhost UDP or TCP:
+
+```powershell
+dotnet run --project GB.Experiments -c Release -- --network-cartridge --telemetry --udp
+dotnet run --project GB.Experiments -c Release -- --network-cartridge --cluster --tcp --workers 4 --count 1000
+```
+
+The cluster runs independent SM83 machines that receive range jobs and return native 16-bit sums.
+The cartridge offloads sockets to the host. See [separate receivers, protocol layouts, SDK source
+and limits](Docs/network-telemetry-and-cluster.md).
+
+## Networked living world
+
+Start 16 native Game Boys evolving one continuous Conway world:
+
+```powershell
+dotnet run --project GB.Experiments.Windows -c Release -- --life
+```
+
+Each guest calculates and displays its territory; TCP routes neighbouring cells between generations.
+The grid, generation count, pacing and seed are configurable (up to 1,000 machines, with automatic process grouping).
+Click an LCD for inspection and collect population/timing results. See the [living-world experiment](Docs/network-life-experiment.md)
+for the boundary-only protocol, 16-screen paging, headless runner and measured 1,000-node runs.
+Life workers can also span Windows/Linux hosts using `--hosts hosts.json`, with encrypted SSH
+launch/control and cartridge TCP forwarding. Start with the [host placement example](Samples/LifeCluster/hosts.example.json)
+and the deployment instructions in the guide.
 
 ## Link-port web experiment
 
@@ -271,7 +329,7 @@ The protocol sends `G` for the greeting, or `P` followed by a 16-bit little-endi
 
 ## Builds and releases
 
-[GitHub Actions](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml) builds the full solution, runs configured compiler/PyBoy and emulator tests with a zero-skip TRX gate, smoke-builds the sample, and publishes self-contained `win-x64`/`win-arm64` console/debugger artifacts. Successful builds on `master` also create a GitHub release with separate console/debugger ZIPs. Pull requests, tag pushes and manual builds upload artifacts without creating a release. CI installs RGBDS/PyBoy only into runner temp; generated ROMs, venvs and tools are not included in the published packages.
+[GitHub Actions](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml) builds the full solution, runs configured compiler/PyBoy and emulator tests with a zero-skip TRX gate, smoke-builds the sample, and publishes self-contained `win-x64`/`win-arm64` player, experiments, console and debugger artifacts. Successful builds on `master` also create a GitHub release with separate player, experiments, console and debugger ZIPs. Pull requests, tag pushes and manual builds upload artifacts without creating a release. CI installs RGBDS/PyBoy only into runner temp; generated ROMs, venvs and tools are not included in the published packages.
 
 GitVersion calculates assembly and artifact versions from Git history using GitHub Flow. Tags of the form `v<major>.<minor>.<patch>` set a release version; commit messages can request a larger increment with `+semver: minor` or `+semver: major`. Automatic release notes use the built commit's full message.
 
@@ -283,3 +341,5 @@ GitVersion calculates assembly and artifact versions from Git history using GitH
 - [Game Boy CPU manual](http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf)
 - [Opcode-generation notes](https://meganesulli.com/generate-gb-opcodes/)
 - [Cinoop emulator walkthrough](https://cturt.github.io/cinoop.html)
+
+Windows labs are hosted by the separate [experiments application](Docs/windows-experiments.md); the regular player and its publish output do not depend on experiment code.
