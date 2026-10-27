@@ -79,6 +79,7 @@ public static class NativeNetworkNode
                 if (device.HasPendingOperation) await Task.Delay(1, timeout.Token);
                 else if (++batches % 16 == 0) await Task.Yield();
             }
+            timeout.Token.ThrowIfCancellationRequested();
             if (onFrame != null)
             {
                 host.Advance(TimeSpan.FromSeconds(1.0 / 30));

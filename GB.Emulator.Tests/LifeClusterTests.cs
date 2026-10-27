@@ -88,13 +88,18 @@ public class LifeClusterTests
     [DataRow(2)]
     public async Task CancellationStopsEveryNativeWorkerAtABarrier(int processes)
     {
-        using var stop = new CancellationTokenSource();
-        var snapshots = new ConcurrentDictionary<ushort, NativeNodeSnapshot>();
-        await Assert.ThrowsAsync<OperationCanceledException>(async () => await LifeCluster.RunAsync(new(2, 2, 100, 0, WorkerProcesses: processes),
-            onGeneration: tick => { if (tick.Generation == 1) stop.Cancel(); },
-            onSnapshot: s => snapshots[s.NodeId] = s, token: stop.Token));
-        Assert.HasCount(4, snapshots);
-        Assert.IsTrue(snapshots.Values.All(s => s.State == "Stopped"));
+        // Exercise shutdown repeatedly: transport EOF must never beat cooperative cancellation.
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            using var stop = new CancellationTokenSource();
+            var snapshots = new ConcurrentDictionary<ushort, NativeNodeSnapshot>();
+            await Assert.ThrowsAsync<OperationCanceledException>(async () => await LifeCluster.RunAsync(new(2, 2, 100, 0, WorkerProcesses: processes),
+                onGeneration: tick => { if (tick.Generation == 1) stop.Cancel(); },
+                onSnapshot: s => snapshots[s.NodeId] = s, token: stop.Token));
+            Assert.HasCount(4, snapshots);
+            Assert.IsTrue(snapshots.Values.All(s => s.State == "Stopped"),
+                $"Attempt {attempt}: {string.Join(", ", snapshots.Values.Select(s => $"{s.NodeId}:{s.State}"))}");
+        }
     }
     [TestMethod]
     public void SettingsAndIndependentConwayRulesAreBounded()

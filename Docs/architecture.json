@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "Working tree on f84b9d67f10050f5a54f59d7c5a41356986edd1b; pre-diagram manifest 3deedf19d39f624eed9301623a660bb20b923a782f160795acec3861ca1b1bff",
+  "source": "Working tree on b66909e15b2ec5be86d4b90d00b4acf26d612230; pre-documentation manifest 6274ec4eb6b326f7f33f730445bb4e58ed34a89a7731f50e8a3c963a6250471e",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
@@ -13,7 +13,7 @@
     "Hosting calls IAudioOutput supplied by the UI; the hosting-to-audio arrow is runtime dispatch only. Only the Win32 adapter references Hosting at compile time. Other audio adapters may implement the same contract.",
     "The console defaults to the bundled SPRITE.GB demo and accepts explicit ROM paths; private ROMs are not automatically copied by its project. This is configuration behavior within the existing front-end boundary.",
     "The network cartridge is explicitly attached to an experiment-only ROM. TCP uses host sockets; UDP selects a virtual DHCP segment or an optional Ethernet backend. Native SM83 instructions acquire and validate the lease; no host address configuration changes. Snapshot values support inspection, not network rewind.",
-    "DHCP covers initial acquisition with a native on-screen display. Optional Ethernet/Npcap transport is implemented; live LAN interoperability is unverified locally because the driver is absent. Renewal/expiry, ARP conflict detection, application routing and production retransmission timing remain future work.",
+    "DHCP covers initial acquisition with a native on-screen display. Optional Ethernet/Npcap transport is implemented; live LAN behavior depends on an installed driver and adapter; CI covers deterministic packet fixtures. Renewal/expiry, ARP conflict detection, application routing and production retransmission timing remain future work.",
     "The separate Windows experiments DHCP window and headless runner share DhcpSession/EmulationHost. Normal ROM loading still does not attach experimental cartridge hardware. Ethernet mode injects DHCP frames; it does not create an OS bridge or configure a host address.",
     "DHCP packet processing and visuals are constrained C# compiled through GB.Compiler/RGBDS. GB.Experiments embeds the resulting 32 KiB ROM; it has no runtime compiler dependency. Native completion is a published mailbox result after drawing. Compiler-managed WRAM begins at C100, above the guest mailbox.",
     "The optional desktop frontend is a native WPF window inside GB.Emulator.Windows. It reuses EmulationHost and Win32 audio; no browser or alternate emulator core is used. Model assets have a separate CC BY-NC 4.0 license. Printed cartridge art is local user input; a ROM does not contain it.",
@@ -24,7 +24,8 @@
     "Per-node inspectors consume detached NativeNodeSnapshot values sampled by each machine owner. Actual TCP payload counters and retained endpoints are transport-owned; the UI never reads live machine memory. Final snapshots survive machine disposal. WRAM non-zero bytes describe contents, not allocation; speed includes network waits and scheduling.",
     "LifeCluster initializes territories once, then routes 116-cell toroidal boundaries over localhost TCP. Native SM83 ROMs compute Conway B3/S23 cells and draw their LCDs; only validated returned cells form the next world. Life v2 supports 1,000 machines with 16-bit node IDs and process groups. NetworkNodeWindow is shared between fractal and Life views. GameNetworkStream preserves TCP remainders across application reads.",
     "LifeProcessPool starts bounded OS worker groups. Pipes carry assignments, LCD selections and detached inspection; simulation cell results remain on per-node TCP sockets. WPF pages 16 LCDs, renders visible/inspected machines on demand, and retains every final native LCD. Life awaits transport operations with its guest clock parked; other experiments preserve their existing scheduling.",
-    "GB.Emulator.Windows owns regular/3D ROM playback only; it has no experiment reference, menu items or launch modes. GB.Experiments.Windows owns launcher, DHCP and WPF labs, with a separate test project and published ZIP. Both front ends reuse GB.Emulator.Presentation.WinForms for LCD painting; neither references the other executable."
+    "GB.Emulator.Windows owns regular/3D ROM playback only; it has no experiment reference, menu items or launch modes. GB.Experiments.Windows owns launcher, DHCP and WPF labs, with a separate test project and published ZIP. Both front ends reuse GB.Emulator.Presentation.WinForms for LCD painting; neither references the other executable.",
+    "Life shutdown cancels worker groups cooperatively before closing collectors, observes every worker, and publishes stopped snapshots after cancellation."
   ],
   "nodes": [
     {

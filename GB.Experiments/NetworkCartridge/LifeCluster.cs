@@ -148,10 +148,12 @@ public static class LifeCluster
         finally
         {
             lifetime.Cancel();
-            foreach (var listener in listeners) listener.Dispose();
+            // Request cooperative cancellation before closing TCP collectors. Otherwise an
+            // EOF can reach a guest first and turn a user stop into a transport failure.
             if (pool != null) await pool.DisposeAsync();
             // Observe every worker before disposing the shared cancellation source.
             try { await Task.WhenAll(nodes); } catch { /* original protocol/cancellation exception is preserved */ }
+            foreach (var listener in listeners) listener.Dispose();
         }
     }
 
