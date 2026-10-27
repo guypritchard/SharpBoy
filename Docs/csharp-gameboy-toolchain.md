@@ -95,7 +95,7 @@ On success the CLI prints paths to `<base>.gb`, `<base>.asm` (combined startup a
 
 Failure diagnostics: `GBC001` source read, `GBC003` arguments/options, `GBC004` IR, `GBC008` invalid MBC1 manifest, `GBL` subset, `GBB` backend (including `GBB007` invalid bank-copy span or unsafe MBC1 raw write), `GBT001` missing tool, `GBT002` wrong version, `GBT003` tool/timeout/assembly/link/fix process (includes stderr and retained work path when requested), `GBR001`-`GBR008` invalid ROM/header/checksum/linker symbols/asset bytes, `GBC005` build I/O/missing tool artifact, `GBC006` publication, `GBC007` cleanup warning/context. Roslyn diagnostics include source/line/column. Framework references allow semantic binding only, not calls into host libraries. SDK `GameMemory.WriteByte(ushort, byte)` is a resolved intrinsic; calling its host body throws, whereas the compiler emits native SM83 writes.
 
-The additional `GBR008` validator diagnostic detects background asset-content mismatch. `GBR007` checks critical global symbols (including display helpers and fixed bank-1 assets), ignoring RGBDS scoped local labels. `GameDisplay.InitializeBackground()`, `WaitForNextVBlank()` and `SetScroll(byte, byte)` are SDK symbol-verified native operations; host bodies throw. The LCD helpers and generated code continue the explicitly anchored ROM0 `$0150` section; no helper may first-fit into unused vector/header gaps. Bank-1 ROMX holds 64 bytes of tile data followed by the 1024-byte map; see the [sample and encoding](../Samples/ScrollingBackground/README.md). The [independent PyBoy 2.6.0 procedure](csharp-gameboy-independent-validation.md) verifies both the semantic fixture and scrolling sample; hardware remains unverified.
+The additional `GBR008` validator diagnostic detects background asset-content mismatch. `GBR007` checks critical global symbols (including display helpers and fixed bank-1 assets), ignoring RGBDS scoped local labels. `GameDisplay.InitializeBackground()`, `WaitForNextVBlank()` and `SetScroll(byte, byte)` are SDK symbol-verified native operations; host bodies throw. The LCD helpers and generated code continue the explicitly anchored ROM0 `$0150` section; no helper may first-fit into unused vector/header gaps. Bank-1 ROMX holds 16..4096 bytes of tile data followed by the 1024-byte map; see the [sample and encoding](../Samples/ScrollingBackground/README.md). The [independent PyBoy 2.6.0 procedure](csharp-gameboy-independent-validation.md) verifies both the semantic fixture and scrolling sample; hardware remains unverified.
 
 ## Explicit background and sprite inputs
 
@@ -149,3 +149,17 @@ dotnet run --project GB.Compiler.Cli -c Release -- --rgbds-bin $bin --out artifa
 ```
 
 `--mbc1-banks 4|8|16|32` opts into no-RAM MBC1 type `$01`, header ROM-size codes `$01|$02|$03|$04` (64/128/256/512 KiB), RAM-size `$00`; without it the default stays 32 KiB ROM-only type `$00`. Repeat `--banked-asset NAME:BANK:$ADDRESS:FILE` for each nonempty binary: decimal physical bank 2 through banks−1, hexadecimal (`$4000`) or decimal CPU ROMX address `$4000-$7FFF`, unique ASCII identifier and no overlap or bank crossing. `--banked-asset` without `--mbc1-banks` is invalid (`GBC008`); invalid manifests also yield `GBC008`. The CLI additionally accepts decimal addresses. All asset files are read and hashed at build time. The build publishes `banked.gb`, `banked.asm`, `banked.map`, `banked.sym`, `banked.memory.txt` together; the ROM's size matches the chosen bank count. The memory report identifies cartridge header/capacity, per-bank asset/guard usage and free space, and every asset's address, byte length and SHA-256. Linked asset symbols and bytes are validated, and mismatches return `GBR008` without publishing. Code and bank-copy helper stay in ROM0; display constants stay in bank 1; bank 2+ holds only explicitly declared assets. The constant-argument SDK operations copy only a span within a single declared asset to `$D000-$D7FF`, then restore the previous bank; `ReadBufferByte` reads staging. No function banking, save RAM, >32 banks, VRAM/DMA transfers, reentrancy or managed arrays; interrupts remain disabled. See the [sample](../Samples/BankedAssets/README.md) and [independent PyBoy reproduction](csharp-gameboy-independent-validation.md). Configured compiler integration tests exercise every size with real RGBDS and SharpBoy, plus a four-bank PyBoy run; CI's existing compiler test and zero-skip gate include these tests without a separate banked CLI smoke step.
+
+
+### SDK font/text and DHCP sample
+
+`--text-font` explicitly supplies the SDK's original uppercase/digit font and a blank map.
+It is mutually exclusive with explicit background assets. `GameText.Write` consumes constant
+ASCII text during compilation; `GameMemory.ReadByte` generates observable native bus reads.
+Compile `GB.Sdk/Target/GameTextNumbers.cs` alongside a game for decimal/IPv4 output.
+
+`--wram-start DECIMAL_ADDRESS` changes the beginning of compiler-owned WRAM, leaving lower bytes
+for a caller-managed mailbox. Its upper boundary remains `$E000`; stack and spill allocation
+are validated against that budget. The DHCP sample uses `49408` (`$C100`). The corresponding
+API is `RomBuildOptions.Limits = new Sm83Limits(WramStart: 0xC100, WramBytes: 0x1F00)`.
+See [the complete sample and rebuild script](../Samples/NetworkDhcp/README.md).

@@ -1,3 +1,5 @@
+using System.IO;
+using GB.Emulator.Presentation.WinForms;
 using System.Diagnostics;
 using GB.Emulator.Core;
 using GB.Emulator.Core.Win32;
@@ -8,7 +10,7 @@ namespace GB.Emulator.Windows;
 internal sealed class PlayerForm : Form
 {
     private readonly EmulationHost host;
-    private readonly ScreenControl screen = new() { Dock = DockStyle.Fill };
+    private readonly ScreenControl screen = new() { Dock = DockStyle.Fill, Text = "SHARPBOY\n\nOpen a ROM to play\nCtrl+O  \u00b7  or drop a .gb file here" };
     private readonly MenuStrip menu = new();
     private readonly StatusStrip status = new();
     private readonly ToolStripStatusLabel stateLabel = new() { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
@@ -84,6 +86,7 @@ internal sealed class PlayerForm : Form
         this.muteItem.CheckedChanged += (_, _) => this.host.Muted = this.muteItem.Checked;
         emulation.DropDownItems.AddRange([this.pauseItem, this.resetItem, new ToolStripSeparator(), this.muteItem, this.inactiveItem]);
         var view = new ToolStripMenuItem("&View");
+        var desktop = new ToolStripMenuItem("3D &desktop Game Boy…", null, (_, _) => this.OpenPresentation("--desktop", true));
         this.integerItem.CheckedChanged += (_, _) => this.screen.IntegerScaling = this.integerItem.Checked;
         var scale = new ToolStripMenuItem("Window &size");
         foreach (int factor in new[] { 2, 3, 4, 5, 6 })
@@ -93,7 +96,7 @@ internal sealed class PlayerForm : Form
         statisticsItem.CheckedChanged += (_, _) => this.statisticsLabel.Visible = statisticsItem.Checked;
         var inspect = new ToolStripMenuItem("&Inspector…", null, (_, _) => this.ShowInspector())
             { ShortcutKeys = Keys.Control | Keys.I };
-        view.DropDownItems.AddRange([scale, this.integerItem, this.fullscreenItem, new ToolStripSeparator(), statisticsItem, inspect]);
+        view.DropDownItems.AddRange([desktop, new ToolStripSeparator(), scale, this.integerItem, this.fullscreenItem, new ToolStripSeparator(), statisticsItem, inspect]);
         var help = new ToolStripMenuItem("&Help");
         help.DropDownItems.Add("&Controls", null, (_, _) => MessageBox.Show(this,
             "D-pad: Arrow keys\nA / B: Z / X\nStart / Select: Enter / Space\n\nOpen: Ctrl+O\nPause / resume: Ctrl+P\nReset: Ctrl+R\nInspector: Ctrl+I\nFullscreen: F11 (Esc to leave)\n\nResize the window to scale the display.\nInteger scaling preserves crisp, evenly sized pixels.",
@@ -101,6 +104,23 @@ internal sealed class PlayerForm : Form
         this.menu.Items.AddRange([file, emulation, view, help]);
         this.menu.MenuActivate += (_, _) => this.host.SetSuspended(PauseReason.Menu, true);
         this.menu.MenuDeactivate += (_, _) => { if (this.host.State != EmulationState.Disposed) this.host.SetSuspended(PauseReason.Menu, false); };
+    }
+
+    private void OpenPresentation(string mode, bool includeCartridge)
+    {
+        var start = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "GB.Emulator.Windows.exe")) { UseShellExecute = true };
+        start.ArgumentList.Add(mode);
+        if (includeCartridge && this.host.Inspection.CaptureCartridge()?.Source is string source) start.ArgumentList.Add(source);
+        try
+        {
+            using var process = Process.Start(start) ?? throw new InvalidOperationException("The selected presentation did not start.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Could not open the selected view", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        this.Close();
     }
 
     private async Task ChooseRomAsync()

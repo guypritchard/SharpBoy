@@ -114,6 +114,9 @@ jobs:
           dotnet test GB.Emulator.Windows.Tests/GB.Emulator.Windows.Tests.csproj -c Release --no-build @versionArgs --logger 'trx;LogFileName=windows.trx' --results-directory $results
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & Tools/ci/Assert-TrxNoSkipped.ps1 (Join-Path $results 'windows.trx')
+          dotnet test GB.Experiments.Windows.Tests/GB.Experiments.Windows.Tests.csproj -c Release --no-build @versionArgs --logger 'trx;LogFileName=experiments-windows.trx' --results-directory $results
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & Tools/ci/Assert-TrxNoSkipped.ps1 (Join-Path $results 'experiments-windows.trx')
 
       - name: Smoke-build C# scrolling background ROM
         shell: pwsh
@@ -145,6 +148,8 @@ jobs:
           foreach ($runtime in @('win-x64', 'win-arm64')) {
             dotnet publish GB.Emulator.Windows/GB.Emulator.Windows.csproj -c Release -r $runtime --self-contained true -o "artifacts/windows/$runtime" @versionArgs
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            dotnet publish GB.Experiments.Windows/GB.Experiments.Windows.csproj -c Release -r $runtime --self-contained true -o "artifacts/experiments-windows/$runtime" @versionArgs
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             dotnet publish GB.Emulator.Console/GB.Emulator.Console.csproj -c Release -r $runtime --self-contained true -o "artifacts/console/$runtime" @versionArgs
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             dotnet publish GB.Debugger/GB.Debugger.csproj -c Release -r $runtime --self-contained true -o "artifacts/debugger/$runtime" @versionArgs
@@ -156,6 +161,13 @@ jobs:
         with:
           name: windows-${{ steps.version.outputs.semVer }}-windows
           path: artifacts/windows/
+          if-no-files-found: error
+
+      - name: Upload Windows experiments
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiments-windows-${{ steps.version.outputs.semVer }}-windows
+          path: artifacts/experiments-windows/
           if-no-files-found: error
 
       - name: Upload console emulator
@@ -186,6 +198,12 @@ jobs:
           name: windows-${{ needs.build.outputs.version }}-windows
           path: artifacts/windows/
 
+      - name: Download Windows experiments
+        uses: actions/download-artifact@v4
+        with:
+          name: experiments-windows-${{ needs.build.outputs.version }}-windows
+          path: artifacts/experiments-windows/
+
       - name: Download console emulator
         uses: actions/download-artifact@v4
         with:
@@ -204,7 +222,7 @@ jobs:
           BUILD_VERSION: ${{ needs.build.outputs.version }}
         run: |
           New-Item -ItemType Directory -Path release-assets -Force | Out-Null
-          foreach ($app in @('windows', 'console', 'debugger')) {
+          foreach ($app in @('windows', 'experiments-windows', 'console', 'debugger')) {
             foreach ($runtime in @('win-x64', 'win-arm64')) {
               Compress-Archive -Path "artifacts/$app/$runtime/*" -DestinationPath "release-assets/$app-$env:BUILD_VERSION-$runtime.zip"
             }

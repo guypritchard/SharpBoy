@@ -4,7 +4,7 @@ namespace GB.Sdk;
 public static class GameDisplay
 {
     /// <summary>Load caller-supplied background assets with the LCD safely disabled; enable BG last.</summary>
-    /// <remarks>The build must supply 64 bytes of DMG 2bpp tiles and a 1024-byte map with IDs 0..3
+    /// <remarks>The build must supply 16..4096 bytes (1..256 whole DMG 2bpp tiles) and a 1024-byte map with IDs within the supplied tile bank
     /// through GameAssetBundle or --background-tiles and --background-map. There is no default artwork.</remarks>
     [GameIntrinsic]
     public static void InitializeBackground() => throw new PlatformNotSupportedException("Game Boy target only.");

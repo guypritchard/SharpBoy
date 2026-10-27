@@ -24,16 +24,19 @@ public sealed class GameAssetBundle(byte[]? backgroundTiles = null, byte[]? back
             issues.Add("GBC009: GameSprites.Initialize requires --sprite-tiles (or GameAssetBundle sprite input).");
         if (!layout.UsesSpriteInit && !SpriteTiles.IsDefault)
             issues.Add("GBC009: --sprite-tiles is unused without GameSprites.Initialize.");
-        if (!BackgroundTiles.IsDefault && BackgroundTiles.Length != 64)
-            issues.Add($"GBC009: --background-tiles requires exactly 64 bytes (four 8x8 DMG 2bpp tiles); got {BackgroundTiles.Length}.");
+        if (!BackgroundTiles.IsDefault && (BackgroundTiles.Length < 16 || BackgroundTiles.Length > 4096 || BackgroundTiles.Length % 16 != 0))
+            issues.Add($"GBC009: --background-tiles requires 16..4096 bytes in whole 8x8 DMG 2bpp tiles; got {BackgroundTiles.Length}.");
         if (!BackgroundMap.IsDefault)
         {
             if (BackgroundMap.Length != 1024)
                 issues.Add($"GBC009: --background-map requires exactly 1024 bytes (32x32 tile IDs); got {BackgroundMap.Length}.");
-            var invalid = BackgroundMap.AsSpan().IndexOfAnyInRange((byte)4, byte.MaxValue);
+            int count = BackgroundTiles.IsDefault ? 0 : BackgroundTiles.Length / 16;
+            var invalid = Enumerable.Range(0, BackgroundMap.Length).FirstOrDefault(i => BackgroundMap[i] >= count, -1);
             if (invalid >= 0)
-                issues.Add($"GBC009: --background-map entry {invalid} references tile {BackgroundMap[invalid]}; available IDs are 0..3.");
+                issues.Add($"GBC009: --background-map entry {invalid} references tile {BackgroundMap[invalid]}; available tile count is {count}.");
         }
+        if (layout.UsesSpriteInit && !BackgroundTiles.IsDefault && BackgroundTiles.Length > 64)
+            issues.Add("GBC009: backgrounds larger than four tiles overlap the current fixed sprite tile ID 4.");
         if (!SpriteTiles.IsDefault && SpriteTiles.Length != 16)
             issues.Add($"GBC009: --sprite-tiles requires exactly 16 bytes (one 8x8 DMG 2bpp tile for tile ID 4); got {SpriteTiles.Length}.");
         return issues;

@@ -311,6 +311,18 @@ public static class GameFrontend
                     break;
                 case IInvocationOperation invocation:
                     var target = invocation.TargetMethod;
+                    if (DisplayIntrinsic.Identify(target, sdkAssembly) == DisplayIntrinsicKind.WriteText)
+                    {
+                        foreach (var argument in invocation.Arguments)
+                            if (argument.Parameter?.Ordinal == 1)
+                            {
+                                if (!argument.Value.ConstantValue.HasValue || argument.Value.ConstantValue.Value is not string text ||
+                                    text.Length > 32 || text.Any(c => c < 32 || c > 126))
+                                    Report("GBL011", "Text must be a compile-time printable ASCII literal of at most 32 characters.", argument.Syntax.GetLocation());
+                            }
+                            else CheckOperation(argument);
+                        return;
+                    }
                     if (DisplayIntrinsic.Identify(target, sdkAssembly) is DisplayIntrinsicKind.CopyToBuffer or DisplayIntrinsicKind.ReadBufferByte)
                     {
                         foreach (var argument in invocation.Arguments)

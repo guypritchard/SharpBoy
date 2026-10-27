@@ -200,7 +200,9 @@ public static class GameIrCompiler
                     break;
                 case IExpressionStatementOperation expression: Expression(expression.Operation); break;
                 case IReturnOperation ret:
-                    current.Terminate(new IrReturn(ret.ReturnedValue is null ? null : Expression(ret.ReturnedValue), At(ret)));
+                    // Expression lowering may move current to a short-circuit join block.
+                    var returned = ret.ReturnedValue is null ? null : Expression(ret.ReturnedValue);
+                    current.Terminate(new IrReturn(returned, At(ret)));
                     break;
                 case IConditionalOperation conditional when conditional.Syntax is IfStatementSyntax:
                     var thenBlock = Block("then", conditional.WhenTrue.Syntax.GetLocation());
@@ -374,6 +376,15 @@ public static class GameIrCompiler
                     var sdk = (IAssemblySymbol)compilation.GetAssemblyOrModuleSymbol(compilation.References.OfType<PortableExecutableReference>()
                         .Single(r => string.Equals(r.FilePath, typeof(GameMemory).Assembly.Location, StringComparison.OrdinalIgnoreCase)))!;
                     var intrinsic = DisplayIntrinsic.Identify(invocation.TargetMethod, sdk);
+                    if (intrinsic == DisplayIntrinsicKind.ReadByte)
+                        return Emit(new IrReadByte(Value(IrType.U8), Expression(invocation.Arguments.Single().Value), location));
+                    if (intrinsic == DisplayIntrinsicKind.WriteText)
+                    {
+                        var address = Expression(invocation.Arguments.Single(a => a.Parameter!.Ordinal == 0).Value);
+                        var text = (string)invocation.Arguments.Single(a => a.Parameter!.Ordinal == 1).Value.ConstantValue.Value!;
+                        current.Instructions.Add(new IrText(address, text, location));
+                        return null!;
+                    }
                     if (intrinsic == DisplayIntrinsicKind.CopyToBuffer)
                     {
                         var values = new int[4];

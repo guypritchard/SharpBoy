@@ -39,7 +39,7 @@ gb_display_init::
     ; LCD off: transfer source bytes from fixed ROM bank 1 to VRAM.
     ld hl, gb_bg_tiles
     ld de, $8000
-    ld bc, 64
+    ld bc, gb_bg_map - gb_bg_tiles
 .tiles:
     ld a, [hl+]
     ld [de], a

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GB.Emulator.Hosting\GB.Emulator.Hosting.csproj" />
+    <InternalsVisibleTo Include="GB.Emulator.Windows.Tests" />
+  </ItemGroup>
+</Project>

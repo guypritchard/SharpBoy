@@ -45,7 +45,7 @@ public sealed class MemoryLayout(
                     .ToString("X" + allocation.Bytes * 2, System.Globalization.CultureInfo.InvariantCulture) : ""));
         text.AppendLine($"CPU stack ${StackBottom:X4}-${StackTop - 1:X4} (top ${StackTop:X4}, reserved {StackReserved}, required {StackRequired}, headroom {StackHeadroom})");
         text.AppendLine($"ROM0 generated code {CodeBytes} bytes (header/startup/linking not included)");
-        if (UsesDisplay) text.AppendLine("Native LCD helpers in ROM0; bank 1 background requires build-supplied 64-byte tiles and 1024-byte map only when initialized");
+        if (UsesDisplay) text.AppendLine("Native LCD helpers in ROM0; bank 1 background requires build-supplied 1..256 tiles and 1024-byte map only when initialized");
         if (UsesSprites) text.AppendLine("Native OBJ helpers in ROM0; bank 1 tile requires build-supplied 16 bytes only when initialized; no DMA");
         if (UsesBanking) text.AppendLine("MBC1 ROMX asset staging $D000-$D7FF (2048 bytes); mapper state $C000; copy helper in ROM0");
         return text.ToString();
@@ -308,7 +308,84 @@ public static class Sm83Backend
             text.Append("    ").AppendLine(line);
             CodeBytes += size;
         }
-        private void Load(object value, int offset = 0) => Line($"ld a, [{Hex(At(value, offset))}]", 3);
+        private readonly Dictionary<IrValue, IrInstruction> definitions = module.Functions
+            .SelectMany(f => f.Blocks).SelectMany(b => b.Instructions).Where(i => i.Result is not null)
+            .ToDictionary(i => i.Result!, (IEqualityComparer<IrValue>)ReferenceEqualityComparer.Instance);
+        private readonly Dictionary<IrValue, int> demands = new(ReferenceEqualityComparer.Instance);
+        private int Demand(IrValue value) => demands.GetValueOrDefault(value);
+        // Materialize only bytes that reach an observable use. Low-byte arithmetic is
+        // closed under unchecked add/subtract/bitwise operations; carry still runs low to high.
+        private void AnalyzeDemands()
+        {
+            void Need(IrValue value, int bytes)
+            {
+                if (Demand(value) >= bytes) return;
+                demands[value] = bytes;
+                switch (definitions[value])
+                {
+                    case IrConvert c:
+                        Need(c.Operand, c.Kind == IrConversionKind.SignExtend ? Width(c.Operand.Type) : Math.Min(bytes, Width(c.Operand.Type)));
+                        break;
+                    case IrBinary b: Need(b.Left, bytes); Need(b.Right, bytes); break;
+                    case IrUnary u: Need(u.Operand, bytes); break;
+                }
+            }
+            foreach (var function in module.Functions.Where(reachable.Contains))
+                foreach (var block in function.Blocks)
+                {
+                    foreach (var instruction in block.Instructions)
+                        switch (instruction)
+                        {
+                            case IrStore i: Need(i.Value, Width(i.Value.Type)); break;
+                            case IrCall i:
+                                foreach (var argument in i.Arguments) Need(argument, Width(argument.Type));
+                                break;
+                            case IrCompare i:
+                                int width = CompareWidth(i);
+                                Need(i.Left, width); Need(i.Right, width);
+                                break;
+                            case IrWriteByte i: Need(i.Address, 2); Need(i.Value, 1); break;
+                            case IrReadByte i: Need(i.Address, 2); break;
+                            case IrText i: Need(i.Address, 2); break;
+                            case IrDisplay i: foreach (var argument in i.Arguments) Need(argument, Width(argument.Type)); break;
+                            case IrSprite i: foreach (var argument in i.Coordinates) Need(argument, 1); break;
+                        }
+                    if (block.Terminator is IrConditionalBranch branch) Need(branch.Condition, 1);
+                    if (block.Terminator is IrReturn { Value: { } value }) Need(value, Width(value.Type));
+                }
+        }
+        private int UnsignedWidth(IrValue value)
+        {
+            if (value.Type is IrType.U8 or IrType.Bool) return 1;
+            if (value.Type == IrType.U16) return 2;
+            return definitions[value] switch
+            {
+                IrLiteral { Bits: >= 0 and <= 255 } => 1,
+                IrLiteral { Bits: >= 0 and <= 65535 } => 2,
+                IrConvert { Kind: IrConversionKind.ZeroExtend } c => UnsignedWidth(c.Operand),
+                _ => 4
+            };
+        }
+        private int CompareWidth(IrCompare compare) => compare.Left.Type == IrType.I32
+            ? Math.Max(UnsignedWidth(compare.Left), UnsignedWidth(compare.Right)) : Width(compare.Left.Type);
+        private void Load(object value, int offset = 0)
+        {
+            if (value is IrValue v)
+            {
+                if (definitions[v] is IrLiteral literal)
+                {
+                    Line($"ld a, ${(byte)(literal.Bits >> (offset * 8)):X2}", 2);
+                    return;
+                }
+                if (definitions[v] is IrConvert c && c.Kind != IrConversionKind.SignExtend)
+                {
+                    if (offset < Width(c.Operand.Type)) Load(c.Operand, offset);
+                    else Line("ld a, $00", 2); // LD preserves carry/borrow for multi-byte arithmetic.
+                    return;
+                }
+            }
+            Line($"ld a, [{Hex(At(value, offset))}]", 3);
+        }
         private void Store(object value, int offset = 0) => Line($"ld [{Hex(At(value, offset))}], a", 3);
         private void Jump(string label) => Line($"jp {label}", 3);
         private void Copy(object from, object to, int count)
@@ -318,6 +395,7 @@ public static class Sm83Backend
 
         public void Generate()
         {
+            AnalyzeDemands();
             text.AppendLine("; Preserve the anchored ROM0[$0150] startup section across WRAM declarations.");
             text.AppendLine("PUSHS");
             void Section(string title, int address) => text.AppendLine(address < 0xD000
@@ -381,18 +459,13 @@ public static class Sm83Backend
         {
             switch (instruction)
             {
-                case IrLiteral literal:
-                    for (int i = 0; i < Width(literal.Value.Type); i++)
-                    {
-                        Line($"ld a, ${(byte)(literal.Bits >> (i * 8)):X2}", 2);
-                        Store(literal.Value, i);
-                    }
-                    break;
-                case IrLoad load: Copy((object?)load.Slot ?? load.Global!, load.Value, Width(load.Value.Type)); break;
+                case IrLiteral: break; // loaded as immediates at each use
+                case IrLoad load: Copy((object?)load.Slot ?? load.Global!, load.Value, Demand(load.Value)); break;
                 case IrStore store: Copy(store.Value, (object?)store.Slot ?? store.Global!, Width(store.Value.Type)); break;
                 case IrConvert convert:
+                    if (convert.Kind != IrConversionKind.SignExtend) break;
                     var from = Width(convert.Operand.Type);
-                    var to = Width(convert.Value.Type);
+                    var to = Demand(convert.Value);
                     Copy(convert.Operand, convert.Value, Math.Min(from, to));
                     if (to > from)
                     {
@@ -413,7 +486,7 @@ public static class Sm83Backend
                         Line("xor $01", 2);
                         Store(unary.Value);
                     }
-                    else for (int i = 0; i < Width(unary.Value.Type); i++)
+                    else for (int i = 0; i < Demand(unary.Value); i++)
                     {
                         Load(unary.Operand, i);
                         switch (unary.Kind)
@@ -431,7 +504,7 @@ public static class Sm83Backend
                     }
                     break;
                 case IrBinary binary:
-                    for (int i = 0; i < Width(binary.Value.Type); i++)
+                    for (int i = 0; i < Demand(binary.Value); i++)
                     {
                         Load(binary.Right, i);
                         Line("ld b, a", 1);
@@ -452,6 +525,44 @@ public static class Sm83Backend
                         Copy(call.Arguments[i], call.Target.Parameters[i], Width(call.Arguments[i].Type));
                     JumpCall(call.Target);
                     if (call.Value is not null) Copy(call.Target, call.Value, Width(call.Value.Type));
+                    break;
+                case IrReadByte read:
+                    Load(read.Address);
+                    Line("ld l, a", 1);
+                    Load(read.Address, 1);
+                    Line("ld h, a", 1);
+                    Line("ld a, [hl]", 1);
+                    Store(read.Value);
+                    break;
+                case IrText text:
+                    if (text.Text.Length == 0) break;
+                    var textDone = Next("text_done");
+                    var textSafe = Next("text_safe");
+                    Load(text.Address);
+                    Line("ld l, a", 1);
+                    Load(text.Address, 1);
+                    Line("ld h, a", 1);
+                    // Text can only write the $9800 background map. Reject the entire
+                    // write if its range leaves that map, including dynamic addresses.
+                    Line("cp $98", 2);
+                    Line($"jp c, {textDone}", 3);
+                    Line("cp $9C", 2);
+                    Line($"jp nc, {textDone}", 3);
+                    if (text.Text.Length > 1)
+                    {
+                        Line("cp $9B", 2);
+                        Line($"jp nz, {textSafe}", 3);
+                        Line("ld a, l", 1);
+                        Line($"cp ${257 - text.Text.Length:X2}", 2);
+                        Line($"jp nc, {textDone}", 3);
+                        Label(textSafe);
+                    }
+                    foreach (char character in text.Text)
+                    {
+                        Line($"ld a, ${((byte)character):X2}", 2);
+                        Line("ld [hl+], a", 1);
+                    }
+                    Label(textDone);
                     break;
                 case IrWriteByte write:
                     Load(write.Address);
@@ -524,13 +635,15 @@ public static class Sm83Backend
             var less = Next("less");
             var greater = Next("greater");
             var done = Next("done");
-            for (int i = Width(compare.Left.Type) - 1; i >= 0; i--)
+            int width = CompareWidth(compare);
+            bool signed = compare.Signed && width == Width(compare.Left.Type);
+            for (int i = width - 1; i >= 0; i--)
             {
                 Load(compare.Right, i);
-                if (compare.Signed && i == Width(compare.Left.Type) - 1) Line("xor $80", 2);
+                if (signed && i == width - 1) Line("xor $80", 2);
                 Line("ld b, a", 1);
                 Load(compare.Left, i);
-                if (compare.Signed && i == Width(compare.Left.Type) - 1) Line("xor $80", 2);
+                if (signed && i == width - 1) Line("xor $80", 2);
                 Line("cp b", 1);
                 Line($"jp nz, {different}", 3);
             }
