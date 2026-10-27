@@ -157,7 +157,16 @@ public class DesktopPlayerTests
             Assert.AreEqual(GameBoyButton.Start, DesktopWindow.MapKey(Key.Enter));
             window.Scene.SetView(1080, 500); Assert.AreEqual(0d, window.Scene.Yaw); Assert.AreEqual(85d, window.Scene.Pitch);
             window.Scene.ResetView(); Assert.AreEqual(-14d, window.Scene.Yaw);
-            window.SetScale(1.2); Assert.IsGreaterThan(640d, window.Width);
+            // A short CI desktop can cap the enlarged window below its nominal 640px width.
+            // Compare with the minimum size and verify the actual desktop-fitting contract.
+            window.SetScale(.4);
+            double minimumWidth = window.Width;
+            window.SetScale(1.2);
+            Assert.IsGreaterThan(minimumWidth, window.Width);
+            // Native window dimensions can round by one device-independent pixel.
+            Assert.IsLessThanOrEqualTo(SystemParameters.WorkArea.Width + 1, window.Width);
+            Assert.IsLessThanOrEqualTo(SystemParameters.WorkArea.Height + 1, window.Height);
+            Assert.AreEqual(window.Width * 780 / 640, window.Height, 1);
         });
     }
 
