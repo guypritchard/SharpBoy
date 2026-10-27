@@ -82,8 +82,9 @@ LAN collector ports, Npcap, DHCP lease, or extra service specific to SharpBoy.
    for usernames, nonstandard SSH ports, identity files and jump hosts. Remote SSH servers must allow
    remote TCP forwarding and exec sessions. Confirm with `ssh gameboy-a C:/SharpBoy/GB.Experiments.exe --life-worker-group`;
    the worker waits for configuration, so Ctrl+C exits this check. The coordinator uses batch mode,
-   strict host-key checking, forwarding-failure detection and keepalives. It never prompts for passwords
-   or accepts unknown host keys automatically. Only the SSH server port needs to be reachable.
+   strict host-key checking, forwarding-failure detection and keepalives by default. Only the SSH
+   server port needs to be reachable. SSH config can route through a jump host to an existing
+   container SSH service; the worker and its reverse-forwarded sockets then live in that container.
 
 3. Copy [hosts.example.json](../Samples/LifeCluster/hosts.example.json), then edit its destinations,
    executable paths and node counts. The example assigns **4 local + 6 Windows + 6 Linux nodes** to a
@@ -105,6 +106,20 @@ LAN collector ports, Npcap, DHCP lease, or extra service specific to SharpBoy.
    The visual lab also has a **Hosts JSON** field under world configuration. Apply retains the chosen
    host file. Optional top-level `SshConfigFile` selects a dedicated OpenSSH config; relative paths are
    resolved beside the host JSON. Without it, OpenSSH uses its ordinary user configuration.
+
+For password-only installations, set optional top-level `PasswordEnvironmentVariable` to the **name**
+of an environment variable populated by your local secret provider, for example `LIFE_SSH_PASSWORD`.
+The coordinator gives the credential only to the SSH child's environment and an apphost `SSH_ASKPASS`
+callback. It supplies no password command-line argument, writes no credential file and does not send
+the credential to native local workers or the ROM. Both Windows and Linux apphosts support this mode;
+the full `GB.Experiments` apphost deployment must be present. An SSH jump process inherits the callback,
+which supports a gateway and destination using the same password. Default key-based profiles still
+use batch mode and need no password environment variable. Password mode does not require sshpass.
+
+`AcceptUnknownHostKeys: true` explicitly disables host-key checking and uses a null known-hosts file
+for that coordinator connection. Leave it absent/false for the default strict policy. Jump-host
+verification is controlled separately by its SSH config. Deployment-specific profiles and launchers
+should remain outside source control; the repository example contains no credentials.
 
 Inspectors identify the actual machine hostname and worker PID. Reports include `Metrics.Locations`
 for local/remote host and PID pairs, while `WorkerProcessIds` retains local native worker PIDs only;
@@ -132,9 +147,18 @@ It compares six native nodes across two SSH aliases plus local placement with a 
 checks remote process identities/cleanup, then drops a connection and verifies barrier failure and
 worker shutdown. Keys/config/reports remain in ignored `artifacts/life-cluster/ssh-smoke`; user SSH
 files, services and firewall rules are untouched. On Linux the venv interpreter is `bin/python`.
-This verifies encrypted exec/forwarding and process lifetimes on one machine; it does not claim a
-physical multi-host LAN run. The normal .NET suite also covers placement validation, local grouped
-equivalence, firmware mismatch and cancellation.
+This verifies encrypted exec/forwarding, key/password authentication and process lifetimes on one
+machine. The normal .NET suite also covers placement validation, local grouped equivalence, missing
+password configuration, firmware mismatch and cancellation.
+
+On 2026-10-27, a physical Windows-PC/Linux-NAS run also passed: eight native Game Boys on each host,
+eight generations, 12,288 cells. The Windows visual lab retained all native LCDs and machine inspection;
+all returned cells were independently validated and the final SHA-256 matched a separate all-local
+run (`CD191103CF939A84BEAD877326E77ED03D39DCBA1AFE5DB8D7CE07B37D45089F`). The NAS worker ran at lower
+priority inside its existing development container via a Proxmox SSH jump, with password-only
+authentication. Worker processes were confirmed absent after completion. Deployment-specific
+configuration, launchers, screenshots and reports remain in ignored artifacts; this was a correctness
+test, not a controlled speedup benchmark.
 
 ## State, transport and scheduling
 

@@ -17,6 +17,7 @@ public class LifeHostTests
     [TestMethod]
     public void PlacementRejectsWrongCountsPortCollisionsAndShellSyntax()
     {
+        Assert.ThrowsExactly<ArgumentException>(() => new LifeHostConfiguration([new(null, null, 4)], PasswordEnvironmentVariable: "not an environment name").Validate(4));
         new LifeHostConfiguration([new(null, null, 2), new("gb-two", "/opt/sharpboy/GB.Experiments", 2)]).Validate(4);
         foreach (var hosts in new LifeHost[][]
         {
@@ -67,6 +68,22 @@ public class LifeHostTests
             Assert.AreEqual(Path.Combine(Path.GetDirectoryName(file)!, "ssh.config"), config.SshConfigFile);
             File.WriteAllText(file, """{"hosts":[{"nodes":4,"proceses":2}]}""");
             Assert.ThrowsExactly<JsonException>(() => LifeHostConfiguration.Load(file, 4));
+        }
+        finally { File.Delete(file); }
+    }
+
+    [TestMethod]
+    public async Task MissingPasswordEnvironmentFailsWithoutLaunchingOrWaitingForAWorker()
+    {
+        string file = Path.GetTempFileName();
+        try
+        {
+            string variable = "LIFE_TEST_UNSET_" + Guid.NewGuid().ToString("N");
+            File.WriteAllText(file, JsonSerializer.Serialize(new LifeHostConfiguration(
+                [new("example.invalid", "/opt/worker", 1)], PasswordEnvironmentVariable: variable)));
+            var error = await Assert.ThrowsExactlyAsync<ArgumentException>(async () =>
+                await LifeCluster.RunAsync(new(1, 1, 1, 0, HostsFile: file)).WaitAsync(TimeSpan.FromSeconds(10)));
+            StringAssert.Contains(error.Message, "password environment variable is not set");
         }
         finally { File.Delete(file); }
     }

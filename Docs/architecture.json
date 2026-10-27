@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "Working tree on 4995032af6b6b6f8853068cc962f4b96412e78bf; pre-architecture manifest 02af4c38ab470a2ca0ea4d46c0ac6374cc14fb6f47434810313b9c03e50b883f",
+  "source": "Working tree on 402ee65b83a9db36ac3b731a871fe3d11f5586e5; pre-documentation manifest 78bae11f8f1b73b88c5df2e2711767b7fbaf54a82ac5b079b4e70fe45a536ebd",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
@@ -27,7 +27,8 @@
     "GB.Emulator.Windows owns regular/3D ROM playback only; it has no experiment reference, menu items or launch modes. GB.Experiments.Windows owns launcher, DHCP and WPF labs, with a separate test project and published ZIP. Both front ends reuse GB.Emulator.Presentation.WinForms for LCD painting; neither references the other executable.",
     "Life shutdown cancels worker groups cooperatively before closing collectors, observes every worker, and publishes stopped snapshots after cancellation.",
     "Life host JSON places bounded groups locally or over OpenSSH; reverse forwards keep both cartridge endpoints loopback-only. Cells use forwarded TCP channels; detached frames/inspection/control use the exec channel. Worker-side samples identify host/PID. Explicit drained events precede collector closure and SSH exit.",
-    "Remote deployment and SSH key/known-host provisioning are operator responsibilities. Real SSH exec, encrypted forwarding, native equivalence and transport-loss cleanup are tested on loopback; physical multi-host LAN execution has not been verified in this workspace."
+    "Remote deployment and SSH key/known-host provisioning are operator responsibilities. Real SSH exec, encrypted forwarding, native equivalence and transport-loss cleanup are tested on loopback; a physical Windows/Linux-NAS 8+8-node visual run passed eight generations with a matching local checksum and clean worker exit.",
+    "Optional password-environment authentication uses the GB.Experiments apphost as a noninteractive SSH_ASKPASS callback. Credentials stay outside JSON, command arguments and guest machines. Strict host-key checking remains default; deployment-specific opt-out is explicit. SSH config may reach a container through a gateway."
   ],
   "nodes": [
     {
@@ -956,15 +957,17 @@
       "role": "Executes remote workers and encrypts TCP forwards",
       "boundary": "OpenSSH client and remote SSH server",
       "contracts": [
-        "Key authentication and known host keys",
+        "Key or opt-in password authentication",
         "Loopback reverse TCP forwards",
         "Exec channel carries control / inspection"
       ],
       "files": [
-        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs"
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs",
+        "GB.Experiments/Program.cs"
       ],
       "evidence": [
-        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: CreateSshStart"
+        "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: CreateSshStart",
+        "GB.Experiments/Program.cs: GB_LIFE_ASKPASS callback; LifeHostConfiguration.CreateSshStart: SSH child environment"
       ],
       "confidence": "high",
       "row": 8,

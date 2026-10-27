@@ -7,7 +7,8 @@ namespace GB.Experiments.NetworkCartridge;
 /// <summary>Explicit placement. A null SSH destination keeps a group on the coordinator.</summary>
 public sealed record LifeHost(string? Destination, string? Executable, int Nodes, int Processes = 1, int FirstPort = 20000);
 
-public sealed record LifeHostConfiguration(LifeHost[] Hosts, string? SshConfigFile = null)
+public sealed record LifeHostConfiguration(LifeHost[] Hosts, string? SshConfigFile = null,
+    string? PasswordEnvironmentVariable = null, bool AcceptUnknownHostKeys = false)
 {
     public static LifeHostConfiguration Load(string path, int workers)
     {
@@ -20,6 +21,8 @@ public sealed record LifeHostConfiguration(LifeHost[] Hosts, string? SshConfigFi
 
     public void Validate(int workers)
     {
+        if (PasswordEnvironmentVariable != null && !Regex.IsMatch(PasswordEnvironmentVariable, @"\A[A-Za-z_][A-Za-z0-9_]*\z"))
+            throw new ArgumentException("Specify an environment variable name for the SSH password, never a password value.");
         if (Hosts == null || Hosts.Length is < 1 or > 32 || Hosts.Any(h => h == null))
             throw new ArgumentException("Specify 1-32 Life hosts.");
         if (Hosts.Any(h => h.Nodes is < 1 or > 1000 || h.Processes < 1 || h.Processes > h.Nodes) ||
@@ -46,12 +49,33 @@ public sealed record LifeHostConfiguration(LifeHost[] Hosts, string? SshConfigFi
         }
     }
 
-    internal static ProcessStartInfo CreateSshStart(LifeHost host, LifeWorkerAssignment[] assignments, int offset, string? configFile)
+    internal static ProcessStartInfo CreateSshStart(LifeHost host, LifeWorkerAssignment[] assignments, int offset, LifeHostConfiguration? configuration)
     {
         var start = new ProcessStartInfo("ssh")
         { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
-        if (configFile != null) { start.ArgumentList.Add("-F"); start.ArgumentList.Add(configFile); }
-        foreach (string arg in new[] { "-T", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes", "-o", "ExitOnForwardFailure=yes",
+        if (configuration?.SshConfigFile is { } configFile) { start.ArgumentList.Add("-F"); start.ArgumentList.Add(configFile); }
+        bool password = configuration?.PasswordEnvironmentVariable != null;
+        if (password)
+        {
+            string value = Environment.GetEnvironmentVariable(configuration!.PasswordEnvironmentVariable!)
+                ?? throw new ArgumentException("The configured SSH password environment variable is not set.");
+            if (value.Length == 0 || value.Contains('\n') || value.Contains('\r')) throw new ArgumentException("SSH password must be a nonempty single line.");
+            string helper = Path.ChangeExtension(typeof(LifeWorkerGroup).Assembly.Location, OperatingSystem.IsWindows() ? ".exe" : null);
+            if (!File.Exists(helper)) throw new IOException("Password authentication requires the GB.Experiments apphost beside its assembly.");
+            start.Environment.Remove(configuration.PasswordEnvironmentVariable!);
+            start.Environment["SSH_ASKPASS"] = helper;
+            start.Environment["SSH_ASKPASS_REQUIRE"] = "force";
+            start.Environment["DISPLAY"] = "sharpboy:0";
+            start.Environment["GB_LIFE_ASKPASS"] = "1";
+            start.Environment["GB_LIFE_ASKPASS_PASSWORD"] = value;
+            foreach (string arg in new[] { "-o", "PreferredAuthentications=password", "-o", "NumberOfPasswordPrompts=1" }) start.ArgumentList.Add(arg);
+        }
+        bool acceptUnknown = configuration?.AcceptUnknownHostKeys == true;
+        if (acceptUnknown)
+        {
+            start.ArgumentList.Add("-o"); start.ArgumentList.Add("UserKnownHostsFile=" + (OperatingSystem.IsWindows() ? "NUL" : "/dev/null"));
+        }
+        foreach (string arg in new[] { "-T", "-o", password ? "BatchMode=no" : "BatchMode=yes", "-o", acceptUnknown ? "StrictHostKeyChecking=no" : "StrictHostKeyChecking=yes", "-o", "ExitOnForwardFailure=yes",
             "-o", "ConnectTimeout=10", "-o", "ServerAliveInterval=5", "-o", "ServerAliveCountMax=3" }) start.ArgumentList.Add(arg);
         for (int i = 0; i < assignments.Length; i++)
         {

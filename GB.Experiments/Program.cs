@@ -1,6 +1,15 @@
 using GB.Experiments;
 using GB.Experiments.NetworkCartridge;
 
+// OpenSSH invokes this apphost as a noninteractive password callback. Credentials
+// exist only in the SSH child's environment, never command arguments or host JSON.
+if (Environment.GetEnvironmentVariable("GB_LIFE_ASKPASS") == "1")
+{
+    string? password = Environment.GetEnvironmentVariable("GB_LIFE_ASKPASS_PASSWORD");
+    if (args.Length == 0 || string.IsNullOrEmpty(password)) return 2;
+    Console.Out.WriteLine(password); return 0;
+}
+
 if (args.Length > 0 && args[0] == "--network-cartridge")
     return await NetworkCartridgeExperiment.RunAsync(args[1..]);
 

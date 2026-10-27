@@ -6,6 +6,7 @@ Run after building GB.Experiments in Release. This tests transport, not physical
 """
 import json
 import os
+import secrets
 import pathlib
 import socket
 import subprocess
@@ -42,13 +43,17 @@ def copy_bytes(read, write, finish):
 
 
 class Server(paramiko.ServerInterface):
-    def __init__(self, transport, client_key, children):
+    def __init__(self, transport, client_key, children, password):
         self.transport, self.client_key, self.children = transport, client_key, children
+        self.password = password
         self.listeners = []
         self.commands = []
 
     def get_allowed_auths(self, username):
-        return "publickey"
+        return "publickey,password"
+
+    def check_auth_password(self, username, password):
+        return paramiko.AUTH_SUCCESSFUL if username == "life-test" and password == self.password else paramiko.AUTH_FAILED
 
     def check_auth_publickey(self, username, key):
         return paramiko.AUTH_SUCCESSFUL if username == "life-test" and key == self.client_key else paramiko.AUTH_FAILED
@@ -121,6 +126,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     paramiko.util.log_to_file(str(OUT / "ssh.log"))
     host_key, client_key = paramiko.RSAKey.generate(2048), paramiko.RSAKey.generate(2048)
+    password = secrets.token_hex(32)
     client_key.write_private_key_file(str(OUT / "identity"))
     if os.name == "nt":
         user = subprocess.check_output(["whoami"], text=True).strip()
@@ -154,7 +160,7 @@ def main():
                 continue
             transport = paramiko.Transport(peer)
             transport.add_server_key(host_key)
-            server = Server(transport, client_key, children)
+            server = Server(transport, client_key, children, password)
             transports.append(transport)
             servers.append(server)
             transport.start_server(server=server)
@@ -186,9 +192,13 @@ def main():
             sock.close()
     command = [str(WORKER), "--life", "--columns", "3", "--rows", "2", "--generations", "3", "--tick-delay-ms", "0"]
     try:
-        for name, extra in [("local", []), ("distributed", ["--hosts", str(placement)])]:
+        password_placement = OUT / "password-hosts.json"
+        password_placement.write_text(json.dumps({"Hosts": hosts, "SshConfigFile": str(config), "PasswordEnvironmentVariable": "LIFE_SMOKE_PASSWORD"}))
+        env = os.environ.copy()
+        env["LIFE_SMOKE_PASSWORD"] = password
+        for name, extra in [("local", []), ("distributed", ["--hosts", str(placement)]), ("password", ["--hosts", str(password_placement)])]:
             run = subprocess.run(command + extra + ["--report", str(OUT / f"{name}.json")],
-                                 capture_output=True, text=True, timeout=60)
+                                 capture_output=True, text=True, timeout=60, env=env)
             print(run.stdout, end="")
             if run.returncode:
                 raise AssertionError(run.stderr)
@@ -196,11 +206,14 @@ def main():
         remote = json.loads((OUT / "distributed.json").read_text(encoding="utf-8-sig"))
         assert local["WorldSha256"] == remote["WorldSha256"]
         assert len(remote["Nodes"]) == 6
-        assert len(children) == 4 and sum(len(s.commands) for s in servers) == 4
+        authenticated = json.loads((OUT / "password.json").read_text(encoding="utf-8-sig"))
+        assert authenticated["WorldSha256"] == local["WorldSha256"]
+        assert len(children) == 8 and sum(len(s.commands) for s in servers) == 8
         assert sum(x["Remote"] for x in remote["Metrics"]["Locations"]) == 4
         assert all(x["ProcessId"] > 0 for x in remote["Metrics"]["Locations"])
         assert all(p.poll() == 0 for p in children), "SSH worker processes were not reaped"
         print("PASS: six native nodes, two SSH aliases plus local placement; encrypted reverse forwards; identical world SHA-256.")
+        print("PASS: noninteractive password authentication through the apphost askpass helper; no credential arguments or host JSON passwords.")
 
         # A lost SSH connection must fail the barrier, rather than silently replacing a territory.
         failure_command = command.copy()

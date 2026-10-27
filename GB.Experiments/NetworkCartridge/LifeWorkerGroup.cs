@@ -156,7 +156,7 @@ internal sealed class LifeProcessPool : IAsyncDisposable
                     int start = hostStart + offset, end = hostStart + host.Nodes * (groupIndex + 1) / host.Processes;
                     var assignments = Enumerable.Range(start, end - start).Select(i => new LifeWorkerAssignment((ushort)(i + 1), listeners[i].Port)).ToArray();
                     ushort[] selection = assignments.Where(n => onFrame != null && (wantsFrames?.Invoke(n.NodeId) ?? true)).Select(n => n.NodeId).Take(128).ToArray();
-                    var group = new Group(assignments, completions, onFrame, onSnapshot, host, placement?.SshConfigFile); pool.groups.Add(group);
+                    var group = new Group(assignments, completions, onFrame, onSnapshot, host, placement); pool.groups.Add(group);
                     await group.StartAsync(new(assignments, onFrame != null, onSnapshot != null, selection, LifeWorkerProtocol.FirmwareSha256), offset, token);
                 }
                 hostStart += host.Nodes;
@@ -206,7 +206,7 @@ internal sealed class LifeProcessPool : IAsyncDisposable
         private long peak;
         private double cpu;
         private readonly LifeHost host;
-        private readonly string? sshConfigFile;
+        private readonly LifeHostConfiguration? configuration;
         private readonly TaskCompletionSource drained = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private Exception? readFailure;
         private LifeWorkerResources? resources;
@@ -225,19 +225,21 @@ internal sealed class LifeProcessPool : IAsyncDisposable
         internal long PeakWorkingSetBytes { get { _ = WorkingSetBytes; return Remote ? resources?.PeakWorkingSetBytes ?? 0 : peak; } }
         internal double CpuSeconds { get { _ = WorkingSetBytes; return Remote ? resources?.CpuSeconds ?? 0 : cpu; } }
         internal Group(LifeWorkerAssignment[] assignments, TaskCompletionSource<NativeNodeResult>[] completions,
-            Action<ushort, VideoFrame>? onFrame, Action<NativeNodeSnapshot>? onSnapshot, LifeHost host, string? sshConfigFile)
-        { Assignments = assignments; this.completions = completions; this.onFrame = onFrame; this.onSnapshot = onSnapshot; this.host = host; this.sshConfigFile = sshConfigFile; }
+            Action<ushort, VideoFrame>? onFrame, Action<NativeNodeSnapshot>? onSnapshot, LifeHost host, LifeHostConfiguration? configuration)
+        { Assignments = assignments; this.completions = completions; this.onFrame = onFrame; this.onSnapshot = onSnapshot; this.host = host; this.configuration = configuration; }
         internal async Task StartAsync(LifeWorkerLaunch launch, int offset, CancellationToken token)
         {
             string assembly = typeof(LifeWorkerGroup).Assembly.Location;
             string appHost = Path.ChangeExtension(assembly, OperatingSystem.IsWindows() ? ".exe" : null);
             var start = new ProcessStartInfo(File.Exists(appHost) ? appHost : "dotnet")
             { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
+            if (configuration?.PasswordEnvironmentVariable is { } credential) start.Environment.Remove(credential);
             if (!File.Exists(appHost)) start.ArgumentList.Add(assembly);
             start.ArgumentList.Add("--life-worker-group");
             if (Remote)
             {
-                start = LifeHostConfiguration.CreateSshStart(host, Assignments, offset, sshConfigFile);
+                try { start = LifeHostConfiguration.CreateSshStart(host, Assignments, offset, configuration); }
+                catch { drained.TrySetResult(); throw; }
                 launch = launch with { Nodes = Assignments.Select((n, i) => n with { Port = (ushort)(host.FirstPort + offset + i) }).ToArray() };
             }
             try { process = Process.Start(start) ?? throw new IOException("Could not start a Life worker group."); }
