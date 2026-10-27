@@ -1,3 +1,4 @@
+using System.IO;
 using System.Diagnostics;
 using GB.Emulator.Core;
 using GB.Emulator.Core.Win32;
@@ -84,6 +85,22 @@ internal sealed class PlayerForm : Form
         this.muteItem.CheckedChanged += (_, _) => this.host.Muted = this.muteItem.Checked;
         emulation.DropDownItems.AddRange([this.pauseItem, this.resetItem, new ToolStripSeparator(), this.muteItem, this.inactiveItem]);
         var view = new ToolStripMenuItem("&View");
+        var desktop = new ToolStripMenuItem("3D &desktop Game Boy…", null, (_, _) =>
+        {
+            var start = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "GB.Emulator.Windows.exe")) { UseShellExecute = true };
+            start.ArgumentList.Add("--desktop");
+            if (this.host.Inspection.CaptureCartridge()?.Source is string source) start.ArgumentList.Add(source);
+            try
+            {
+                using var process = Process.Start(start) ?? throw new InvalidOperationException("The desktop player did not start.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Could not open the desktop Game Boy", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            this.Close();
+        });
         this.integerItem.CheckedChanged += (_, _) => this.screen.IntegerScaling = this.integerItem.Checked;
         var scale = new ToolStripMenuItem("Window &size");
         foreach (int factor in new[] { 2, 3, 4, 5, 6 })
@@ -93,7 +110,7 @@ internal sealed class PlayerForm : Form
         statisticsItem.CheckedChanged += (_, _) => this.statisticsLabel.Visible = statisticsItem.Checked;
         var inspect = new ToolStripMenuItem("&Inspector…", null, (_, _) => this.ShowInspector())
             { ShortcutKeys = Keys.Control | Keys.I };
-        view.DropDownItems.AddRange([scale, this.integerItem, this.fullscreenItem, new ToolStripSeparator(), statisticsItem, inspect]);
+        view.DropDownItems.AddRange([desktop, new ToolStripSeparator(), scale, this.integerItem, this.fullscreenItem, new ToolStripSeparator(), statisticsItem, inspect]);
         var help = new ToolStripMenuItem("&Help");
         help.DropDownItems.Add("&Controls", null, (_, _) => MessageBox.Show(this,
             "D-pad: Arrow keys\nA / B: Z / X\nStart / Select: Enter / Space\n\nOpen: Ctrl+O\nPause / resume: Ctrl+P\nReset: Ctrl+R\nInspector: Ctrl+I\nFullscreen: F11 (Esc to leave)\n\nResize the window to scale the display.\nInteger scaling preserves crisp, evenly sized pixels.",

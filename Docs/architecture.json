@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "Working tree on 8e1604fa36c19ce613ca1f16715715c338738048; pre-documentation manifest 86198cf5de7e693cda2f1682cb854b97a32ca1cfec83044a24068c84409f6476",
+  "source": "Working tree on f84b9d67f10050f5a54f59d7c5a41356986edd1b; desktop-only pre-diagram manifest adb2c51e1fd704c58e81f3060a5ac175e779c13c47ab98c8f74b2a4ecee37e97",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
@@ -11,7 +11,8 @@
     "Emulator overview updated for the Windows player and Win32 audio extraction; compiler/toolchain components remain outside this diagram. Windows playback and read-only inspection share one UI thread; inspector refresh is capped at 4 Hz.",
     "Console and Windows playback share EmulationHost pacing, immutable frame publication, audio lifetime and inspection. Debugger stepping/rewind use the shared debugging service; rich debugger views still inspect composed core devices.",
     "Hosting calls IAudioOutput supplied by the UI; the hosting-to-audio arrow is runtime dispatch only. Only the Win32 adapter references Hosting at compile time. Other audio adapters may implement the same contract.",
-    "The console defaults to the bundled SPRITE.GB demo and accepts explicit ROM paths; private ROMs are not automatically copied by its project. This is configuration behavior within the existing front-end boundary."
+    "The console defaults to the bundled SPRITE.GB demo and accepts explicit ROM paths; private ROMs are not automatically copied by its project. This is configuration behavior within the existing front-end boundary.",
+    "The optional desktop frontend reuses EmulationHost and Win32 audio. WPF presentation owns rotation, live screen transitions and model hit testing. Local GLB and cartridge label loading introduce no browser or network dependency. The model is separately licensed CC BY-NC 4.0."
   ],
   "nodes": [
     {
@@ -341,7 +342,8 @@
       "contracts": [
         "Hardware and front end regression tests",
         "Windows player UI and pacing regression coverage",
-        "Independent machine state, host lifecycle, output and debugger contracts"
+        "Independent machine state, host lifecycle, output and debugger contracts",
+        "Transparent captures, bezel visibility, rotated input, view transitions and disposal"
       ],
       "files": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj",
@@ -354,7 +356,8 @@
         "GB.Emulator.Windows.Tests/PlayerTests.cs",
         "GB.Emulator.Windows.Tests/GB.Emulator.Windows.Tests.csproj",
         "GB.Emulator.Hosting.Tests/EmulationHostTests.cs",
-        "GB.Emulator.Hosting.Tests/GB.Emulator.Hosting.Tests.csproj"
+        "GB.Emulator.Hosting.Tests/GB.Emulator.Hosting.Tests.csproj",
+        "GB.Emulator.Windows.Tests/DesktopPlayerTests.cs"
       ],
       "evidence": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite",
@@ -411,12 +414,14 @@
       "id": "windows",
       "label": "Windows player",
       "group": "Hosts",
-      "role": "Owns scalable playback and optional live inspection",
+      "role": "Owns windowed and desktop playback",
       "boundary": "WinForms executable",
       "contracts": [
         "EmulationHost commands and immutable frames",
         "DPI-aware display, input and fullscreen",
-        "Read-only host inspection and statistics"
+        "Read-only host inspection and statistics",
+        "Optional borderless, transparent WPF desktop DMG player",
+        "Successful desktop launch closes the original player"
       ],
       "files": [
         "GB.Emulator.Windows/GB.Emulator.Windows.csproj",
@@ -429,7 +434,9 @@
       "evidence": [
         "GB.Emulator.Windows/PlayerForm.cs: composition root and TickEmulation",
         "GB.Emulator.Windows/InspectorForm.cs: read-only live inspection",
-        "GB.Emulator.Windows/ScreenControl.cs: snapshot painting and viewport scaling"
+        "GB.Emulator.Windows/ScreenControl.cs: snapshot painting and viewport scaling",
+        "GB.Emulator.Windows/Program.cs: --desktop composition",
+        "GB.Emulator.Windows/PlayerForm.cs: desktop process launch and Close"
       ],
       "confidence": "high",
       "row": 0,
@@ -463,6 +470,60 @@
       ],
       "confidence": "high",
       "row": 1,
+      "col": 3
+    },
+    {
+      "id": "desktop-player",
+      "label": "Desktop 3D DMG player",
+      "group": "Rendering",
+      "role": "Maps live frames and input to a rotatable DMG",
+      "boundary": "Windows WPF dispatcher / transparent window",
+      "contracts": [
+        "Ctrl-drag rotation / native desktop movement",
+        "160x144 reusable LCD texture / glass highlights",
+        "Shared host pacing, ROM load, input and audio lifetime",
+        "Live LCD quad unfolds into close-up; playback continues",
+        "Model power switch closes and disposes host"
+      ],
+      "files": [
+        "GB.Emulator.Windows/Desktop/DesktopWindow.cs",
+        "GB.Emulator.Windows/Desktop/DesktopScene.cs",
+        "GB.Emulator.Windows/Desktop/ScreenTransitionView.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Windows/Desktop/DesktopWindow.cs: EmulationHost / Tick / input and disposal",
+        "GB.Emulator.Windows/Desktop/DesktopScene.cs: Present / model transform / hit testing",
+        "GB.Emulator.Windows/Desktop/ScreenTransitionView.cs: live screen quad",
+        "GB.Emulator.Windows/Desktop/DesktopWindow.cs: ToggleScreenCloseUp / AdvanceViewTransition"
+      ],
+      "confidence": "high",
+      "row": 2,
+      "col": 3
+    },
+    {
+      "id": "desktop-assets",
+      "label": "DMG model / cartridge art",
+      "group": "Rendering",
+      "role": "Loads the model and resolves matching local labels",
+      "boundary": "Bundled CC BY-NC GLB / user-local images",
+      "contracts": [
+        "Checked static GLB buffers / embedded textures",
+        "ROM hash identity / local label scans",
+        "Recoloured shell / generated title label fallback"
+      ],
+      "files": [
+        "GB.Emulator.Windows/Desktop/DmgModel.cs",
+        "GB.Emulator.Windows/Desktop/CartridgeAppearance.cs",
+        "GB.Emulator.Windows/Desktop/Assets/Dmg.glb",
+        "GB.Emulator.Windows/Desktop/Assets/ATTRIBUTION.md"
+      ],
+      "evidence": [
+        "GB.Emulator.Windows/Desktop/DmgModel.cs: Load",
+        "GB.Emulator.Windows/Desktop/CartridgeAppearance.cs: Read / CreateTexture",
+        "GB.Emulator.Windows/Desktop/Assets/ATTRIBUTION.md: original author and asset license"
+      ],
+      "confidence": "high",
+      "row": 3,
       "col": 3
     }
   ],
@@ -878,6 +939,61 @@
       "label": "tests lifecycle and independent machines",
       "evidence": [
         "GB.Emulator.Hosting.Tests/GB.Emulator.Hosting.Tests.csproj: ProjectReference"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "windows-desktop",
+      "from": "windows",
+      "to": "desktop-player",
+      "kind": "composition",
+      "label": "selects a native desktop presentation",
+      "evidence": [
+        "GB.Emulator.Windows/Program.cs: --desktop"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "desktop-hosting",
+      "from": "desktop-player",
+      "to": "hosting",
+      "kind": "runtime-call",
+      "label": "advances the shared machine and consumes immutable frames",
+      "evidence": [
+        "GB.Emulator.Windows/Desktop/DesktopWindow.cs: host.Advance and scene.Present"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "desktop-audio",
+      "from": "desktop-player",
+      "to": "audio",
+      "kind": "composition",
+      "label": "supplies the shared Win32 audio adapter to its host",
+      "evidence": [
+        "GB.Emulator.Windows/Desktop/DesktopWindow.cs: WindowsAudioOutput.TryCreate"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "desktop-model",
+      "from": "desktop-player",
+      "to": "desktop-assets",
+      "kind": "runtime-asset",
+      "label": "loads the packaged DMG and matches the loaded cartridge",
+      "evidence": [
+        "GB.Emulator.Windows/Desktop/DesktopScene.cs: DmgModel.Load and SetCartridge"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-desktop",
+      "from": "tests",
+      "to": "desktop-player",
+      "kind": "test-invocation",
+      "label": "checks real playback, alpha output, input and cleanup",
+      "evidence": [
+        "GB.Emulator.Windows.Tests/DesktopPlayerTests.cs"
       ],
       "confidence": "high"
     }
