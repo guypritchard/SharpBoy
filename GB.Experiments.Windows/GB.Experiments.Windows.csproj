@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GB.Experiments\GB.Experiments.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Presentation.WinForms\GB.Emulator.Presentation.WinForms.csproj" />
+    <InternalsVisibleTo Include="GB.Experiments.Windows.Tests" />
+    <None Include="..\Samples\NetworkFractal\lab.json" Link="cluster-settings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

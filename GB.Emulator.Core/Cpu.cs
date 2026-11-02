@@ -1,15 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using GB.Emulator.Core.InputOutput;
 
 namespace GB.Emulator.Core
 {
     public partial class Cpu
     {
-        public Cpu(MemoryMap memory, Video video)
+        private static readonly Instruction HaltIdleInstruction = new(0, "HALT idle", (_, _) => { }, 0, false);
+        private static readonly Instruction StopIdleInstruction = new(0, "STOP idle", (_, _) => { }, 0, false);
+        private bool interruptMasterEnabled;
+        private int enableInterruptsDelay;
+        private bool halted;
+        private bool stopped;
+        private bool haltBug;
+        private long totalCycles;
+
+        private readonly Dictionary<byte, Instruction> instructions;
+        public CpuRegisters Registers { get; } = new();
+        public CpuFlags Flags { get; }
+        public CpuOperations Operations { get; }
+
+        public Cpu(MemoryMap memory, Video video, SerialPort serial, Apu apu, Timer timer)
         {
-            Cpu.memory = memory;
+            this.memory = memory;
+            this.Flags = new CpuFlags(this.Registers);
+            this.Operations = new CpuOperations(this.Flags);
             this.video = video;
+            this.serial = serial;
+            this.apu = apu;
+            this.timer = timer;
+            this.instructions = this.BuildInstructions();
             Registers.Reset();
         }
 
@@ -17,8 +38,12 @@ namespace GB.Emulator.Core
         {
             try
             {
-                while (Cpu.Registers.PC < ushort.MaxValue)
+                while (this.Registers.PC < ushort.MaxValue)
                 {
+                    if (this.halted || this.stopped)
+                    {
+                        break;
+                    }
                     this.ExecuteInstruction(data);
                 }
             }
@@ -38,7 +63,7 @@ namespace GB.Emulator.Core
         {
             try
             {
-                return this.ExecuteInstruction(data);
+                return this.BuildStepResult(this.ExecuteInstruction(data));
             }
             catch (ArgumentOutOfRangeException aore)
             {
@@ -52,66 +77,251 @@ namespace GB.Emulator.Core
             }
         }
 
+        internal void ExecuteNextInstructionFast(byte[] data) => this.ExecuteInstruction(data);
+
+        public bool IsStopped => this.stopped;
+        public bool IsHalted => this.halted;
+
         private Instruction GetInstruction(byte instruction)
         {
-            if (instructions.ContainsKey(instruction))
+            if (TryGetInstruction(instruction, out Instruction result))
             {
-                return instructions[instruction];
+                return result;
             }
 
-            throw new NotImplementedException($"0x{instruction.ToString("X2")} not implemented at 0x{Cpu.Registers.PC:X4}.");
+            throw new NotImplementedException($"0x{instruction.ToString("X2")} not implemented at 0x{this.Registers.PC:X4}.");
+        }
+
+        private bool TryGetInstruction(byte instruction, out Instruction result)
+        {
+            return instructions.TryGetValue(instruction, out result);
         }
 
         public readonly Video video;
+        private readonly SerialPort serial;
+        private readonly Apu apu;
+        private readonly Timer timer;
+        public long TotalCycles => this.totalCycles;
 
-        private CpuStepResult ExecuteInstruction(byte[] data)
+        internal void ResetExecutionState()
         {
-            int pc = Cpu.Registers.PC;
-            if (pc >= data.Length)
+            this.interruptMasterEnabled = false;
+            this.enableInterruptsDelay = 0;
+            this.halted = false;
+            this.stopped = false;
+            this.haltBug = false;
+            this.totalCycles = 0;
+        }
+
+        internal void WakeFromStop() => this.stopped = false;
+
+        internal CpuExecutionState CaptureExecutionState() =>
+            new(this.interruptMasterEnabled, this.enableInterruptsDelay, this.halted, this.stopped, this.haltBug,
+                this.totalCycles);
+
+        internal void RestoreExecutionState(CpuExecutionState state)
+        {
+            this.interruptMasterEnabled = state.InterruptMasterEnabled;
+            this.enableInterruptsDelay = state.EnableInterruptsDelay;
+            this.halted = state.Halted;
+            this.stopped = state.Stopped;
+            this.haltBug = state.HaltBug;
+            this.totalCycles = state.TotalCycles;
+        }
+
+        private byte PendingInterrupts =>
+            (byte)(Memory.Peek(0xFF0F) & Memory.Peek(0xFFFF) & 0x1F);
+
+        private InstructionExecution ExecuteInstruction(byte[] data)
+        {
+            if (this.TryServiceInterrupt(out InstructionExecution interruptExecution))
             {
-                throw new ArgumentOutOfRangeException(nameof(data), $"Program counter 0x{pc:X4} is outside the loaded cartridge.");
+                return interruptExecution;
             }
 
-            Instruction instruction = GetInstruction(data[pc]);
+            if (this.halted || this.stopped)
+            {
+                if (this.halted)
+                {
+                    this.AdvanceHardware();
+                }
 
-            byte parameter1 = 0x0;
-            byte parameter2 = 0x0;
+                Instruction idleInstruction = this.halted ? HaltIdleInstruction : StopIdleInstruction;
+                return new InstructionExecution(idleInstruction, Registers.PC, 0, 0);
+            }
 
+            ushort address = Registers.PC;
+            byte opcode = this.ReadInstructionByte(data, address);
+            Instruction instruction = this.GetInstruction(opcode);
+            InstructionExecution execution = this.ReadOperands(data, address, instruction);
+            int cycles = GetCycles(opcode, execution.Operand1);
+            bool enableInterruptsNow = this.enableInterruptsDelay == 1;
+
+            instruction.Execute(execution.Operand1, execution.Operand2);
+            if (instruction.IncrementPc) Registers.PC = (ushort)(Registers.PC + instruction.Length);
+            this.UpdateDelayedInterruptEnable(opcode, enableInterruptsNow);
+            this.AdvanceHardware(cycles);
+
+            return execution;
+        }
+
+        private bool TryServiceInterrupt(out InstructionExecution execution)
+        {
+            execution = default;
+            byte pending = this.PendingInterrupts;
+            if (pending == 0)
+            {
+                return false;
+            }
+
+            // An enabled interrupt wakes HALT even when the CPU cannot service it yet.
+            this.halted = false;
+            if (!this.interruptMasterEnabled)
+            {
+                return false;
+            }
+
+            int interruptBit = 0;
+            while ((pending & (1 << interruptBit)) == 0)
+            {
+                interruptBit++;
+            }
+
+            ushort vector = (ushort)(0x40 + interruptBit * 8);
+            ushort interruptedAddress = Registers.PC;
+            this.interruptMasterEnabled = false;
+            this.stopped = false;
+            Memory.Write8((byte)(Memory.Peek(0xFF0F) & ~(1 << interruptBit)), 0xFF0F);
+            PushWord(interruptedAddress);
+            Registers.PC = vector;
+            this.AdvanceHardware(20);
+
+            var interrupt = new Instruction(0, $"INT 0x{vector:X2}", (_, _) => { }, 0, false);
+            execution = new InstructionExecution(interrupt, interruptedAddress, 0, 0);
+            return true;
+        }
+
+        private InstructionExecution ReadOperands(byte[] data, ushort address, Instruction instruction)
+        {
+            byte operand1 = 0;
+            byte operand2 = 0;
+            bool applyHaltBug = this.haltBug;
+            this.haltBug = false;
+
+            // The HALT bug repeats the opcode byte as the first operand and suppresses
+            // one program-counter increment for this instruction.
+            int operandOffset = applyHaltBug ? 0 : 1;
             if (instruction.Length > 1)
             {
-                if (pc + instruction.Length - 1 >= data.Length)
+                int lastOperandAddress = address + instruction.Length - (applyHaltBug ? 2 : 1);
+                if (lastOperandAddress > ushort.MaxValue)
                 {
-                    throw new ArgumentOutOfRangeException(nameof(data), $"Instruction {instruction.Name} at 0x{pc:X4} requires {instruction.Length - 1} operand bytes.");
+                    throw new ArgumentOutOfRangeException(nameof(data), $"Instruction {instruction.Name} at 0x{address:X4} crosses the end of memory.");
                 }
 
-                parameter1 = data[pc + 1];
+                operand1 = this.ReadInstructionByte(data, address + operandOffset);
                 if (instruction.Length > 2)
                 {
-                    parameter2 = data[pc + 2];
+                    operand2 = this.ReadInstructionByte(data, address + operandOffset + 1);
                 }
             }
 
-            instruction.Execute(parameter1, parameter2);
-            this.video.Step();
+            if (applyHaltBug)
+            {
+                Registers.PC = (ushort)(address - 1);
+            }
 
-            IReadOnlyCollection<ushort> writes = memory.ConsumeRecentWrites();
-
-            return new CpuStepResult(instruction, (ushort)pc, parameter1, parameter2, writes);
+            return new InstructionExecution(instruction, address, operand1, operand2);
         }
+
+        private void UpdateDelayedInterruptEnable(byte opcode, bool enableInterruptsNow)
+        {
+            const byte disableInterruptsOpcode = 0xF3;
+            const byte enableInterruptsOpcode = 0xFB;
+
+            if (enableInterruptsNow && opcode != disableInterruptsOpcode)
+            {
+                this.interruptMasterEnabled = true;
+                this.enableInterruptsDelay = 0;
+            }
+            else if (opcode == enableInterruptsOpcode)
+            {
+                this.enableInterruptsDelay = 1;
+            }
+            else if (this.enableInterruptsDelay > 0)
+            {
+                this.enableInterruptsDelay--;
+            }
+        }
+
+        private CpuStepResult BuildStepResult(InstructionExecution execution)
+        {
+            Instruction resultInstruction = execution.Instruction.Value == 0xCB
+                ? new Instruction(0xCB, GetCbName(execution.Operand1), (_, _) => { }, 2)
+                : execution.Instruction;
+            return new CpuStepResult(resultInstruction, execution.Address, execution.Operand1, execution.Operand2,
+                memory.ConsumeRecentWrites(), memory.ConsumeRecentReads());
+        }
+
+        private readonly record struct InstructionExecution(Instruction Instruction, ushort Address,
+            byte Operand1, byte Operand2);
+
+        private byte ReadInstructionByte(byte[] data, int address)
+        {
+            if (address < 0 || address > ushort.MaxValue ||
+                (address < 0x8000 && address >= data.Length))
+            {
+                throw new ArgumentOutOfRangeException(nameof(data), $"Program counter 0x{address:X4} is outside the loaded cartridge.");
+            }
+
+            // Cartridge instructions come from ROM; code copied into work or high RAM
+            // must be fetched through the memory map (for example, DMA routines).
+            return Memory.Read8((ushort)address);
+        }
+
+        private void AdvanceHardware(int cycles = 4)
+        {
+            this.totalCycles += cycles;
+            byte interruptRequest = this.timer.Step(cycles);
+            interruptRequest |= this.video.Step(cycles);
+            this.serial.Step(cycles);
+            this.apu.Step(cycles);
+            if (interruptRequest != 0)
+            {
+                byte flags = this.Memory.Peek(0xFF0F);
+                this.Memory.Write8((byte)(flags | interruptRequest), 0xFF0F);
+            }
+        }
+
+        // Synthetic startup advances the peripherals without fetching or executing an opcode.
+        internal void AdvanceStartupFrame() => this.AdvanceHardware(Lcd.CyclesPerScanline * Lcd.ScanlinesPerFrame);
+
+        internal readonly record struct CpuExecutionState(
+            bool InterruptMasterEnabled,
+            int EnableInterruptsDelay,
+            bool Halted,
+            bool Stopped,
+            bool HaltBug,
+            long TotalCycles);
 
         private void HandleExecutionFailure(ArgumentOutOfRangeException exception)
         {
-            Trace.WriteLine(Cpu.Registers.Dump());
-            Trace.WriteLine(Cpu.Flags.Dump());
+            Trace.WriteLine(this.Registers.Dump());
+            Trace.WriteLine(this.Flags.Dump());
             Trace.WriteLine(exception.Message);
         }
 
         private void HandleExecutionFailure(byte[] data, Exception exception)
         {
-            Instruction instruction = GetInstruction(data[Cpu.Registers.PC]);
-            Trace.WriteLine(instruction.Disassemble());
-            Trace.WriteLine(Cpu.Registers.Dump());
-            Trace.WriteLine(Cpu.Flags.Dump());
+            Instruction instruction;
+            byte opcode = this.ReadInstructionByte(data, this.Registers.PC);
+            if (!TryGetInstruction(opcode, out instruction))
+            {
+                instruction = new Instruction(opcode, $"NOTIMPL 0x{opcode:X2}", (p1, p2) => { }, 1);
+            }
+            Trace.WriteLine(new CpuStepResult(instruction, this.Registers.PC, 0, 0).Disassembly);
+            Trace.WriteLine(this.Registers.Dump());
+            Trace.WriteLine(this.Flags.Dump());
             Trace.WriteLine(exception.Message);
         }
 
@@ -124,13 +334,9 @@ namespace GB.Emulator.Core
 
             Instruction instruction;
             byte opcode = data[address];
-            try
+            if (!TryGetInstruction(opcode, out instruction))
             {
-                instruction = GetInstruction(opcode);
-            }
-            catch (NotImplementedException)
-            {
-                instruction = new Instruction(opcode, $"DB 0x{opcode:X2}", (p1, p2) => { }, 1);
+                instruction = new Instruction(opcode, $"NOTIMPL 0x{opcode:X2}", (p1, p2) => { }, 1);
             }
 
             byte parameter1 = 0x0;
@@ -148,6 +354,11 @@ namespace GB.Emulator.Core
                 {
                     parameter2 = data[address + 2];
                 }
+            }
+
+            if (opcode == 0xCB)
+            {
+                instruction = new Instruction(0xCB, GetCbName(parameter1), (_, _) => { }, 2);
             }
 
             return new CpuStepResult(instruction, address, parameter1, parameter2);

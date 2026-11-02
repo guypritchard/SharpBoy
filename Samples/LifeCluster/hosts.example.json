@@ -1,0 +1,19 @@
+{
+  "Hosts": [
+    { "Nodes": 4, "Processes": 1 },
+    {
+      "Destination": "gameboy-a",
+      "Executable": "C:/SharpBoy/GB.Experiments.exe",
+      "Nodes": 6,
+      "Processes": 2,
+      "FirstPort": 20000
+    },
+    {
+      "Destination": "gameboy-b",
+      "Executable": "/opt/sharpboy/GB.Experiments",
+      "Nodes": 6,
+      "Processes": 2,
+      "FirstPort": 20000
+    }
+  ]
+}

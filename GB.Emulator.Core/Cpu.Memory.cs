@@ -1,12 +1,8 @@
 namespace GB.Emulator.Core
 {
-  public partial class Cpu
-  {
-    private static MemoryMap memory;
-    public static MemoryMap Memory {
-      get {
-        return Cpu.memory;
-      }
+    public partial class Cpu
+    {
+        private readonly MemoryMap memory;
+        public MemoryMap Memory => this.memory;
     }
-  }
 }
