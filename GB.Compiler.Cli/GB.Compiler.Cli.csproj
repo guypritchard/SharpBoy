@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>gbc</ToolCommandName>
+    <PackageId>GB.Compiler.Cli</PackageId>
+    <Version>0.1.0-alpha.1</Version>
+    <Authors>SharpBoy contributors</Authors>
+    <RepositoryUrl>https://github.com/guypritchard/SharpBoy</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Description>SharpBoy C# to Game Boy native ROM compiler command-line tool.</Description>
+    <PackageTags>gameboy;dmg;sharpboy;compiler;dotnet-tool</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- A tool is self-contained with respect to project dependencies: NuGet does not restore
+         ProjectReference closure when installing a tool. Include compiler, SDK and Roslyn. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="PackageREADME.md" Pack="true" PackagePath="README.md" />
+    <ProjectReference Include="..\GB.Compiler\GB.Compiler.csproj" />
+  </ItemGroup>
+</Project>
