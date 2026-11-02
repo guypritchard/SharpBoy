@@ -27,6 +27,7 @@ internal sealed class DesktopScene : IVideoOutput
     private readonly int[] lcdPixels = new int[160 * 144];
     private readonly LinearGradientBrush reflection;
     private readonly GeometryModel3D lcdSurface, glassSurface;
+    private readonly double cameraDistance;
     private static readonly int[] Palette = [unchecked((int)0xFFADB975), unchecked((int)0xFF829454), unchecked((int)0xFF435437), unchecked((int)0xFF1E3026)];
     public Viewport3D View { get; } = new() { ClipToBounds = false };
     public long FrameNumber { get; private set; } = -1;
@@ -37,11 +38,13 @@ internal sealed class DesktopScene : IVideoOutput
     public double Pitch => pitch.Angle;
     public int TriangleCount { get; }
 
-    public DesktopScene()
+    public DesktopScene(double cameraDistance = 305)
     {
+        if (!double.IsFinite(cameraDistance) || cameraDistance < 250) throw new ArgumentOutOfRangeException(nameof(cameraDistance));
+        this.cameraDistance = cameraDistance;
         model = DmgModel.Load(Path.Combine(AppContext.BaseDirectory, "Desktop", "Assets", "Dmg.glb"));
         TriangleCount = model.Parts.Sum(p => ((MeshGeometry3D)p.Model.Geometry).TriangleIndices.Count / 3);
-        View.Camera = new PerspectiveCamera(new Point3D(0, 0, 305), new Vector3D(0, 0, -305), new Vector3D(0, 1, 0), 30)
+        View.Camera = new PerspectiveCamera(new Point3D(0, 0, cameraDistance), new Vector3D(0, 0, -cameraDistance), new Vector3D(0, 1, 0), 30)
             { NearPlaneDistance = 10, FarPlaneDistance = 1000 };
         View.Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 11, Direction = 285, Opacity = .38, Color = Colors.Black };
         var lighting = new Model3DGroup();
@@ -151,7 +154,7 @@ internal sealed class DesktopScene : IVideoOutput
     internal Point Project(Point3D local)
     {
         Point3D world = body.Transform.Transform(local);
-        double factor = View.ActualWidth / (2 * Math.Tan(15 * Math.PI / 180)) / (305 - world.Z);
+        double factor = View.ActualWidth / (2 * Math.Tan(15 * Math.PI / 180)) / (cameraDistance - world.Z);
         return new Point(View.ActualWidth/2 + world.X * factor, View.ActualHeight/2 - world.Y * factor);
     }
     internal Point[] ProjectScreenCorners()

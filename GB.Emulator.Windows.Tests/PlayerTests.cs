@@ -2,6 +2,7 @@ using System.Runtime.ExceptionServices;
 using GB.Emulator.Core;
 using GB.Emulator.Core.InputOutput;
 using GB.Emulator.Windows;
+using GB.Emulator.Presentation.WinForms;
 using GB.Emulator.Hosting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -13,6 +14,12 @@ namespace GB.Emulator.Windows.Tests;
 [DoNotParallelize] // UI tests share the process message loop and desktop.
 public class PlayerTests
 {
+    [TestMethod]
+    public void RegularPlayerDoesNotReferenceTheExperimentAssembly()
+    {
+        Assert.IsFalse(typeof(PlayerForm).Assembly.GetReferencedAssemblies().Any(a => a.Name?.StartsWith("GB.Experiments", StringComparison.Ordinal) == true));
+    }
+
     [TestMethod]
     public void PacingBoundsCatchUpAndDiscardsPausedTime()
     {

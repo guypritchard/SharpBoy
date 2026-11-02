@@ -6,6 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="..\GB.Roms\NETWORK-DHCP.gb" LogicalName="GB.Experiments.NetworkDhcp.gb" />
+    <EmbeddedResource Include="..\GB.Roms\NETWORK-TELEMETRY.gb" LogicalName="GB.Experiments.NetworkTelemetry.gb" />
+    <EmbeddedResource Include="..\GB.Roms\NETWORK-WORKER.gb" LogicalName="GB.Experiments.NetworkWorker.gb" />
+    <EmbeddedResource Include="..\GB.Roms\NETWORK-FRACTAL.gb" LogicalName="GB.Experiments.NetworkFractal.gb" />
+    <EmbeddedResource Include="..\GB.Roms\NETWORK-LIFE.gb" LogicalName="GB.Experiments.NetworkLife.gb" />
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Hosting\GB.Emulator.Hosting.csproj" />
   </ItemGroup>
 </Project>

@@ -89,6 +89,13 @@ public static class IrVerifier
                                 (call.Target.ReturnType == IrType.Void ? call.Value is null : call.Value?.Type == call.Target.ReturnType),
                                 "invalid call target/signature/result");
                             break;
+                        case IrReadByte read:
+                            Require(read.Address.Type == IrType.U16 && read.Value.Type == IrType.U8, "invalid ReadByte intrinsic");
+                            break;
+                        case IrText text:
+                            Require(text.Address.Type == IrType.U16 && text.Text is not null && text.Text.Length <= 32 &&
+                                text.Text.All(c => c >= 32 && c <= 126), "invalid text literal");
+                            break;
                         case IrWriteByte write:
                             Require(write.Address.Type == IrType.U16 && write.Value.Type == IrType.U8 &&
                                 write.Effect == IrEffect.HardwareWrite, "invalid WriteByte intrinsic");
@@ -205,6 +212,7 @@ public static class IrVerifier
                     {
                         IrStore s => [s.Value], IrConvert c => [c.Operand], IrUnary u => [u.Operand],
                         IrBinary b => [b.Left, b.Right], IrCompare c => [c.Left, c.Right],
+                        IrReadByte r => [r.Address], IrText t => [t.Address],
                         IrCall c => c.Arguments, IrWriteByte w => [w.Address, w.Value], IrDisplay d => d.Arguments,
                         IrSprite s => s.Coordinates, _ => []
                     };

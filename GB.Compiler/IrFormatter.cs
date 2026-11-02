@@ -37,6 +37,8 @@ public static class IrFormatter
                         IrBinary i => $"{V(i.Value)} = {i.Kind.ToString().ToLowerInvariant()} {V(i.Left)}, {V(i.Right)} unchecked",
                         IrCompare i => $"{V(i.Value)} = cmp.{i.Kind.ToString().ToLowerInvariant()}.{(i.Signed ? "signed" : "unsigned")} {V(i.Left)}, {V(i.Right)}",
                         IrCall i => $"{(i.Value is null ? "" : V(i.Value) + " = ")}call {i.Target.Name}({string.Join(", ", i.Arguments.Select(V))})",
+                        IrReadByte i => $"{V(i.Value)} = intrinsic.readbyte observable {V(i.Address)}",
+                        IrText i => $"intrinsic.text observable {V(i.Address)}, {System.Text.Json.JsonSerializer.Serialize(i.Text)}",
                         IrWriteByte i => $"intrinsic.writebyte observable {V(i.Address)}, {V(i.Value)}",
                         IrDisplay i => $"intrinsic.display.{i.Kind.ToString().ToLowerInvariant()} observable {string.Join(", ", i.Arguments.Select(V))}",
                         IrSprite i => $"intrinsic.sprite.{i.Kind.ToString().ToLowerInvariant()} observable index {i.Index} attributes ${i.Attributes:X2} {string.Join(", ", i.Coordinates.Select(V))}",

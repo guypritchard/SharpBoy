@@ -34,6 +34,14 @@ public sealed class EmulationInspection
     private readonly EmulationHost host;
     internal EmulationInspection(EmulationHost host) => this.host = host;
 
+    /// <summary>Capture a detached native LCD on demand, including when automatic frame capture is disabled.</summary>
+    public VideoFrame CaptureFrame()
+    {
+        this.host.EnsureUsable();
+        return new(this.host.Machine.CaptureVideoState(), this.host.Statistics.Frames,
+            this.host.Machine.EmulatedCycles, this.host.Machine.IsStartupSequenceActive);
+    }
+
     public CpuSnapshot CaptureCpu()
     {
         this.host.EnsureUsable();

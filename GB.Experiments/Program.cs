@@ -1,4 +1,53 @@
 using GB.Experiments;
+using GB.Experiments.NetworkCartridge;
+
+// OpenSSH invokes this apphost as a noninteractive password callback. Credentials
+// exist only in the SSH child's environment, never command arguments or host JSON.
+if (Environment.GetEnvironmentVariable("GB_LIFE_ASKPASS") == "1")
+{
+    string? password = Environment.GetEnvironmentVariable("GB_LIFE_ASKPASS_PASSWORD");
+    if (args.Length == 0 || string.IsNullOrEmpty(password)) return 2;
+    Console.Out.WriteLine(password); return 0;
+}
+
+if (args.Length > 0 && args[0] == "--network-cartridge")
+    return await NetworkCartridgeExperiment.RunAsync(args[1..]);
+
+if (args is ["--life-worker-group"]) return await LifeWorkerGroup.RunAsync();
+
+if (args.FirstOrDefault() == "--life")
+{
+    using var stop = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Cancel(); };
+    try
+    {
+        var options = new List<string>(); string? report = null;
+        for (int i = 1; i < args.Length; i++)
+        {
+            if (args[i] == "--report" && i + 1 < args.Length) report = Path.GetFullPath(args[++i]);
+            else options.Add(args[i]);
+        }
+        var settings = LifeSettings.Parse(options.ToArray());
+        var result = await LifeCluster.RunAsync(settings,
+            onGeneration: tick => Console.WriteLine($"Generation {tick.Generation}: {tick.Alive:N0} live cells | {tick.ElapsedSeconds:F2}s"), token: stop.Token);
+        Console.WriteLine($"Verified {result.Final.Generation} generations from {result.Nodes.Count} native Game Boys over TCP.");
+        if (report != null)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(report)!);
+            await File.WriteAllTextAsync(report, System.Text.Json.JsonSerializer.Serialize(new
+            {
+                Settings = settings, result.Final.Generation, result.Final.Width, result.Final.Height, result.Final.Alive,
+                result.Final.ElapsedSeconds, result.Metrics,
+                WorldSha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(result.Final.Cells.Span)),
+                Nodes = result.Nodes.Select((n, i) => new { NodeId = i + 1, n.Result, n.Cycles })
+            }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            Console.WriteLine("Saved scaling report: " + report);
+        }
+        return 0;
+    }
+    catch (OperationCanceledException) { Console.WriteLine("Life experiment stopped."); return 1; }
+    catch (Exception ex) { Console.Error.WriteLine(ex.Message); return 2; }
+}
 
 int port = 8765;
 int workers = Math.Min(4, Environment.ProcessorCount);

@@ -78,6 +78,18 @@ public sealed record IrWriteByte(IrValue Address, IrValue Value, IrLocation Loca
     public override IrEffect Effect => IrEffect.HardwareWrite;
     public override IrValue? Result => null;
 }
+/// <summary>Ordered native memory read, including device side effects.</summary>
+public sealed record IrReadByte(IrValue Value, IrValue Address, IrLocation Location) : IrInstruction(Location)
+{
+    public override IrEffect Effect => IrEffect.HardwareReadWrite;
+    public override IrValue Result => Value;
+}
+/// <summary>Compile-time text expanded into tile writes.</summary>
+public sealed record IrText(IrValue Address, string Text, IrLocation Location) : IrInstruction(Location)
+{
+    public override IrEffect Effect => IrEffect.HardwareWrite;
+    public override IrValue? Result => null;
+}
 public enum IrDisplayKind { InitializeBackground, WaitForNextVBlank, SetScroll }
 /// <summary>Ordered, observable LCD polling/VRAM copy or scroll-register writes.</summary>
 public sealed record IrDisplay(IrDisplayKind Kind, IReadOnlyList<IrValue> Arguments, IrLocation Location) : IrInstruction(Location)

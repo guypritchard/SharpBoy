@@ -34,9 +34,14 @@ namespace GB.Emulator.Core
             this.RebuildDeviceMap();
         }
 
-        public void AddDevice(IMemoryRange device)
+        public void AddDevice(IMemoryRange device) => this.AddDevice(device, takePriority: false);
+
+        public void AddDevice(IMemoryRange device, bool takePriority)
         {
-            this.devices.Add(device);
+            ArgumentNullException.ThrowIfNull(device);
+            if (device.Start > device.End) throw new ArgumentException("Device range is inverted.", nameof(device));
+            if (takePriority) this.devices.Insert(0, device);
+            else this.devices.Add(device);
             this.RebuildDeviceMap();
         }
 
@@ -242,6 +247,8 @@ namespace GB.Emulator.Core
 
         public byte Peek(ushort address)
         {
+            if (this.deviceByAddress[address] is IInspectableMemoryRange peripheral)
+                return peripheral.Peek(address);
             if (address >= this.memory.Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(address));
@@ -293,6 +300,10 @@ namespace GB.Emulator.Core
                     copy[address] = this.lcd.Read8(address);
             this.CopyDeviceRegisters(this.cartridgeMapper?.Rom, copy);
             this.CopyDeviceRegisters(this.cartridgeMapper?.Ram, copy);
+            foreach (IInspectableMemoryRange peripheral in this.devices.OfType<IInspectableMemoryRange>())
+                for (int address = peripheral.Start; address <= peripheral.End; address++)
+                    if (ReferenceEquals(this.deviceByAddress[address], peripheral))
+                        copy[address] = peripheral.Peek((ushort)address);
             return copy;
         }
 

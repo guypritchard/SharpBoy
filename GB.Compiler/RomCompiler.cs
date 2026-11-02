@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace GB.Compiler;
 
 public sealed record RomBuildOptions(string OutputPath, string Title = "SHARPBOY", string? RgbdsBinDirectory = null,
-    bool KeepIntermediates = false, CartridgeProfile? Profile = null, GameAssetBundle? Assets = null);
+    bool KeepIntermediates = false, CartridgeProfile? Profile = null, GameAssetBundle? Assets = null, Sm83Limits? Limits = null);
 
 public sealed record RomBuildResult(IReadOnlyList<string> Diagnostics, IReadOnlyDictionary<string, string> Artifacts,
     string? WorkDirectory = null)
@@ -69,7 +69,7 @@ public sealed class RomCompiler(IToolRunner? runner = null, IRomArtifactFileSyst
         IrModule module;
         try { module = GameIrCompiler.Lower(frontend); }
         catch (IrVerificationException ex) { return Fail($"GBC004: IR: {ex.Message}"); }
-        var backend = Sm83Backend.Emit(module, profile: profile);
+        var backend = Sm83Backend.Emit(module, limits: options.Limits, profile: profile);
         if (!backend.Success)
             return new(backend.Diagnostics.Select(d => $"{d.Source?.Path}({d.Source?.Line},{d.Source?.Column}): {d}").ToArray(),
                 new Dictionary<string, string>());

@@ -16,6 +16,20 @@
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="../Samples/NetworkDhcp/NetworkDhcp.cs" Link="Fixtures/NetworkDhcp.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/NetworkDhcp/EntryPoint.cs" Link="Fixtures/DhcpEntryPoint.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/NetworkTelemetry/NetworkTelemetry.cs" Link="Fixtures/NetworkTelemetry.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/NetworkWorker/NetworkWorker.cs" Link="Fixtures/NetworkWorker.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/NetworkLife/NetworkLife.cs" Link="Fixtures/NetworkLife.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Roms/NETWORK-LIFE.gb" Link="Fixtures/NETWORK-LIFE.gb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Sdk/Target/GameNetworkStream.cs" Link="Fixtures/GameNetworkStream.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Samples/NetworkFractal/NetworkFractal.cs" Link="Fixtures/NetworkFractal.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Roms/NETWORK-FRACTAL.gb" Link="Fixtures/NETWORK-FRACTAL.gb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Sdk/Target/GameNetwork.cs" Link="Fixtures/GameNetwork.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Roms/NETWORK-TELEMETRY.gb" Link="Fixtures/NETWORK-TELEMETRY.gb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Roms/NETWORK-WORKER.gb" Link="Fixtures/NETWORK-WORKER.gb" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Sdk/Target/GameTextNumbers.cs" Link="Fixtures/GameTextNumbers.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Roms/NETWORK-DHCP.gb" Link="Fixtures/NETWORK-DHCP.gb" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures/ArithmeticGame.cs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Samples/Assets/*" Link="Assets/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures/SemanticPure.cs" CopyToOutputDirectory="PreserveNewest" />

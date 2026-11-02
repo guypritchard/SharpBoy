@@ -330,6 +330,22 @@ public sealed class EmulationHostTests
         Assert.IsGreaterThan(0L, host.Advance(TimeSpan.FromMilliseconds(1)));
     }
 
+    [TestMethod]
+    public void HeadlessInspectionAndTransferredFramesOwnTheirPixels()
+    {
+        using var host = new EmulationHost(new Gameboy(), options: Options(captureFrames: false));
+        host.Load(Rom(0x18, 0xFE)); host.Resume(); host.Advance(TimeSpan.FromMilliseconds(10));
+        Assert.IsNull(host.LatestFrame);
+        var original = host.Inspection.CaptureFrame();
+        byte[] pixels = original.Pixels.ToArray();
+        var transfer = VideoFrame.FromPixels(pixels, original.Number, original.Cycles);
+        pixels[0] = (byte)((pixels[0] + 1) & 3);
+        CollectionAssert.AreEqual(original.Pixels.ToArray(), transfer.Pixels.ToArray());
+        Assert.ThrowsExactly<ArgumentException>(() => VideoFrame.FromPixels(new byte[1], 0, 0));
+        var invalid = new byte[160 * 144]; invalid[100] = 4;
+        Assert.ThrowsExactly<ArgumentException>(() => VideoFrame.FromPixels(invalid, 0, 0));
+    }
+
     private sealed class DelayedSource : ICartridgeSource
     {
         public string Name => "test-cartridge";

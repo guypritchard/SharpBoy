@@ -22,6 +22,9 @@ is assumed or bundled. Without a ROM the LCD shows an invitation to open one.
 
 ## Controls
 
+For nine machines doing visible parallel computation, use the separate
+[parallel lab](visual-gameboy-cluster.md): `dotnet run --project GB.Experiments.Windows -c Release -- --cluster`.
+
 | Action | Control |
 | --- | --- |
 | Rotate | Hold Ctrl and drag the model |

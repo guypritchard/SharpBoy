@@ -4,6 +4,8 @@ string? output = null, title = null, rgbdsBin = null;
 byte[]? backgroundTiles = null, backgroundMap = null, spriteTiles = null;
 bool keep = false, probe = false;
 int? mbc1Banks = null;
+int wramStart = 0xC000;
+bool textFont = false;
 var assets = new List<BankedAsset>();
 var sources = new List<string>();
 for (var i = 0; i < args.Length; i++)
@@ -25,6 +27,9 @@ for (var i = 0; i < args.Length; i++)
             else if (option == "--background-map") backgroundMap = data;
             else spriteTiles = data;
             break;
+        case "--text-font": textFont = true; break;
+        case "--wram-start" when i + 1 < args.Length && int.TryParse(args[i + 1], out var start):
+            wramStart = start; i++; break;
         case "--out" when i + 1 < args.Length: output = args[++i]; break;
         case "--title" when i + 1 < args.Length: title = args[++i]; break;
         case "--rgbds-bin" when i + 1 < args.Length: rgbdsBin = args[++i]; break;
@@ -59,7 +64,7 @@ if (probe && sources.Count == 0 && output is null)
 }
 if (sources.Count == 0 || output is null || probe)
 {
-    Console.Error.WriteLine("Usage: GB.Compiler.Cli --out game.gb [--title TITLE] [--rgbds-bin DIR] [--keep-intermediates] [--background-tiles FILE --background-map FILE] [--sprite-tiles FILE] [--mbc1-banks 4|8|16|32 --banked-asset 'NAME:BANK:$ADDRESS:FILE' ...] source.cs [other.cs ...] (or --check-rgbds)");
+    Console.Error.WriteLine("Usage: GB.Compiler.Cli --out game.gb [--title TITLE] [--rgbds-bin DIR] [--keep-intermediates] [--text-font] [--wram-start DECIMAL_ADDRESS] [--background-tiles FILE --background-map FILE] [--sprite-tiles FILE] [--mbc1-banks 4|8|16|32 --banked-asset 'NAME:BANK:$ADDRESS:FILE' ...] source.cs [other.cs ...] (or --check-rgbds)");
     Console.Error.WriteLine("MBC1: no RAM, assets in physical bank 2+, ROMX address $4000-$7FFF; quote $ addresses in PowerShell. Code is ROM0, bank 1 reserved for display, $D000-$D7FF is constant-only staging. No function banking, save RAM, >32 banks, interrupts, DMA/VRAM transfer, reentrancy or managed arrays.");
     return 2;
 }
@@ -71,8 +76,15 @@ try
     profile = mbc1Banks is int count ? CartridgeProfile.CreateMbc1(count, assets) : CartridgeProfile.RomOnly;
 }
 catch (ArgumentException ex) { Console.Error.WriteLine(ex.Message); return 2; }
+if (textFont)
+{
+    if (backgroundTiles is not null || backgroundMap is not null)
+    { Console.Error.WriteLine("GBC009: --text-font cannot be combined with explicit background assets."); return 2; }
+    backgroundTiles = GB.Sdk.GameFont.CreateTiles();
+    backgroundMap = Enumerable.Repeat((byte)32, 1024).ToArray();
+}
 var result = await new RomCompiler().CompileAsync(sources, new RomBuildOptions(output, title ?? "SHARPBOY", rgbdsBin, keep, profile,
-    new GameAssetBundle(backgroundTiles, backgroundMap, spriteTiles)));
+    new GameAssetBundle(backgroundTiles, backgroundMap, spriteTiles), Limits: new Sm83Limits(WramStart: wramStart, WramBytes: 0xE000 - wramStart)));
 foreach (var diagnostic in result.Diagnostics) Console.Error.WriteLine(diagnostic);
 foreach (var warning in result.Warnings) Console.Error.WriteLine(warning);
 if (result.WorkDirectory is not null) Console.Error.WriteLine($"Build work directory: {result.WorkDirectory}");

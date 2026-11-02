@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 
 namespace GB.Compiler;
 
-internal enum DisplayIntrinsicKind { None, WriteByte, InitializeBackground, WaitForNextVBlank, SetScroll, CopyToBuffer, ReadBufferByte, InitializeSprites, SetSprite, HideSprite }
+internal enum DisplayIntrinsicKind { None, ReadByte, WriteText, WriteByte, InitializeBackground, WaitForNextVBlank, SetScroll, CopyToBuffer, ReadBufferByte, InitializeSprites, SetSprite, HideSprite }
 
 internal static class DisplayIntrinsic
 {
@@ -26,6 +26,12 @@ internal static class DisplayIntrinsic
         if (SymbolEqualityComparer.Default.Equals(method.ContainingType, sdk.GetTypeByMetadataName(typeof(GameBanking).FullName!)) &&
             method.Name == nameof(GameBanking.ReadBufferByte) && method.ReturnType.SpecialType == SpecialType.System_Byte &&
             Signature(SpecialType.System_UInt16)) return DisplayIntrinsicKind.ReadBufferByte;
+        if (SymbolEqualityComparer.Default.Equals(method.ContainingType, sdk.GetTypeByMetadataName(typeof(GameMemory).FullName!)) &&
+            method.Name == nameof(GameMemory.ReadByte) && method.ReturnType.SpecialType == SpecialType.System_Byte &&
+            Signature(SpecialType.System_UInt16)) return DisplayIntrinsicKind.ReadByte;
+        if (SymbolEqualityComparer.Default.Equals(method.ContainingType, sdk.GetTypeByMetadataName(typeof(GameText).FullName!)) &&
+            method.ReturnsVoid && method.Name == nameof(GameText.Write) && Signature(SpecialType.System_UInt16, SpecialType.System_String))
+            return DisplayIntrinsicKind.WriteText;
         if (!method.ReturnsVoid) return DisplayIntrinsicKind.None;
         if (SymbolEqualityComparer.Default.Equals(method.ContainingType, sdk.GetTypeByMetadataName(typeof(GameSprites).FullName!)))
             return method.Name switch

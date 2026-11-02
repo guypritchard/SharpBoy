@@ -25,6 +25,15 @@ public sealed class VideoFrame
         DmgScreenRenderer.RenderScreen(video, this.pixels);
         this.Number = number; this.Cycles = cycles; this.IsStartup = startup;
     }
+    private VideoFrame(byte[] pixels, long number, long cycles, bool startup)
+    { this.pixels = pixels; this.Number = number; this.Cycles = cycles; this.IsStartup = startup; }
+    /// <summary>Copy a detached 160x144 native shade buffer received from another process.</summary>
+    public static VideoFrame FromPixels(ReadOnlySpan<byte> pixels, long number, long cycles, bool startup = false)
+    {
+        if (pixels.Length != Width * Height) throw new ArgumentException("A complete native LCD is required.", nameof(pixels));
+        foreach (byte shade in pixels) if (shade > 3) throw new ArgumentException("Invalid DMG shade.", nameof(pixels));
+        return new(pixels.ToArray(), number, cycles, startup);
+    }
     public const int Width = Video.Width;
     public const int Height = Video.Height;
     public long Number { get; }
