@@ -135,6 +135,12 @@ the existing ten-minute worker deadline is the final limit if a broken SSH serve
 
 ### SSH transport smoke test
 
+Full Life/Mandelbrot simulations and their UI runs are tagged `ClusterIntegration`. Normal PR/push
+builds exclude that category and do not install or run the SSH smoke harness. Configuration, framing,
+reference-rule, firmware-mismatch and other focused regression tests remain in the normal pipeline.
+To run the simulation and SSH checks in GitHub Actions, manually dispatch **Windows emulator build**
+with **run_cluster_integration** enabled. Local `dotnet test` without a filter still includes them.
+
 ```powershell
 dotnet build GB.Experiments -c Release
 python -m venv artifacts/toolchains/life-ssh
@@ -148,8 +154,8 @@ checks remote process identities/cleanup, then drops a connection and verifies b
 worker shutdown. Keys/config/reports remain in ignored `artifacts/life-cluster/ssh-smoke`; user SSH
 files, services and firewall rules are untouched. On Linux the venv interpreter is `bin/python`.
 This verifies encrypted exec/forwarding, key/password authentication and process lifetimes on one
-machine. The normal .NET suite also covers placement validation, local grouped equivalence, missing
-password configuration, firmware mismatch and cancellation.
+machine. Focused .NET tests cover placement validation, missing password configuration and firmware
+mismatch; optional integration tests cover local grouped equivalence and simulation cancellation.
 
 On 2026-10-27, a physical Windows-PC/Linux-NAS run also passed: eight native Game Boys on each host,
 eight generations, 12,288 cells. The Windows visual lab retained all native LCDs and machine inspection;

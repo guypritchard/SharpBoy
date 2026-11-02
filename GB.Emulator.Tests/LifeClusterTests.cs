@@ -19,6 +19,7 @@ public class LifeClusterTests
     [DataRow(2, 2, 1024, 2)]
     [DataRow(4, 4, 1024, 0)]
     [DataRow(1, 1, 7, 0)]
+    [TestCategory("ClusterIntegration")]
     public async Task NativeTerritoriesEvolveAcrossSeamsAndDrawTheirReturnedCells(int columns, int rows, int fragmentSize, int processes)
     {
         var settings = new LifeSettings(columns, rows, 4, 0, WorkerProcesses: processes);
@@ -68,6 +69,7 @@ public class LifeClusterTests
         }
     }
     [TestMethod]
+    [TestCategory("ClusterIntegration")]
     public async Task GroupedWorkersPreserveIdsBeyondOneByteAndReturnTheirOwnMailboxHeaders()
     {
         var snapshots = new ConcurrentDictionary<ushort, NativeNodeSnapshot>();
@@ -86,6 +88,7 @@ public class LifeClusterTests
     [TestMethod]
     [DataRow(0)]
     [DataRow(2)]
+    [TestCategory("ClusterIntegration")]
     public async Task CancellationStopsEveryNativeWorkerAtABarrier(int processes)
     {
         // Exercise shutdown repeatedly: transport EOF must never beat cooperative cancellation.

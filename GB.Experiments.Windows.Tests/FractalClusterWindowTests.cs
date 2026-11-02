@@ -16,6 +16,7 @@ public class FractalClusterWindowTests
     [DataRow(16)]
     [DataRow(32)]
     [DataRow(6)]
+    [TestCategory("ClusterIntegration")]
     public void LcdDashboardCanCancelRestartCollectAndExportNativeResults(int workers)
     {
         Exception? failure = null;

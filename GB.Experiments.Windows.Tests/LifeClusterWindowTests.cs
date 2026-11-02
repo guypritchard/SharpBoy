@@ -35,6 +35,7 @@ public class LifeClusterWindowTests
     [DataRow(2, 0)]
     [DataRow(4, 2)]
     [DataRow(5, 2)]
+    [TestCategory("ClusterIntegration")]
     public void LivingWorldCanCancelRestartInspectAndExport(int columns, int processes)
     {
         Exception? failure = null;

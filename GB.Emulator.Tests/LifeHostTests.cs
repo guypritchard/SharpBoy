@@ -33,6 +33,7 @@ public class LifeHostTests
     }
 
     [TestMethod]
+    [TestCategory("ClusterIntegration")]
     public async Task ExplicitPlacementPreservesNativeResultsInspectionAndProcessIdentity()
     {
         string file = Path.GetTempFileName();

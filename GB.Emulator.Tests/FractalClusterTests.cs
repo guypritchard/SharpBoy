@@ -15,6 +15,7 @@ namespace GB.Emulator.Tests;
 public class FractalClusterTests
 {
     [TestMethod]
+    [TestCategory("ClusterIntegration")]
     public async Task InspectionPublishesLiveAndFinalDetachedSnapshotsAndCancellation()
     {
         var samples = new ConcurrentQueue<NativeNodeSnapshot>();
@@ -38,6 +39,7 @@ public class FractalClusterTests
     [DataRow(2, 3, 12)]
     [DataRow(1, 1, 1)]
     [DataRow(1, 1, 64)]
+    [TestCategory("ClusterIntegration")]
     public async Task CustomGridAndIterationLimitsExecuteInTheGuest(int columns, int gridRows, int limit)
     {
         var settings = new FractalSettings(columns, gridRows, limit, 0);
@@ -82,6 +84,7 @@ public class FractalClusterTests
     [DataRow(9)]
     [DataRow(16)]
     [DataRow(32)]
+    [TestCategory("ClusterIntegration")]
     public async Task NativeNodesReturnEveryPixelAndDrawTheSameValuesOnTheirOwnLcds(int workers)
     {
         var layout = FractalLayout.ForWorkers(workers);
