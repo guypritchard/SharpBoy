@@ -43,7 +43,7 @@ jobs:
         uses: gittools/actions/gitversion/execute@v4.7.0
 
       - name: Setup Python for independent ROM validation
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
