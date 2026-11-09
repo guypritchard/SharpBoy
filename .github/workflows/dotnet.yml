@@ -182,28 +182,28 @@ jobs:
           }
 
       - name: Upload Windows player
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-${{ steps.version.outputs.semVer }}-windows
           path: artifacts/windows/
           if-no-files-found: error
 
       - name: Upload Windows experiments
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: experiments-windows-${{ steps.version.outputs.semVer }}-windows
           path: artifacts/experiments-windows/
           if-no-files-found: error
 
       - name: Upload console emulator
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: console-${{ steps.version.outputs.semVer }}-windows
           path: artifacts/console/
           if-no-files-found: error
 
       - name: Upload debugger
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: debugger-${{ steps.version.outputs.semVer }}-windows
           path: artifacts/debugger/
