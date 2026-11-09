@@ -218,25 +218,25 @@ jobs:
       contents: write
     steps:
       - name: Download Windows player
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: windows-${{ needs.build.outputs.version }}-windows
           path: artifacts/windows/
 
       - name: Download Windows experiments
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: experiments-windows-${{ needs.build.outputs.version }}-windows
           path: artifacts/experiments-windows/
 
       - name: Download console emulator
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: console-${{ needs.build.outputs.version }}-windows
           path: artifacts/console/
 
       - name: Download debugger
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: debugger-${{ needs.build.outputs.version }}-windows
           path: artifacts/debugger/
