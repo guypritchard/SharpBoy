@@ -82,7 +82,10 @@ public class DesktopPlayerTests
             }
             await WaitForViewTransition(window);
             Assert.AreEqual(Visibility.Collapsed, scene.View.Visibility);
-            Assert.AreEqual(160d / 144, window.Width / window.Height, .00001);
+            // HWND dimensions are rounded to physical pixels at fractional scales.
+            double pixelWidth = 1 / VisualTreeHelper.GetDpi(window).DpiScaleX;
+            Assert.IsTrue(Math.Abs(window.Width - window.Height * 160d / 144) <= pixelWidth * 1.01,
+                "The native window should match the LCD aspect ratio within one physical pixel.");
             long before = scene.FrameNumber;
             await Task.Delay(2500);
             Assert.IsGreaterThan(before, scene.FrameNumber);

@@ -2,6 +2,7 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
 WORKDIR /src
+COPY Directory.Build.props ./
 COPY GB.Emulator.Core/GB.Emulator.Core.csproj GB.Emulator.Core/
 COPY GB.Emulator.Link/GB.Emulator.Link.csproj GB.Emulator.Link/
 COPY GB.Emulator.Hosting/GB.Emulator.Hosting.csproj GB.Emulator.Hosting/

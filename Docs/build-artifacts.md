@@ -51,3 +51,9 @@ Full cluster simulations/SSH tests are excluded from normal runs; enable
 probes and `Tools/DesktopPerformanceProbe` remain manual, outside the solution
 and CI. Audio/GPU performance depends on an interactive local machine; the
 pipeline does not run a large multiplayer or performance simulation.
+
+Linux dependency-submission jobs can restore Windows reference packs through
+`Directory.Build.props`; GUI builds and releases still run on Windows. SDK
+template project files use a `.csproj.template` suffix in the source package so
+repository dependency scans do not treat them as consumer projects. `dotnet new`
+renames them to ordinary `.csproj` files when generating a game.

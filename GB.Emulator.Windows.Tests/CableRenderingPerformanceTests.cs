@@ -9,6 +9,25 @@ namespace GB.Emulator.Windows.Tests;
 public class CableRenderingPerformanceTests
 {
     [TestMethod]
+    public void CroppedViewportSavesAreaOnLargeWorkspacesAndFitsSmallWorkspaces() => Sta(() =>
+    {
+        var scene = new DesktopScene(); scene.SetLinkVisible(true);
+        var root = new System.Windows.Controls.Grid(); root.Children.Add(scene.View);
+        foreach (var (width, height, scale) in new[] { (1920d, 1080d, 1d), (1024d, 720d, 685d / 780) })
+        {
+            scene.SetWorkspaceViewport(width, height, scale);
+            root.Measure(new(width, height)); root.Arrange(new(0, 0, width, height)); root.UpdateLayout();
+            var crop = scene.RenderCrop;
+            Assert.IsFalse(crop.IsEmpty);
+            Assert.IsTrue(new System.Windows.Rect(0, 0, width, height).Contains(crop));
+            Assert.AreEqual(crop.Width, scene.View.ActualWidth, .01);
+            Assert.AreEqual(crop.Height, scene.View.ActualHeight, .01);
+            if (width >= 1920)
+                Assert.IsLessThan(width * height * .75, crop.Width * crop.Height, "A large workspace must not force full-desktop 3D rendering.");
+        }
+    });
+
+    [TestMethod]
     public void SleepingCordReusesItsMeshAndMovingCordDoesNotAllocateFreshVertexBuffers() => Sta(() =>
     {
         var model = new LinkCableModel(); var rotation = new AxisAngleRotation3D(new(0,1,0), 0);

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "Working tree on 0f55d26264c3280491b1ec97feeeace406cfb374; pre-diagram manifest f74f16f04d7f1029ecd30d4a3f8aae8825ecaccf107e3de07077a729efc8668e",
+  "source": "Working tree on 0f55d26264c3280491b1ec97feeeace406cfb374; pre-diagram manifest bedafb0e65e855dba5613550fff24950933148913cb02105a11c289e683e039a",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
@@ -40,7 +40,8 @@
     "Opt-in private-ROM checks verified four headless players, frozen idle title screens, native Tetris gameplay and AI placement, retirement/replenishment and explicit rematching. A Windows headless client also completed native multiplayer with the Linux container (717 cable bytes); container health/non-root/read-only checks passed. Normal GUI regression confirms server assignment creates no second client window.",
     "Desktop emulation/audio is owned by one UI dispatcher. A separate cable presentation timer, nonblocking bitmap locks and display-event transitions avoid making audio wait for decorative rendering. View transitions preserve the linked cropped camera and resize the native window only at boundaries.",
     "The Link Boy monitor samples acknowledged serial payload counters and server/pairing state; it does not infer bytes from cable movement. Retry requests retain a connection snapshot; explicit leave, cartridge replacement or shutdown cancels them.",
-    "Build delivery publishes Windows applications and Windows/Linux relay runtimes plus a minimal Docker build-context ZIP. CI tests only synthetic/public demo linking and a ROM-free relay health check. Private-ROM AI probes and interactive audio/GPU benchmarking are explicit developer tools outside CI."
+    "Build delivery publishes Windows applications and Windows/Linux relay runtimes plus a minimal Docker build-context ZIP. CI tests only synthetic/public demo linking and a ROM-free relay health check. Private-ROM AI probes and interactive audio/GPU benchmarking are explicit developer tools outside CI.",
+    "Linux metadata jobs opt in to Windows reference-pack restore; release GUI builds remain on Windows. SDK template source uses .csproj.template payloads so automatic discovery does not restore consumer placeholders; dotnet new still emits the same named .csproj projects."
   ],
   "nodes": [
     {
@@ -439,7 +440,8 @@
         "Tools/TetrisAiProbe/Program.cs",
         "Tools/TetrisAiProbe/TetrisAiProbe.csproj",
         "Tools/TetrisDesktopProbe/TetrisDesktopProbe.csproj",
-        "Tools/TetrisServerProbe/TetrisServerProbe.csproj"
+        "Tools/TetrisServerProbe/TetrisServerProbe.csproj",
+        "Tools/verify-sdk-packages.ps1"
       ],
       "evidence": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite",
@@ -694,14 +696,21 @@
         "GB.Sdk/Target/GameTextNumbers.cs",
         "GB.Sdk/GB.Sdk.csproj",
         "GB.Sdk/Target/GameNetwork.cs",
-        "GB.Sdk/Target/GameNetworkStream.cs"
+        "GB.Sdk/Target/GameNetworkStream.cs",
+        "GB.Sdk.Templates/content/background/.template.config/template.json",
+        "GB.Sdk.Templates/content/background/TemplateProject.csproj.template",
+        "GB.Sdk.Templates/content/blank/.template.config/template.json",
+        "GB.Sdk.Templates/content/blank/TemplateProject.csproj.template",
+        "GB.Sdk.Templates/content/sprites/.template.config/template.json",
+        "GB.Sdk.Templates/content/sprites/TemplateProject.csproj.template"
       ],
       "evidence": [
         "GB.Compiler/DisplayIntrinsic.cs: exact SDK assembly/type/signature",
         "GB.Sdk/GameFont.cs: CreateTiles",
         "GB.Sdk/Target/GameTextNumbers.cs: WriteDecimal / WriteIpv4",
         "GB.Sdk/Target/GameNetwork.cs: OpenConfigured / Receive / Send",
-        "GB.Sdk/Target/GameNetworkStream.cs: Send / Receive"
+        "GB.Sdk/Target/GameNetworkStream.cs: Send / Receive",
+        "GB.Sdk.Templates/content/blank/.template.config/template.json: source payload renamed when instantiated"
       ],
       "confidence": "high",
       "row": 5,
@@ -1184,14 +1193,17 @@
         "Self-contained Windows application packages",
         "Master releases; cluster integration opt-in",
         "Windows/Linux x64/ARM64 relay and Docker source bundle",
-        "ROM-free Linux container health check; diagnostic artifacts"
+        "ROM-free Linux container health check; diagnostic artifacts",
+        "Linux metadata restore supports Windows reference packs"
       ],
       "files": [
-        ".github/workflows/dotnet.yml"
+        ".github/workflows/dotnet.yml",
+        "Directory.Build.props"
       ],
       "evidence": [
         ".github/workflows/dotnet.yml: build / release jobs",
-        ".github/workflows/dotnet.yml: container job / server publish / upload diagnostics"
+        ".github/workflows/dotnet.yml: container job / server publish / upload diagnostics",
+        "Directory.Build.props: EnableWindowsTargeting for non-Windows restore"
       ],
       "confidence": "high",
       "row": 9,

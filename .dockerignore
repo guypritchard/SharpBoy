@@ -1,5 +1,6 @@
 # The service build receives backend source only, never ROMs, artwork or local deployment files.
 *
+!Directory.Build.props
 !GB.Emulator.Core/
 !GB.Emulator.Link/
 !GB.Emulator.Hosting/

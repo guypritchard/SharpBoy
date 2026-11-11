@@ -780,6 +780,7 @@ GB.Sdk/GameFont.cs: CreateTiles
 GB.Sdk/Target/GameTextNumbers.cs: WriteDecimal / WriteIpv4
 GB.Sdk/Target/GameNetwork.cs: OpenConfigured / Receive / Send
 GB.Sdk/Target/GameNetworkStream.cs: Send / Receive
+GB.Sdk.Templates/content/blank/.template.config/template.json: source payload renamed when instantiated
 </title>
 <rect x="508" y="1812" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="506" y="1807" width="330" height="210" rx="13" fill="#fff5e5" stroke="#f0d6a7" stroke-width="1.5" stroke-dasharray=""/>
@@ -1134,10 +1135,11 @@ GB.Roms/LINK-LOUNGE.gb
 </g>
 <g><title>Build and delivery
 Boundary: GitHub Actions jobs
-Contracts: Pinned RGBDS/PyBoy and zero-skip TRX gate; Self-contained Windows application packages; Master releases; cluster integration opt-in; Windows/Linux x64/ARM64 relay and Docker source bundle; ROM-free Linux container health check; diagnostic artifacts
+Contracts: Pinned RGBDS/PyBoy and zero-skip TRX gate; Self-contained Windows application packages; Master releases; cluster integration opt-in; Windows/Linux x64/ARM64 relay and Docker source bundle; ROM-free Linux container health check; diagnostic artifacts; Linux metadata restore supports Windows reference packs
 Confidence: high
 .github/workflows/dotnet.yml: build / release jobs
 .github/workflows/dotnet.yml: container job / server publish / upload diagnostics
+Directory.Build.props: EnableWindowsTargeting for non-Windows restore
 </title>
 <rect x="98" y="3068" width="330" height="210" rx="13" fill="#152a4510" stroke="none" />
 <rect x="96" y="3063" width="330" height="210" rx="13" fill="#fff5e5" stroke="#f0d6a7" stroke-width="1.5" stroke-dasharray=""/>

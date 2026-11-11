@@ -44,7 +44,7 @@ try {
     Assert-PackageEntries $cli @('tools/net10.0/any/GB.Compiler.Cli.dll', 'tools/net10.0/any/GB.Compiler.dll', 'tools/net10.0/any/GB.Sdk.dll', 'tools/net10.0/any/Microsoft.CodeAnalysis.dll', 'tools/net10.0/any/Microsoft.CodeAnalysis.CSharp.dll') @('*Samples*')
     $templateEntries = @('content/background/Assets/background.2bpp', 'content/background/Assets/background.tilemap', 'content/sprites/Assets/background.2bpp', 'content/sprites/Assets/background.tilemap', 'content/sprites/Assets/sprite.2bpp')
     foreach ($name in 'blank', 'background', 'sprites') {
-        foreach ($file in '.template.config/template.json', 'TemplateProject.csproj', 'Game.cs', 'README.md', 'build.ps1', 'rom-title.txt') {
+        foreach ($file in '.template.config/template.json', 'TemplateProject.csproj.template', 'Game.cs', 'README.md', 'build.ps1', 'rom-title.txt') {
             $templateEntries += "content/$name/$file"
         }
     }
@@ -99,5 +99,8 @@ try {
     if (Test-Path $toolPath) {
         & dotnet tool uninstall GB.Compiler.Cli --tool-path $toolPath
     }
-    if (Test-Path $root) { Remove-Item $root -Recurse -Force }
+    $resolvedRoot = [IO.Path]::GetFullPath($root)
+    $tempPrefix = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    if (-not $resolvedRoot.StartsWith($tempPrefix, [StringComparison]::OrdinalIgnoreCase)) { throw 'SDK verification cleanup escaped the temporary directory.' }
+    if (Test-Path -LiteralPath $resolvedRoot) { Remove-Item -LiteralPath $resolvedRoot -Recurse -Force }
 }

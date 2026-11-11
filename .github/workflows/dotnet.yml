@@ -206,7 +206,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Path artifacts/link-server-container -Force | Out-Null
-          git archive --format=zip --output=artifacts/link-server-container/link-server-container.zip HEAD -- .dockerignore compose.yaml compose.tetris.yaml compose.tls.yaml GB.Emulator.Core GB.Emulator.Hosting GB.Emulator.Link GB.Emulator.AI GB.Link.Server Docs/link-server.md Docs/link-lobby.md Docs/tetris-ai.md
+          git archive --format=zip --output=artifacts/link-server-container/link-server-container.zip HEAD -- .dockerignore Directory.Build.props compose.yaml compose.tetris.yaml compose.tls.yaml GB.Emulator.Core GB.Emulator.Hosting GB.Emulator.Link GB.Emulator.AI GB.Link.Server Docs/link-server.md Docs/link-lobby.md Docs/tetris-ai.md
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload Windows player
