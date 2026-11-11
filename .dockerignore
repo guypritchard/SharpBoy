@@ -1,0 +1,20 @@
+# The service build receives backend source only, never ROMs, artwork or local deployment files.
+*
+!Directory.Build.props
+!GB.Emulator.Core/
+!GB.Emulator.Link/
+!GB.Emulator.Hosting/
+!GB.Emulator.AI/
+!GB.Link.Server/
+**/bin/
+**/obj/
+**/.vs/
+.git/
+artifacts/
+Docs/architecture-impact/
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
+.env
+**/.env

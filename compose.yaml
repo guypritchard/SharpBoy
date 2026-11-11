@@ -1,0 +1,21 @@
+services:
+  link-hub:
+    image: sharpboy/link-hub:local
+    build:
+      context: .
+      dockerfile: GB.Link.Server/Dockerfile
+    ports:
+      - "${LINK_PUBLIC_PORT:-8766}:8766/tcp"
+    environment:
+      LINK_BIND: 0.0.0.0
+      LINK_PORT: 8766
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s

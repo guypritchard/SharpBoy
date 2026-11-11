@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\GB.Roms\SPRITE.GB" Link="SPRITE.GB" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.0.1" />
     <PackageReference Include="MSTest.TestFramework" Version="4.0.1" />
@@ -16,6 +17,8 @@
     <ProjectReference Include="..\GB.Emulator.Core\GB.Emulator.Core.csproj" />
     <ProjectReference Include="..\GB.Emulator.Console\GB.Emulator.Console.csproj" />
     <ProjectReference Include="..\GB.Experiments\GB.Experiments.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Link\GB.Emulator.Link.csproj" />
+    <ProjectReference Include="..\GB.Emulator.AI\GB.Emulator.AI.csproj" />
   </ItemGroup>
 
 </Project>

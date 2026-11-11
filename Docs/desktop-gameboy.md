@@ -56,9 +56,17 @@ not a physically based ray tracer or a reflection of the user's desktop.
 The close-up shows only the live LCD at its original 160:144 aspect ratio, with crisp nearest-neighbour
 scaling. Switching views preserves the running game and model orientation. The mouse wheel resizes
 either view; right-click controls and keyboard input work in both views.
-The live LCD unfolds from its position on the model into the close-up over 380 ms, while the shell
-fades out and the window smoothly changes height. Returning reverses the transition to the saved
-orientation.
+The live LCD unfolds from its position on the model into the close-up over 380 ms while the shell
+fades out. The animation keeps the native window bounds fixed and applies the final size once,
+avoiding repeated layered-window reallocations on the audio/emulation dispatcher. Returning
+reverses the transition to the saved orientation. Display-rendering events drive the animation;
+emulation keeps its independent bounded timer.
+
+**Ctrl+L** opens the [link lounge and Link Boy monitor](link-lobby.md). With the cable attached,
+drag the shell and monitor independently; the finite, stiff cable follows both plugs. The monitor
+graphs actual read/write traffic and connection history. Its LED is bright amber when joined to
+the server, red when paired, and dark offline. The linked 3D viewport renders only padded hardware
+bounds and retains its cropped camera while switching views.
 
 The 18,182-triangle model is [Nintendo Game Boy (Original 1989) by Lokeig](https://sketchfab.com/3d-models/nintendo-game-boy-original-1989-ad2f6be906e948f793fe722bbae5d29c).
 The source GLB is unchanged; the renderer hides the loose decorative cartridge, replaces the LCD,

@@ -29,16 +29,21 @@ internal sealed class ScreenTransitionView : Viewport3D
         Children.Add(new ModelVisual3D { Content = new GeometryModel3D(quad, material) { BackMaterial = material } });
     }
 
-    internal void Update(Point[] modelCorners, double width, double height, double modelHeight, double progress)
+    private readonly Point3DCollection[] buffers = [new([new(), new(), new(), new()]), new([new(), new(), new(), new()])];
+    private int bufferIndex;
+
+    internal void Update(Point[] modelCorners, double width, double height, double screenWidth, double screenHeight, double progress)
     {
         camera.Width = width;
-        Point[] flat = [new(0, 0), new(width, 0), new(width, height), new(0, height)];
-        var positions = new Point3DCollection();
+        var positions = buffers[bufferIndex ^= 1];
+        double left = (width - screenWidth) / 2, top = (height - screenHeight) / 2;
         for (int i = 0; i < 4; i++)
         {
-            double x = modelCorners[i].X * (1 - progress) + flat[i].X * progress;
-            double y = (modelCorners[i].Y + (height - modelHeight) / 2) * (1 - progress) + flat[i].Y * progress;
-            positions.Add(new(x - width / 2, height / 2 - y, 0));
+            double flatX = left + (i is 1 or 2 ? screenWidth : 0);
+            double flatY = top + (i >= 2 ? screenHeight : 0);
+            double x = modelCorners[i].X * (1 - progress) + flatX * progress;
+            double y = modelCorners[i].Y * (1 - progress) + flatY * progress;
+            positions[i] = new(x - width / 2, height / 2 - y, 0);
         }
         quad.Positions = positions;
     }

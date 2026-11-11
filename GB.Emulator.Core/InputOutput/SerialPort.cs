@@ -10,12 +10,26 @@ namespace GB.Emulator.Core.InputOutput
         private byte data;
         private byte control;
         private int remainingCycles;
+        private byte armedData;
 
         public ushort Start => 0xFF01;
         public ushort End => 0xFF02;
         public bool IsTransferPending => (this.control & 0x80) != 0;
         public bool UsesExternalClock => (this.control & 0x01) == 0;
-        public ISerialPeer? Peer { get; set; }
+        private ISerialPeer? peer;
+        public ISerialPeer? Peer
+        {
+            get => this.peer;
+            set
+            {
+                (this.peer as IDeferredSerialPeer)?.CancelTransfer();
+                this.peer = value;
+                if (this.IsTransferPending && value is IDeferredSerialPeer deferred)
+                { this.armedData = this.data; deferred.BeginTransfer(this.data, !this.UsesExternalClock); }
+            }
+        }
+        public bool IsWaitingForPeer => this.IsTransferPending && this.peer is IDeferredSerialPeer { IsConnected: true, IsWaiting: true } &&
+            !this.UsesExternalClock && this.remainingCycles <= 0;
 
         /// <summary>Raised when a byte exchange completes and IF bit 3 must be set.</summary>
         public event EventHandler? InterruptRequested;
@@ -35,9 +49,16 @@ namespace GB.Emulator.Core.InputOutput
                     this.data = value;
                     break;
                 case 0xFF02:
+                    // Games re-arm external SC every menu frame. Keep the outstanding
+                    // rendezvous (including a just-arrived reply) when nothing changed.
+                    if ((value & 0x83) == 0x80 && this.control == 0x80 && this.data == this.armedData &&
+                        this.peer is IDeferredSerialPeer { IsConnected: true }) return;
+                    (this.peer as IDeferredSerialPeer)?.CancelTransfer();
                     this.control = (byte)(value & 0x83);
                     this.remainingCycles = this.IsTransferPending && !this.UsesExternalClock
                         ? InternalTransferCycles : 0;
+                    if (this.IsTransferPending && this.peer is IDeferredSerialPeer deferred)
+                    { this.armedData = this.data; deferred.BeginTransfer(this.data, !this.UsesExternalClock); }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(location));
@@ -47,12 +68,26 @@ namespace GB.Emulator.Core.InputOutput
         /// <summary>Advance the internal 8192 Hz DMG clock by CPU clock cycles.</summary>
         public void Step(int cycles)
         {
-            if (!this.IsTransferPending || this.UsesExternalClock) return;
+            if (!this.IsTransferPending) return;
+            if (this.UsesExternalClock) { this.Pump(); return; }
             this.remainingCycles -= cycles;
             if (this.remainingCycles > 0) return;
 
-            byte incoming = this.Peer?.ExchangeByte(this.data) ?? 0xFF;
+            if (this.peer is IDeferredSerialPeer { IsConnected: true } network)
+            {
+                if (network.TryCompleteTransfer(out byte received)) this.Complete(received);
+                return;
+            }
+            byte incoming = this.peer is IDeferredSerialPeer ? (byte)0xFF : this.Peer?.ExchangeByte(this.data) ?? 0xFF;
             this.Complete(incoming);
+        }
+
+        /// <summary>Poll without advancing guest time; safe while the network clock is parked.</summary>
+        public void Pump()
+        {
+            if (this.IsTransferPending && (this.UsesExternalClock || this.remainingCycles <= 0) &&
+                this.peer is IDeferredSerialPeer { IsConnected: true } network && network.TryCompleteTransfer(out byte value))
+                this.Complete(value);
         }
 
         /// <summary>Clock one byte from an external link partner. Returns the byte sent by this Game Boy.</summary>
@@ -76,6 +111,7 @@ namespace GB.Emulator.Core.InputOutput
 
         public void Reset()
         {
+            (this.peer as IDeferredSerialPeer)?.CancelTransfer();
             this.data = 0;
             this.control = 0;
             this.remainingCycles = 0;

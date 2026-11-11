@@ -18,6 +18,42 @@ namespace GB.Emulator.Windows.Tests;
 public class DesktopPlayerTests
 {
     [TestMethod]
+    public void ViewTransitionsKeepNativeBoundsAndCroppedViewportStableWhileGameAdvances()
+    {
+        Run(async window =>
+        {
+            window.Host.Muted = true;
+            await window.LoadRomAsync(Path.Combine(AppContext.BaseDirectory, "SPRITE.GB"));
+            long before = window.Host.Statistics.Frames;
+            for (int linked = 0; linked < 2; linked++)
+            {
+                if (linked != 0) { window.OpenLinkLobby(); window.LinkLobby!.Hide(); }
+                for (int toggle = 0; toggle < 4; toggle++)
+                {
+                    window.ToggleScreenCloseUp();
+                    var bounds = new Rect(window.Left, window.Top, window.Width, window.Height);
+                    var crop = window.Scene.RenderCrop;
+                    int samples = 0; bool moved = false, changedCrop = false;
+                    void Observe(object? sender, EventArgs e)
+                    {
+                        if (!window.IsViewTransitioning) return;
+                        samples++;
+                        moved |= bounds != new Rect(window.Left, window.Top, window.Width, window.Height);
+                        changedCrop |= crop != window.Scene.RenderCrop;
+                    }
+                    CompositionTarget.Rendering += Observe;
+                    try { await WaitForViewTransition(window); }
+                    finally { CompositionTarget.Rendering -= Observe; }
+                    Assert.IsFalse(moved, "Animate the LCD inside a stable native window, without per-frame HWND resizing.");
+                    Assert.IsFalse(changedCrop, "The linked transition must retain its cropped render target.");
+                    Assert.IsGreaterThan(0, samples, "The transition must animate on display rendering events.");
+                }
+            }
+            Assert.IsGreaterThan(before, window.Host.Statistics.Frames, "View changes must keep emulation running.");
+        });
+    }
+
+    [TestMethod]
     public void ScreenDoubleClickPreservesGameAndOrientationAndPowerSwitchDisposesHost()
     {
         Run(async window =>
@@ -46,7 +82,10 @@ public class DesktopPlayerTests
             }
             await WaitForViewTransition(window);
             Assert.AreEqual(Visibility.Collapsed, scene.View.Visibility);
-            Assert.AreEqual(160d / 144, window.Width / window.Height, .00001);
+            // HWND dimensions are rounded to physical pixels at fractional scales.
+            double pixelWidth = 1 / VisualTreeHelper.GetDpi(window).DpiScaleX;
+            Assert.IsLessThanOrEqualTo(pixelWidth * 1.01, Math.Abs(window.Width - window.Height * 160d / 144),
+                "The native window should match the LCD aspect ratio within one physical pixel.");
             long before = scene.FrameNumber;
             await Task.Delay(2500);
             Assert.IsGreaterThan(before, scene.FrameNumber);

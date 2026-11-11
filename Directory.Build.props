@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Allow Linux dependency/CodeQL jobs to restore Windows reference packs.
+         Windows applications are still published and tested on Windows. -->
+    <EnableWindowsTargeting Condition="'$(OS)' != 'Windows_NT' and '$(EnableWindowsTargeting)' == ''">true</EnableWindowsTargeting>
+  </PropertyGroup>
+</Project>

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "title": "SharpBoy | logical architecture",
-  "source": "Working tree on 402ee65b83a9db36ac3b731a871fe3d11f5586e5; pre-documentation manifest 78bae11f8f1b73b88c5df2e2711767b7fbaf54a82ac5b079b4e70fe45a536ebd",
+  "source": "Working tree on 0f55d26264c3280491b1ec97feeeace406cfb374; pre-diagram manifest bedafb0e65e855dba5613550fff24950933148913cb02105a11c289e683e039a",
   "notes": [
     "Responsibility overview: representative source files, not an exhaustive class or call graph. Unchanged device routing is summarized.",
     "Consumer -> provider arrows distinguish project references, source inclusion, composition, runtime calls and snapshot consumption.",
@@ -28,7 +28,20 @@
     "Life shutdown cancels worker groups cooperatively before closing collectors, observes every worker, and publishes stopped snapshots after cancellation.",
     "Life host JSON places bounded groups locally or over OpenSSH; reverse forwards keep both cartridge endpoints loopback-only. Cells use forwarded TCP channels; detached frames/inspection/control use the exec channel. Worker-side samples identify host/PID. Explicit drained events precede collector closure and SSH exit.",
     "Remote deployment and SSH key/known-host provisioning are operator responsibilities. Real SSH exec, encrypted forwarding, native equivalence and transport-loss cleanup are tested on loopback; a physical Windows/Linux-NAS 8+8-node visual run passed eight generations with a matching local checksum and clean worker exit.",
-    "Optional password-environment authentication uses the GB.Experiments apphost as a noninteractive SSH_ASKPASS callback. Credentials stay outside JSON, command arguments and guest machines. Strict host-key checking remains default; deployment-specific opt-out is explicit. SSH config may reach a container through a gateway."
+    "Optional password-environment authentication uses the GB.Experiments apphost as a noninteractive SSH_ASKPASS callback. Credentials stay outside JSON, command arguments and guest machines. Strict host-key checking remains default; deployment-specific opt-out is explicit. SSH config may reach a container through a gateway.",
+    "Existing baseline reconciled against the comparison base; the current change introduces serial lobby, service deployment and AI boundaries.",
+    "The Tetris AI is a host-side policy over detached inspection and ordinary joypad input. Its verified private-ROM reader is SHA-256 gated; no commercial ROM or RAM writes are required by normal CI. The private two-emulator smoke check is an explicit separate tool.",
+    "Serial receive notifications queue coalesced owner-dispatcher work. External re-arms preserve an unchanged pending request/reply; the host retains its bounded cycle budget across internal clock waits. Lost pairings pause desktop hosts, and audio primes about 43 ms before starting or recovering from starvation.",
+    "An explicit private-ROM desktop probe uses actual WinForms/WPF timers and a containerised relay, outside the solution and CI. A 30-second native multiplayer run maintained approximately 100% clock speed and 59.7 FPS; no additional Windows audio starvation or discarded PCM occurred during gameplay.",
+    "Tetris playing styles are immutable validated settings, edited on the owner UI thread and serialised separately from ROM-reader profiles. Configuring a style cancels obsolete work and releases the old policy input on the next owner tick. Preview search runs on detached snapshots in a bounded, cancellable background task; only the owner validates/applies results and joypad input.",
+    "Presets express playing preferences, not measured strength ranks. A crafted regression proves next-piece planning preserves an I-piece gap; a muted 20-second native Strategist desktop run maintained approximately 100% clock speed and 59.7 FPS. Audio was not verified in that muted run.",
+    "Optional Tetris pool moves normal AI machine ownership into the headless service. Private ROMs are read-only runtime mounts, never build context or network payloads. Ready bots remain paused at the 2PLAYER title until paired, preventing attract mode; disconnect retires and rebuilds a machine. Random assignment is atomic and revision-matched. The local second-LCD/style editor remains available only to the explicit desktop developer probe.",
+    "Pool uses 1–12 workers within the 32-player lobby limit, cycling four existing presets. Each host has one serialized async execution context and no audio/window adapters. Matching uses the existing deferred TCP serial interface; no host-written game state or fabricated game packets.",
+    "Opt-in private-ROM checks verified four headless players, frozen idle title screens, native Tetris gameplay and AI placement, retirement/replenishment and explicit rematching. A Windows headless client also completed native multiplayer with the Linux container (717 cable bytes); container health/non-root/read-only checks passed. Normal GUI regression confirms server assignment creates no second client window.",
+    "Desktop emulation/audio is owned by one UI dispatcher. A separate cable presentation timer, nonblocking bitmap locks and display-event transitions avoid making audio wait for decorative rendering. View transitions preserve the linked cropped camera and resize the native window only at boundaries.",
+    "The Link Boy monitor samples acknowledged serial payload counters and server/pairing state; it does not infer bytes from cable movement. Retry requests retain a connection snapshot; explicit leave, cartridge replacement or shutdown cancels them.",
+    "Build delivery publishes Windows applications and Windows/Linux relay runtimes plus a minimal Docker build-context ZIP. CI tests only synthetic/public demo linking and a ROM-free relay health check. Private-ROM AI probes and interactive audio/GPU benchmarking are explicit developer tools outside CI.",
+    "Linux metadata jobs opt in to Windows reference-pack restore; release GUI builds remain on Windows. SDK template source uses .csproj.template payloads so automatic discovery does not restore consumer placeholders; dotnet new still emits the same named .csproj projects."
   ],
   "nodes": [
     {
@@ -143,7 +156,8 @@
       "boundary": "Shared .NET library: GB.Emulator.Core.Win32",
       "contracts": [
         "IAudioOutput Write / Flush / Dispose",
-        "TryCreate returns null when unavailable"
+        "TryCreate returns null when unavailable",
+        "Four-block priming; bounded eight-block PCM queue and starvation counters"
       ],
       "files": [
         "GB.Emulator.Core.Win32/WindowsAudioOutput.cs",
@@ -293,12 +307,14 @@
       "boundary": "Core serial device and cable",
       "contracts": [
         "ISerialPeer",
-        "SerialLinkCable"
+        "SerialLinkCable",
+        "IDeferredSerialPeer polling; internal clock parks after 4096 cycles, external clock leaves CPU running"
       ],
       "files": [
         "GB.Emulator.Core/InputOutput/SerialPort.cs",
         "GB.Emulator.Core/InputOutput/SerialLinkCable.cs",
-        "GB.Emulator.Core/InputOutput/ISerialPeer.cs"
+        "GB.Emulator.Core/InputOutput/ISerialPeer.cs",
+        "GB.Emulator.Core/InputOutput/IDeferredSerialPeer.cs"
       ],
       "evidence": [
         "GB.Emulator.Core/InputOutput/SerialPort.cs: Serial / link port",
@@ -406,7 +422,26 @@
         "GB.Experiments.Windows.Tests/GB.Experiments.Windows.Tests.csproj",
         "GB.Experiments.Windows.Tests/ExperimentLauncherTests.cs",
         "GB.Emulator.Tests/LifeHostTests.cs",
-        "Tools/LifeCluster/ssh_smoke.py"
+        "Tools/LifeCluster/ssh_smoke.py",
+        "Tools/TetrisDesktopProbe/Program.cs",
+        "GB.Emulator.Tests/TetrisAiTests.cs",
+        "GB.Emulator.Windows.Tests/TetrisStyleTests.cs",
+        "Tools/TetrisServerProbe/Program.cs",
+        "GB.Emulator.Windows.Tests/LinkLobbyTests.cs",
+        "GB.Compiler.Tests/GB.Compiler.Tests.csproj",
+        "GB.Emulator.Tests/NetworkLinkTests.cs",
+        "GB.Emulator.Tests/Roms.cs",
+        "GB.Emulator.Windows.Tests/CableRenderingPerformanceTests.cs",
+        "GB.Emulator.Windows.Tests/CableSimulationTests.cs",
+        "GB.Emulator.Windows.Tests/LinkActivityDisplayTests.cs",
+        "GB.Emulator.Windows.Tests/TetrisOpponentTests.cs",
+        "Tools/DesktopPerformanceProbe/DesktopPerformanceProbe.csproj",
+        "Tools/DesktopPerformanceProbe/Program.cs",
+        "Tools/TetrisAiProbe/Program.cs",
+        "Tools/TetrisAiProbe/TetrisAiProbe.csproj",
+        "Tools/TetrisDesktopProbe/TetrisDesktopProbe.csproj",
+        "Tools/TetrisServerProbe/TetrisServerProbe.csproj",
+        "Tools/verify-sdk-packages.ps1"
       ],
       "evidence": [
         "GB.Emulator.Tests/GB.Emulator.Tests.csproj: Verification suite",
@@ -424,7 +459,12 @@
         "GB.Compiler.Tests/TextAndMemoryTests.cs: native execution, text validation and firmware reproducibility",
         "GB.Emulator.Windows.Tests/PlayerTests.cs: RegularPlayerDoesNotReferenceTheExperimentAssembly",
         "GB.Experiments.Windows.Tests/ExperimentLauncherTests.cs: independent launcher modes and UI",
-        "GB.Emulator.Tests/LifeHostTests.cs; Tools/LifeCluster/ssh_smoke.py: native equivalence, real SSH forwards, disconnect cleanup"
+        "GB.Emulator.Tests/LifeHostTests.cs; Tools/LifeCluster/ssh_smoke.py: native equivalence, real SSH forwards, disconnect cleanup",
+        "Tools/TetrisDesktopProbe/Program.cs: real WinForms/WPF timers, container link and Windows audio counters",
+        "GB.Emulator.Windows.Tests/LinkLobbyTests.cs: retry/restart/cancellation and native public-demo exchange",
+        "GB.Emulator.Windows.Tests/CableRenderingPerformanceTests.cs: mesh allocation and sleep regression",
+        "GB.Emulator.Windows.Tests/DesktopPlayerTests.cs: stable transition bounds and cropped viewport",
+        "Tools/DesktopPerformanceProbe/Program.cs: manual-only interactive rendering/audio probe"
       ],
       "confidence": "high",
       "row": 4,
@@ -506,7 +546,9 @@
         "State, pacing and bounded execution",
         "Owned frames and audio output lifetime",
         "Read-only inspection, stepping and rewind",
-        "On-demand detached LCDs / copied frame transfer"
+        "On-demand detached LCDs / copied frame transfer",
+        "Owner-thread AttachSerialPeer and serial-wait pacing",
+        "Bounded unspent frame budget survives serial wait"
       ],
       "files": [
         "GB.Emulator.Hosting/EmulationHost.cs",
@@ -515,7 +557,8 @@
         "GB.Emulator.Hosting/CartridgeSource.cs",
         "GB.Emulator.Hosting/EmulationInspection.cs",
         "GB.Emulator.Hosting/EmulationDebugger.cs",
-        "GB.Emulator.Hosting/GB.Emulator.Hosting.csproj"
+        "GB.Emulator.Hosting/GB.Emulator.Hosting.csproj",
+        "GB.Emulator.Hosting/EmulationHost.Serial.cs"
       ],
       "evidence": [
         "GB.Emulator.Hosting/EmulationHost.cs: composition, lifecycle and Advance",
@@ -653,14 +696,21 @@
         "GB.Sdk/Target/GameTextNumbers.cs",
         "GB.Sdk/GB.Sdk.csproj",
         "GB.Sdk/Target/GameNetwork.cs",
-        "GB.Sdk/Target/GameNetworkStream.cs"
+        "GB.Sdk/Target/GameNetworkStream.cs",
+        "GB.Sdk.Templates/content/background/.template.config/template.json",
+        "GB.Sdk.Templates/content/background/TemplateProject.csproj.template",
+        "GB.Sdk.Templates/content/blank/.template.config/template.json",
+        "GB.Sdk.Templates/content/blank/TemplateProject.csproj.template",
+        "GB.Sdk.Templates/content/sprites/.template.config/template.json",
+        "GB.Sdk.Templates/content/sprites/TemplateProject.csproj.template"
       ],
       "evidence": [
         "GB.Compiler/DisplayIntrinsic.cs: exact SDK assembly/type/signature",
         "GB.Sdk/GameFont.cs: CreateTiles",
         "GB.Sdk/Target/GameTextNumbers.cs: WriteDecimal / WriteIpv4",
         "GB.Sdk/Target/GameNetwork.cs: OpenConfigured / Receive / Send",
-        "GB.Sdk/Target/GameNetworkStream.cs: Send / Receive"
+        "GB.Sdk/Target/GameNetworkStream.cs: Send / Receive",
+        "GB.Sdk.Templates/content/blank/.template.config/template.json: source payload renamed when instantiated"
       ],
       "confidence": "high",
       "row": 5,
@@ -701,16 +751,27 @@
       "contracts": [
         "Ctrl-drag rotation / native desktop movement",
         "160x144 reusable LCD texture / glass highlights",
-        "Shared host pacing, ROM load, input and audio lifetime"
+        "Shared host pacing, ROM load, input and audio lifetime",
+        "Constrained cable and independent device positions",
+        "Nonblocking LCD uploads; cropped viewport and sleeping mesh",
+        "Display-paced view animation inside fixed native bounds"
       ],
       "files": [
         "GB.Emulator.Windows/Desktop/DesktopWindow.cs",
         "GB.Emulator.Windows/Desktop/DesktopScene.cs",
-        "GB.Emulator.Windows/Desktop/ScreenTransitionView.cs"
+        "GB.Emulator.Windows/Desktop/ScreenTransitionView.cs",
+        "GB.Emulator.Windows/Desktop/CableSimulation.cs",
+        "GB.Emulator.Windows/Desktop/LinkCableModel.cs",
+        "GB.Emulator.Windows/Desktop/LinkActivityDisplay.cs",
+        "GB.Emulator.Windows/Desktop/DesktopShadow.cs"
       ],
       "evidence": [
         "GB.Emulator.Windows/Desktop/DesktopWindow.cs: EmulationHost / Tick / input and disposal",
-        "GB.Emulator.Windows/Desktop/DesktopScene.cs: Present / model transform / hit testing"
+        "GB.Emulator.Windows/Desktop/DesktopScene.cs: Present / model transform / hit testing",
+        "GB.Emulator.Windows/Desktop/DesktopWindow.cs: Tick / Animate / ToggleScreenCloseUp / RenderViewTransition",
+        "GB.Emulator.Windows/Desktop/DesktopScene.cs: TryPresent / UpdateRenderCrop",
+        "GB.Emulator.Windows/Desktop/LinkCableModel.cs: SetStatus / reusable mesh buffers",
+        "GB.Emulator.Windows/Desktop/CableSimulation.cs: Step / curvature memory / sleep"
       ],
       "confidence": "high",
       "row": 2,
@@ -972,6 +1033,181 @@
       "confidence": "high",
       "row": 8,
       "col": 3
+    },
+    {
+      "id": "link-transport",
+      "label": "Serial lobby transport",
+      "group": "Platform",
+      "role": "Pairs players and exchanges ordered serial bytes",
+      "boundary": "Reusable library / socket I/O",
+      "contracts": [
+        "TCP/TLS length-prefixed JSON",
+        "Bounded queues, consent and session IDs",
+        "Deferred serial peer; no guest memory access",
+        "WorkAvailable background notification; single-write packets",
+        "Trusted ready-bot registration; random matching by title/hash",
+        "Acknowledged serial payload read/write counters"
+      ],
+      "files": [
+        "GB.Emulator.Link/LinkLobbyClient.cs",
+        "GB.Emulator.Link/LinkLobbyServer.cs",
+        "GB.Emulator.Link/LinkProtocol.cs",
+        "GB.Emulator.Link/LinkLobbyProbe.cs",
+        "GB.Emulator.Link/LinkServerOptions.cs",
+        "GB.Emulator.Link/GB.Emulator.Link.csproj"
+      ],
+      "evidence": [
+        "GB.Emulator.Link/LinkLobbyClient.cs",
+        "GB.Emulator.Link/LinkLobbyServer.cs",
+        "GB.Emulator.Link/LinkProtocol.cs"
+      ],
+      "confidence": "high",
+      "row": 8,
+      "col": 0
+    },
+    {
+      "id": "link-server",
+      "label": "Link service / container",
+      "group": "Hosts",
+      "role": "Owns relay and headless Tetris player pool",
+      "boundary": "Standalone Linux container or CLI",
+      "contracts": [
+        "32 players / two-player pairs",
+        "Health probe, non-root and graceful shutdown",
+        "Optional trusted TLS and join token",
+        "Optional 1–12 silent machines; private ROM mount",
+        "Random preset opponents; reset after disconnection"
+      ],
+      "files": [
+        "GB.Link.Server/Program.cs",
+        "GB.Link.Server/Dockerfile",
+        "compose.yaml",
+        "compose.tls.yaml",
+        "GB.Link.Server/TetrisPlayerPool.cs",
+        "GB.Link.Server/GB.Link.Server.csproj",
+        "compose.tetris.yaml"
+      ],
+      "evidence": [
+        "GB.Link.Server/Program.cs",
+        "GB.Link.Server/Dockerfile",
+        "compose.yaml",
+        "compose.tls.yaml",
+        "GB.Link.Server/TetrisPlayerPool.cs: Play / Ready / DisposeAsync"
+      ],
+      "confidence": "high",
+      "row": 8,
+      "col": 1
+    },
+    {
+      "id": "tetris-ai",
+      "label": "Tetris AI policy",
+      "group": "Core",
+      "role": "Plans configurable moves from detached boards",
+      "boundary": "Host policy / snapshot search worker",
+      "contracts": [
+        "ITetrisObserver; per-ROM hash guard",
+        "Reachable placement search",
+        "Guest-cycle input timing; read-only inspection",
+        "Validated immutable style weights and guest-frame timings",
+        "Optional visible-preview lookahead; cancellable worker search"
+      ],
+      "files": [
+        "GB.Emulator.AI/Tetris/ITetrisObserver.cs",
+        "GB.Emulator.AI/Tetris/DmgTetrisObserver.cs",
+        "GB.Emulator.AI/Tetris/TetrisPlanner.cs",
+        "GB.Emulator.AI/Tetris/TetrisController.cs",
+        "GB.Emulator.AI/Tetris/TetrisAiSettings.cs",
+        "GB.Emulator.AI/Tetris/TetrisMemoryProfile.cs",
+        "GB.Emulator.AI/GB.Emulator.AI.csproj"
+      ],
+      "evidence": [
+        "GB.Emulator.AI/Tetris/ITetrisObserver.cs",
+        "GB.Emulator.AI/Tetris/DmgTetrisObserver.cs",
+        "GB.Emulator.AI/Tetris/TetrisPlanner.cs",
+        "GB.Emulator.AI/Tetris/TetrisController.cs",
+        "GB.Emulator.AI/Tetris/TetrisController.cs: Configure / StartSearch / SamePositionFamily"
+      ],
+      "confidence": "high",
+      "row": 8,
+      "col": 2
+    },
+    {
+      "id": "link-lounge",
+      "label": "Link lounge / AI editor",
+      "group": "Hosts",
+      "role": "Owns connections and AI editor controls",
+      "boundary": "Windows UI owner thread",
+      "contracts": [
+        "Modeless lobby; owner-thread serial attachment",
+        "Random server opponent; room title and revision match",
+        "Bounded reconnect backoff; explicit leave cancels attempts",
+        "Developer harness alone opens local AI LCD/style editor"
+      ],
+      "files": [
+        "GB.Emulator.Windows/Link/LinkLobbyWindow.cs",
+        "GB.Emulator.Windows/Link/TetrisOpponentWindow.cs",
+        "GB.Emulator.Windows/Link/TetrisStyleWindow.cs"
+      ],
+      "evidence": [
+        "GB.Emulator.Windows/Link/LinkLobbyWindow.cs",
+        "GB.Emulator.Windows/Link/TetrisOpponentWindow.cs",
+        "GB.Emulator.Windows/Desktop/LinkCableModel.cs",
+        "GB.Emulator.Windows/Link/LinkLobbyWindow.cs: ConnectionRequest / OpenConnectionAsync / Pump / LeaveAsync"
+      ],
+      "confidence": "high",
+      "row": 9,
+      "col": 3
+    },
+    {
+      "id": "link-firmware",
+      "label": "SDK serial demo",
+      "group": "Build",
+      "role": "Draws and exchanges native multiplayer scores",
+      "boundary": "Constrained C# to SM83 ROM",
+      "contracts": [
+        "Joypad chooses internal or external clock",
+        "Native SB/SC bytes and LCD score display"
+      ],
+      "files": [
+        "Samples/LinkLounge/LinkLounge.cs",
+        "Samples/LinkLounge/Build.ps1",
+        "GB.Roms/LINK-LOUNGE.gb"
+      ],
+      "evidence": [
+        "Samples/LinkLounge/LinkLounge.cs",
+        "Samples/LinkLounge/Build.ps1",
+        "GB.Roms/LINK-LOUNGE.gb"
+      ],
+      "confidence": "high",
+      "row": 9,
+      "col": 2
+    },
+    {
+      "id": "ci",
+      "label": "Build and delivery",
+      "group": "Build",
+      "role": "Builds, verifies and packages applications",
+      "boundary": "GitHub Actions jobs",
+      "contracts": [
+        "Pinned RGBDS/PyBoy and zero-skip TRX gate",
+        "Self-contained Windows application packages",
+        "Master releases; cluster integration opt-in",
+        "Windows/Linux x64/ARM64 relay and Docker source bundle",
+        "ROM-free Linux container health check; diagnostic artifacts",
+        "Linux metadata restore supports Windows reference packs"
+      ],
+      "files": [
+        ".github/workflows/dotnet.yml",
+        "Directory.Build.props"
+      ],
+      "evidence": [
+        ".github/workflows/dotnet.yml: build / release jobs",
+        ".github/workflows/dotnet.yml: container job / server publish / upload diagnostics",
+        "Directory.Build.props: EnableWindowsTargeting for non-Windows restore"
+      ],
+      "confidence": "high",
+      "row": 9,
+      "col": 0
     }
   ],
   "edges": [
@@ -1817,6 +2053,205 @@
       "evidence": [
         "GB.Experiments/NetworkCartridge/LifeWorkerGroup.cs: Group.StartAsync",
         "GB.Experiments/NetworkCartridge/LifeHostConfiguration.cs: CreateSshStart"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "windows-lounge",
+      "from": "windows",
+      "to": "link-lounge",
+      "kind": "composition",
+      "label": "opens multiplayer lobby",
+      "evidence": [
+        "GB.Emulator.Windows/PlayerForm.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "desktop-lounge",
+      "from": "desktop-player",
+      "to": "link-lounge",
+      "kind": "composition",
+      "label": "opens lounge from EXT port and cable",
+      "evidence": [
+        "GB.Emulator.Windows/Desktop/DesktopWindow.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "lounge-host",
+      "from": "link-lounge",
+      "to": "hosting",
+      "kind": "composition",
+      "label": "attaches player cable; developer harness owns extra host",
+      "evidence": [
+        "GB.Emulator.Windows/Link/TetrisOpponentWindow.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "lounge-transport",
+      "from": "link-lounge",
+      "to": "link-transport",
+      "kind": "runtime-call",
+      "label": "joins rooms and attaches serial peers",
+      "evidence": [
+        "GB.Emulator.Windows/Link/LinkLobbyWindow.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "lounge-ai",
+      "from": "link-lounge",
+      "to": "tetris-ai",
+      "kind": "runtime-call",
+      "label": "developer harness only: edits and ticks local AI policy",
+      "evidence": [
+        "GB.Emulator.Windows/Link/TetrisOpponentWindow.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "ai-host",
+      "from": "tetris-ai",
+      "to": "hosting",
+      "kind": "runtime-call",
+      "label": "reads detached inspection and supplies joypad input",
+      "evidence": [
+        "GB.Emulator.AI/Tetris/TetrisController.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "link-core",
+      "from": "link-transport",
+      "to": "serial",
+      "kind": "contract-implementation",
+      "label": "implements deferred serial peer without sockets in Core",
+      "evidence": [
+        "GB.Emulator.Link/LinkLobbyClient.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "server-link",
+      "from": "link-server",
+      "to": "link-transport",
+      "kind": "composition",
+      "label": "binds standalone relay with TLS and access token",
+      "evidence": [
+        "GB.Link.Server/Program.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "link-demo-sdk",
+      "from": "link-firmware",
+      "to": "target-sdk",
+      "kind": "source-inclusion",
+      "label": "uses native SDK text, memory and joypad helpers",
+      "evidence": [
+        "Samples/LinkLounge/LinkLounge.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "link-demo-compiler",
+      "from": "link-firmware",
+      "to": "rom-compiler",
+      "kind": "build-tool",
+      "label": "builds native SM83 cartridge with RGBDS",
+      "evidence": [
+        "Samples/LinkLounge/Build.ps1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-link",
+      "from": "tests",
+      "to": "link-transport",
+      "kind": "test-invocation",
+      "label": "checks native TCP exchange, TLS, auth and lifecycle",
+      "evidence": [
+        "GB.Emulator.Tests/NetworkLinkTests.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "tests-ai",
+      "from": "tests",
+      "to": "tetris-ai",
+      "kind": "test-invocation",
+      "label": "checks strategy, timing, profile guard and UI consent",
+      "evidence": [
+        "GB.Emulator.Tests/TetrisAiTests.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "server-ai",
+      "from": "link-server",
+      "to": "tetris-ai",
+      "kind": "project-reference",
+      "label": "owns configurable silent CPU players",
+      "evidence": [
+        "GB.Link.Server/GB.Link.Server.csproj",
+        "GB.Link.Server/TetrisPlayerPool.cs"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "server-host",
+      "from": "link-server",
+      "to": "hosting",
+      "kind": "composition",
+      "label": "serializes per-machine emulation and joypad input",
+      "evidence": [
+        "GB.Link.Server/TetrisPlayerPool.cs: Play"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "ci-windows",
+      "from": "ci",
+      "to": "windows",
+      "kind": "build-tool",
+      "label": "publishes player packages",
+      "evidence": [
+        ".github/workflows/dotnet.yml"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "ci-tests",
+      "from": "ci",
+      "to": "tests",
+      "kind": "build-tool",
+      "label": "runs tests and validates TRX",
+      "evidence": [
+        ".github/workflows/dotnet.yml"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "ci-rom-compiler",
+      "from": "ci",
+      "to": "rom-compiler",
+      "kind": "build-tool",
+      "label": "smoke-builds native sample",
+      "evidence": [
+        ".github/workflows/dotnet.yml"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "ci-link-server",
+      "from": "ci",
+      "to": "link-server",
+      "kind": "build-tool",
+      "label": "publishes relay and probes Linux container",
+      "evidence": [
+        ".github/workflows/dotnet.yml: server publish / container job"
       ],
       "confidence": "high"
     }

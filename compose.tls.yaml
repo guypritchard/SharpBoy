@@ -1,0 +1,11 @@
+# Optional private/public host: supply paths to a PFX and secret files on the Docker host.
+services:
+  link-hub:
+    environment:
+      LINK_TLS_PFX: /run/secrets/link.pfx
+      LINK_TLS_PASSWORD_FILE: /run/secrets/tls-password
+      LINK_ACCESS_TOKEN_FILE: /run/secrets/join-token
+    volumes:
+      - ${LINK_TLS_PFX_FILE:?Set LINK_TLS_PFX_FILE}:/run/secrets/link.pfx:ro
+      - ${LINK_TLS_PASSWORD_FILE:?Set LINK_TLS_PASSWORD_FILE}:/run/secrets/tls-password:ro
+      - ${LINK_ACCESS_TOKEN_FILE:?Set LINK_ACCESS_TOKEN_FILE}:/run/secrets/join-token:ro

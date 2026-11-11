@@ -8,6 +8,8 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="../Samples/LinkLounge/LinkLounge.cs" Link="Fixtures/LinkLounge.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../GB.Roms/LINK-LOUNGE.gb" Link="Fixtures/LINK-LOUNGE.gb" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.0.1" />
     <PackageReference Include="MSTest.TestFramework" Version="4.0.1" />

@@ -15,13 +15,18 @@
     <ProjectReference Include="..\GB.Emulator.Hosting\GB.Emulator.Hosting.csproj" />
     <ProjectReference Include="..\GB.Emulator.Core.Win32\GB.Emulator.Core.Win32.csproj" />
     <ProjectReference Include="..\GB.Emulator.Presentation.WinForms\GB.Emulator.Presentation.WinForms.csproj" />
+    <ProjectReference Include="..\GB.Emulator.Link\GB.Emulator.Link.csproj" />
+    <ProjectReference Include="..\GB.Emulator.AI\GB.Emulator.AI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="GB.Emulator.Windows.Tests" />
+    <InternalsVisibleTo Include="GB.Emulator.DesktopProbe" />
+    <InternalsVisibleTo Include="GB.Emulator.RenderProbe" />
     <None Update="Desktop/Assets/Dmg.glb" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Desktop/Assets/ATTRIBUTION.md" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\GB.Roms\SPRITE.GB" Link="SPRITE.GB" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\GB.Roms\LINK-LOUNGE.gb" Link="LINK-LOUNGE.gb" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

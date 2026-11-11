@@ -66,6 +66,15 @@ The bundled detailed model is by Lokeig under **CC BY-NC 4.0 (noncommercial use)
 
 ## Windows player
 
+The [link cable lounge](Docs/link-lobby.md) connects two emulator instances over
+TCP/TLS, with a standalone containerised lobby service and a 3D EXT cable/LCD activity monitor.
+Press **Ctrl+L** to connect. An optional [headless Tetris pool](Docs/tetris-ai.md)
+runs several AI Game Boys on the server and assigns an available opponent at
+random. Only your own screen opens; the bots use ordinary joypad input and a verified ROM reader.
+The client retries dropped server connections; the Link Boy LED is amber for a
+server connection and red for a paired cable. [Download or deploy the headless server](Docs/link-server.md)
+on Windows, Linux or Docker; no commercial ROM is included.
+
 The player reuses `GB.Emulator.Core` for hardware, startup and rendering, and
 `GB.Emulator.Core.Win32` for audio. Resize freely: the display stays centered with
 its original aspect ratio. **View → Window size** selects 2×–6×, and **Integer
@@ -329,7 +338,9 @@ The protocol sends `G` for the greeting, or `P` followed by a 16-bit little-endi
 
 ## Builds and releases
 
-[GitHub Actions](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml) builds the full solution, runs configured compiler/PyBoy and emulator tests with a zero-skip TRX gate, smoke-builds the sample, and publishes self-contained `win-x64`/`win-arm64` player, experiments, console and debugger artifacts. Full cluster simulation/UI tests (`ClusterIntegration`) and the SSH experiment are excluded from ordinary PR/push builds; enable `run_cluster_integration` on a manual workflow dispatch to run them. Successful builds on `master` also create a GitHub release with separate player, experiments, console and debugger ZIPs. Pull requests, tag pushes and manual builds upload artifacts without creating a release. CI installs RGBDS/PyBoy only into runner temp; generated ROMs, venvs and tools are not included in the published packages.
+[GitHub Actions](https://github.com/guypritchard/SharpBoy/actions/workflows/dotnet.yml) builds the solution, runs the configured tests with a zero-skip TRX gate, smoke-builds a C# sample and health-checks the Linux relay container. Downloads include self-contained Windows x64/ARM64 player, experiments, console and debugger packages; Windows/Linux x64/ARM64 link servers; and a Docker build-context ZIP. Successful `master` builds create release ZIPs; other runs upload Actions artifacts. Available test reports, public-demo screenshots and container logs are retained as separate diagnostics. See the [artifact inventory and validation policy](Docs/build-artifacts.md).
+
+Full cluster simulations and SSH checks remain opt-in through `run_cluster_integration` on manual dispatch. Private-ROM Tetris probes and interactive rendering/audio benchmarks remain local developer tools. No private ROMs, development toolchains or local secrets are packaged.
 
 GitVersion calculates assembly and artifact versions from Git history using GitHub Flow. Tags of the form `v<major>.<minor>.<patch>` set a release version; commit messages can request a larger increment with `+semver: minor` or `+semver: major`. Automatic release notes use the built commit's full message.
 

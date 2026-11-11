@@ -161,6 +161,21 @@ public sealed class TextAndMemoryTests
         finally { Directory.Delete(directory, true); }
     }
 
+    [TestMethod]
+    public async Task LinkLoungeRomRebuildsFromTheNativeSdkWithoutANetworkCartridge()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "sharpboy-link-sdk-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var options = Options(Path.Combine(directory, "link.gb"), "LINK LOUNGE") with { Limits = new() };
+            var result = await new RomCompiler().CompileAsync([Fixture("LinkLounge.cs"), Fixture("GameTextNumbers.cs")], options);
+            Assert.IsTrue(result.Success, string.Join("\n", result.Diagnostics));
+            CollectionAssert.AreEqual(await File.ReadAllBytesAsync(Fixture("LINK-LOUNGE.gb")), await File.ReadAllBytesAsync(options.OutputPath));
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
     private static RomBuildOptions Options(string path, string title = "SDK TEXT")
     {
         var bin = Environment.GetEnvironmentVariable("GB_RGBDS_BIN");

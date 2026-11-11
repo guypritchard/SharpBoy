@@ -6,6 +6,8 @@ using GB.Emulator.Hosting;
 
 namespace GB.Emulator.Core.Win32;
 
+public sealed record WindowsAudioStatistics(long SubmittedBlocks, long Underruns, long DiscardedBlocks);
+
 /// <summary>Small bounded waveOut queue for the APU's signed 16-bit stereo PCM.</summary>
 public sealed class WindowsAudioOutput : IAudioOutput
 {
@@ -15,6 +17,11 @@ public sealed class WindowsAudioOutput : IAudioOutput
     private IntPtr device;
     private bool disposed;
     private int nextSlot;
+    private readonly bool canPrime;
+    private bool primed;
+    private int primingBlocks;
+    private long submittedBlocks, underruns, discardedBlocks;
+    public WindowsAudioStatistics Statistics => new(this.submittedBlocks, this.underruns, this.discardedBlocks);
 
     private WindowsAudioOutput()
     {
@@ -29,6 +36,8 @@ public sealed class WindowsAudioOutput : IAudioOutput
         };
         int result = WaveOutOpen(out this.device, Mapper, ref format, IntPtr.Zero, IntPtr.Zero, 0);
         if (result != 0) throw new InvalidOperationException($"Could not open the audio device (waveOut error {result}).");
+        this.canPrime = WaveOutPause(this.device) == 0;
+        this.primed = !this.canPrime; // Some synchronous devices cannot pause; retain their streaming behaviour.
         int headerSize = Marshal.SizeOf<WaveHeader>();
         for (int i = 0; i < this.slots.Length; i++)
             this.slots[i] = new Slot(Marshal.AllocHGlobal(2048), Marshal.AllocHGlobal(headerSize));
@@ -46,8 +55,15 @@ public sealed class WindowsAudioOutput : IAudioOutput
     public void Write(ReadOnlyMemory<short> samples)
     {
         if (this.disposed) return;
+        if (samples.IsEmpty) return;
         if (samples.Length > 1024) throw new ArgumentOutOfRangeException(nameof(samples), "Audio blocks must fit the bounded 1024-sample queue slots.");
         int headerSize = Marshal.SizeOf<WaveHeader>();
+        if (this.primed && this.submittedBlocks > 0 && !Array.Exists(this.slots,
+            slot => slot.Submitted && (Marshal.PtrToStructure<WaveHeader>(slot.Header).Flags & HeaderDone) == 0))
+        {
+            this.underruns++;
+            this.BeginPriming();
+        }
         for (int attempt = 0; attempt < this.slots.Length; attempt++)
         {
             int index = (this.nextSlot + attempt) % this.slots.Length;
@@ -70,15 +86,29 @@ public sealed class WindowsAudioOutput : IAudioOutput
                 return;
             }
             slot.Submitted = true;
+            this.submittedBlocks++;
+            // Four APU blocks provide ~43 ms of queued PCM before starting/restarting.
+            if (!this.primed && ++this.primingBlocks >= 4)
+            {
+                if (WaveOutRestart(this.device) == 0) this.primed = true;
+                else this.Flush();
+            }
             this.nextSlot = (index + 1) % this.slots.Length;
             return;
         }
         // The CPU is running ahead of the speaker; discard this block instead of growing latency.
+        this.discardedBlocks++;
     }
 
     public void Flush()
     {
-        if (!this.disposed && this.device != IntPtr.Zero) WaveOutReset(this.device);
+        if (!this.disposed && this.device != IntPtr.Zero) { WaveOutReset(this.device); this.BeginPriming(); }
+    }
+
+    private void BeginPriming()
+    {
+        this.primingBlocks = 0;
+        this.primed = !this.canPrime || WaveOutPause(this.device) != 0;
     }
 
     public void Dispose()
@@ -144,6 +174,10 @@ public sealed class WindowsAudioOutput : IAudioOutput
     private static extern int WaveOutUnprepareHeader(IntPtr device, IntPtr header, uint headerSize);
     [DllImport("winmm.dll", EntryPoint = "waveOutReset")]
     private static extern int WaveOutReset(IntPtr device);
+    [DllImport("winmm.dll", EntryPoint = "waveOutPause")]
+    private static extern int WaveOutPause(IntPtr device);
+    [DllImport("winmm.dll", EntryPoint = "waveOutRestart")]
+    private static extern int WaveOutRestart(IntPtr device);
     [DllImport("winmm.dll", EntryPoint = "waveOutClose")]
     private static extern int WaveOutClose(IntPtr device);
 }

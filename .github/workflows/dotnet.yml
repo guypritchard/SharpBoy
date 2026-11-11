@@ -1,4 +1,4 @@
-name: Windows emulator build
+name: SharpBoy build and packages
 
 on:
   push:
@@ -129,6 +129,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & Tools/ci/Assert-TrxNoSkipped.ps1 (Join-Path $results 'experiments-windows.trx')
 
+      - name: Upload test reports and public-demo screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/ci/test-results/*.trx
+            artifacts/desktop-player/tests/*.png
+            artifacts/link-lobby/*.png
+            artifacts/link-monitor/*.png
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Verify distributed Life over real SSH transport
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_cluster_integration }}
         shell: pwsh
@@ -173,6 +186,7 @@ jobs:
           foreach ($runtime in @('win-x64', 'win-arm64')) {
             dotnet publish GB.Emulator.Windows/GB.Emulator.Windows.csproj -c Release -r $runtime --self-contained true -o "artifacts/windows/$runtime" @versionArgs
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            Copy-Item Docs/link-lobby.md, Docs/tetris-ai.md "artifacts/windows/$runtime/"
             dotnet publish GB.Experiments.Windows/GB.Experiments.Windows.csproj -c Release -r $runtime --self-contained true -o "artifacts/experiments-windows/$runtime" @versionArgs
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             dotnet publish GB.Emulator.Console/GB.Emulator.Console.csproj -c Release -r $runtime --self-contained true -o "artifacts/console/$runtime" @versionArgs
@@ -180,6 +194,20 @@ jobs:
             dotnet publish GB.Debugger/GB.Debugger.csproj -c Release -r $runtime --self-contained true -o "artifacts/debugger/$runtime" @versionArgs
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
+          foreach ($runtime in @('win-x64', 'win-arm64', 'linux-x64', 'linux-arm64')) {
+            dotnet publish GB.Link.Server/GB.Link.Server.csproj -c Release -r $runtime --self-contained true -o "artifacts/link-server/$runtime" @versionArgs
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            Copy-Item Docs/link-server.md "artifacts/link-server/$runtime/README.md"
+            Copy-Item Docs/link-lobby.md, Docs/tetris-ai.md "artifacts/link-server/$runtime/"
+          }
+
+      - name: Package link server Docker build context
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path artifacts/link-server-container -Force | Out-Null
+          git archive --format=zip --output=artifacts/link-server-container/link-server-container.zip HEAD -- .dockerignore Directory.Build.props compose.yaml compose.tetris.yaml compose.tls.yaml GB.Emulator.Core GB.Emulator.Hosting GB.Emulator.Link GB.Emulator.AI GB.Link.Server Docs/link-server.md Docs/link-lobby.md Docs/tetris-ai.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload Windows player
         uses: actions/upload-artifact@v4
@@ -209,9 +237,58 @@ jobs:
           path: artifacts/debugger/
           if-no-files-found: error
 
+      - name: Upload link lobby server
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-server-${{ steps.version.outputs.semVer }}
+          path: artifacts/link-server/
+          if-no-files-found: error
+
+      - name: Upload link server Docker build context
+        uses: actions/upload-artifact@v4
+        with:
+          name: link-server-container-${{ steps.version.outputs.semVer }}
+          path: artifacts/link-server-container/
+          if-no-files-found: error
+
+  container:
+    name: Linux relay container smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Build and probe relay without private ROMs
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build -f GB.Link.Server/Dockerfile -t sharpboy/link-hub:ci .
+          docker run -d --name sharpboy-link-ci --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --cap-drop ALL --security-opt no-new-privileges:true sharpboy/link-hub:ci
+          ready=false
+          for attempt in {1..30}; do
+            if docker exec sharpboy-link-ci dotnet GB.Link.Server.dll --health-check; then ready=true; break; fi
+            sleep 1
+          done
+          "$ready"
+      - name: Save container diagnostics
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts/container
+          docker logs sharpboy-link-ci > artifacts/container/server.log 2>&1 || true
+          docker inspect sharpboy-link-ci > artifacts/container/inspect.json || true
+          docker stop --time 15 sharpboy-link-ci || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/container/
+          if-no-files-found: warn
+          retention-days: 14
+
   release:
-    name: Release Windows applications
-    needs: build
+    name: Release applications and link server
+    needs: [build, container]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: windows-latest
     permissions:
@@ -241,17 +318,34 @@ jobs:
           name: debugger-${{ needs.build.outputs.version }}-windows
           path: artifacts/debugger/
 
+      - name: Download link lobby server
+        uses: actions/download-artifact@v4
+        with:
+          name: link-server-${{ needs.build.outputs.version }}
+          path: artifacts/link-server/
+
+      - name: Download link server Docker build context
+        uses: actions/download-artifact@v4
+        with:
+          name: link-server-container-${{ needs.build.outputs.version }}
+          path: artifacts/link-server-container/
+
       - name: Package release assets
         shell: pwsh
         env:
           BUILD_VERSION: ${{ needs.build.outputs.version }}
         run: |
           New-Item -ItemType Directory -Path release-assets -Force | Out-Null
-          foreach ($app in @('windows', 'experiments-windows', 'console', 'debugger')) {
+          foreach ($app in @('windows', 'experiments-windows', 'console', 'debugger', 'link-server')) {
             foreach ($runtime in @('win-x64', 'win-arm64')) {
               Compress-Archive -Path "artifacts/$app/$runtime/*" -DestinationPath "release-assets/$app-$env:BUILD_VERSION-$runtime.zip"
             }
           }
+          foreach ($runtime in @('linux-x64', 'linux-arm64')) {
+            # ZIP extraction does not preserve Unix executable bits; the included README explains chmod.
+            Compress-Archive -Path "artifacts/link-server/$runtime/*" -DestinationPath "release-assets/link-server-$env:BUILD_VERSION-$runtime.zip"
+          }
+          Copy-Item artifacts/link-server-container/link-server-container.zip "release-assets/link-server-$env:BUILD_VERSION-container.zip"
 
       - name: Create GitHub release from commit message
         shell: pwsh
