@@ -156,6 +156,8 @@ namespace GB.Emulator.Core
         public bool RunStep()
         {
             this.EnsureCartridgeLoaded("running");
+            this.serial.Pump();
+            if (this.serial.IsWaitingForPeer) return false;
             this.memory.UseAccessRecorder(SilentMemoryAccessRecorder.Instance);
             if (this.IsStartupSequenceActive)
             {
@@ -174,7 +176,9 @@ namespace GB.Emulator.Core
             this.EnsureCartridgeLoaded("running");
             long start = this.EmulatedCycles;
             for (int i = 0; i < maxInstructions && this.EmulatedCycles - start < cycleBudget; i++)
-                if (this.RunStep()) break;
+            {
+                if (this.RunStep() || this.serial.IsWaitingForPeer) break;
+            }
             return this.EmulatedCycles - start;
         }
 

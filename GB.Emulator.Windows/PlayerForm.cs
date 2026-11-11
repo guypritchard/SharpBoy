@@ -10,6 +10,7 @@ namespace GB.Emulator.Windows;
 internal sealed class PlayerForm : Form
 {
     private readonly EmulationHost host;
+    private readonly WindowsAudioOutput? audioOutput;
     private readonly ScreenControl screen = new() { Dock = DockStyle.Fill, Text = "SHARPBOY\n\nOpen a ROM to play\nCtrl+O  \u00b7  or drop a .gb file here" };
     private readonly MenuStrip menu = new();
     private readonly StatusStrip status = new();
@@ -26,6 +27,7 @@ internal sealed class PlayerForm : Form
     private readonly PlayerKeyboardInput keyboard;
     private readonly string? initialRom;
     private InspectorForm? inspector;
+    private Link.LinkLobbyWindow? lobby;
     private bool loading;
     private long lastTick;
     private VideoFrame? presentedFrame;
@@ -34,13 +36,16 @@ internal sealed class PlayerForm : Form
     private string cartridgeDescription = "Open a ROM · Ctrl+O   |   Arrows · Z/X · Enter/Space";
 
     internal EmulationHost Host => this.host;
+    internal WindowsAudioStatistics? AudioStatistics => this.audioOutput?.Statistics;
+    internal Link.LinkLobbyWindow? LinkLobby => this.lobby;
     [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
     internal bool PauseWhenInactive { get => this.inactiveItem.Checked; set => this.inactiveItem.Checked = value; }
 
     public PlayerForm(string? initialRom = null)
     {
         this.initialRom = initialRom;
-        this.host = new EmulationHost(audio: WindowsAudioOutput.TryCreate());
+        this.audioOutput = WindowsAudioOutput.TryCreate();
+        this.host = new EmulationHost(audio: this.audioOutput);
         this.host.StateChanged += this.OnStateChanged;
         this.clock.Start();
         this.Text = "SharpBoy";
@@ -80,11 +85,13 @@ internal sealed class PlayerForm : Form
         var demo = new ToolStripMenuItem("Load &bundled demo", null,
             async (_, _) => await this.LoadRomAsync(Path.Combine(AppContext.BaseDirectory, "SPRITE.GB")));
         file.DropDownItems.AddRange([open, demo, new ToolStripSeparator(), new ToolStripMenuItem("E&xit", null, (_, _) => this.Close())]);
+        file.DropDownItems.Insert(2, new ToolStripMenuItem("Load &multiplayer link demo", null, async (_,_) => await this.LoadRomAsync(Path.Combine(AppContext.BaseDirectory, "LINK-LOUNGE.gb"))));
         var emulation = new ToolStripMenuItem("&Emulation");
         this.pauseItem.Click += (_, _) => this.SetPaused(this.host.IsPlaybackRequested);
         this.resetItem.Click += (_, _) => this.ResetRom();
         this.muteItem.CheckedChanged += (_, _) => this.host.Muted = this.muteItem.Checked;
         emulation.DropDownItems.AddRange([this.pauseItem, this.resetItem, new ToolStripSeparator(), this.muteItem, this.inactiveItem]);
+        emulation.DropDownItems.Add(new ToolStripMenuItem("&Link cable / multiplayer lobby…", null, (_,_) => this.ShowLinkLobby()) { ShortcutKeys = Keys.Control | Keys.L });
         var view = new ToolStripMenuItem("&View");
         var desktop = new ToolStripMenuItem("3D &desktop Game Boy…", null, (_, _) => this.OpenPresentation("--desktop", true));
         this.integerItem.CheckedChanged += (_, _) => this.screen.IntegerScaling = this.integerItem.Checked;
@@ -146,6 +153,7 @@ internal sealed class PlayerForm : Form
         this.pauseItem.Enabled = this.resetItem.Enabled = false;
         try
         {
+            if (this.lobby != null) await this.lobby.LeaveAsync();
             await this.host.LoadAsync(path);
             if (this.IsDisposed) return;
             CartridgeSnapshot cart = this.host.Inspection.CaptureCartridge()!;
@@ -155,6 +163,7 @@ internal sealed class PlayerForm : Form
                 (cart.Support.Level == CartridgeSupportLevel.Partial ? " · Partial support (see Inspector)" : "");
             this.PresentLatestFrame();
             this.host.Resume();
+            this.lobby?.RefreshCartridge();
         }
         catch (Exception ex)
         {
@@ -184,15 +193,16 @@ internal sealed class PlayerForm : Form
     internal void ResetRom()
     {
         if (this.loading) return;
-        this.host.Reset(); this.PresentLatestFrame(); this.UpdateStatus();
+        this.lobby?.DisconnectCable(); this.host.Reset(); this.PresentLatestFrame(); this.UpdateStatus();
     }
 
     private void TickEmulation()
     {
         try
         {
-            bool active = Form.ActiveForm == this || (this.inspector != null && Form.ActiveForm == this.inspector);
-            this.host.SetSuspended(PauseReason.Inactive, this.inactiveItem.Checked && !active);
+            this.lobby?.Pump();
+            bool active = Form.ActiveForm == this || (this.inspector != null && Form.ActiveForm == this.inspector) || this.lobby?.IsPlayerWindowActive == true;
+            this.host.SetSuspended(PauseReason.Inactive, this.inactiveItem.Checked && !active && this.lobby?.HasConnectedCable != true);
             this.host.SetSuspended(PauseReason.Minimized, this.WindowState == FormWindowState.Minimized);
             long now = this.clock.ElapsedTicks;
             TimeSpan elapsed = TimeSpan.FromSeconds((now - this.lastTick) / (double)Stopwatch.Frequency);
@@ -263,6 +273,7 @@ internal sealed class PlayerForm : Form
         // Handle these here too: the menu is hidden in fullscreen.
         if (keyData == (Keys.Control | Keys.O)) { _ = this.ChooseRomAsync(); return true; }
         if (keyData == (Keys.Control | Keys.I)) { this.ShowInspector(); return true; }
+        if (keyData == (Keys.Control | Keys.L)) { this.ShowLinkLobby(); return true; }
         if (keyData == (Keys.Control | Keys.P) && !this.loading && this.host.Inspection.CaptureCartridge() != null)
         { this.SetPaused(this.host.IsPlaybackRequested); return true; }
         if (keyData == (Keys.Control | Keys.R)) { this.ResetRom(); return true; }
@@ -281,12 +292,22 @@ internal sealed class PlayerForm : Form
         if (!this.inspector.Visible) this.inspector.Show(this);
         this.inspector.Activate();
     }
+    internal void ShowLinkLobby()
+    {
+        if (this.lobby != null) { this.lobby.Activate(); return; }
+        this.lobby = new Link.LinkLobbyWindow(this.host, advance: this.TickEmulation);
+        new System.Windows.Interop.WindowInteropHelper(this.lobby) { Owner = this.Handle };
+        System.Windows.Forms.Integration.ElementHost.EnableModelessKeyboardInterop(this.lobby);
+        this.lobby.Closed += (_,_) => this.lobby = null;
+        this.lobby.Show();
+    }
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             this.timer.Stop(); this.timer.Dispose();
+            this.lobby?.Close();
             Application.RemoveMessageFilter(this.keyboard);
             this.host.StateChanged -= this.OnStateChanged;
             this.host.Dispose();

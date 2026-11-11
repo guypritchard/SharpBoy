@@ -9,7 +9,7 @@ namespace GB.Emulator.Hosting;
 /// execution context. A UI schedules Advance and marshals immutable frames to its own dispatcher.
 /// The supplied audio output is owned and disposed by this host.
 /// </summary>
-public sealed class EmulationHost : IDisposable, IButtonInput
+public sealed partial class EmulationHost : IDisposable, IButtonInput
 {
     private readonly EmulationHostOptions options;
     private readonly IAudioOutput? audio;
@@ -160,11 +160,13 @@ public sealed class EmulationHost : IDisposable, IButtonInput
                 int chunk = this.Debugging.HasBreakpoints ? 1 : 256;
                 this.Machine.RunForCycles(budget - (this.Machine.EmulatedCycles - start), Math.Min(chunk, this.options.MaximumInstructionsPerAdvance - work));
                 work += chunk;
-                if (this.Machine.Cpu.IsStopped || Stopwatch.GetElapsedTime(started) >= this.options.MaximumAdvanceDuration) break;
+                if (this.Machine.Cpu.IsStopped || this.Machine.Serial.IsWaitingForPeer || Stopwatch.GetElapsedTime(started) >= this.options.MaximumAdvanceDuration) break;
             }
             long cycles = this.Machine.EmulatedCycles - start;
             if ((this.lastLcdControl & 0x80) != 0 && (this.Machine.Memory.Peek(0xFF40) & 0x80) == 0)
                 this.PublishCurrentFrame(); // LCD-off produces no further VBlank; blank the presenter now.
+            // Retain the unspent, bounded budget across a link wait. A receive wake-up
+            // can finish this frame immediately instead of losing time on every byte.
             if (this.Machine.Cpu.IsStopped) this.pacer.Reset(); else this.pacer.Consume(cycles);
             this.SampleStatistics(elapsed);
             this.UpdateState();

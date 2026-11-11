@@ -2,6 +2,6 @@
 {
     public class Roms
     {
-        public const string TestRom = @"../../../../GB.Roms/SPRITE.GB";
+        public static string TestRom => System.IO.Path.Combine(System.AppContext.BaseDirectory, "SPRITE.GB");
     }
 }

@@ -1,0 +1,11 @@
+# Supply your own legally obtained ROM. It is mounted read-only, never copied into the image.
+services:
+  link-hub:
+    environment:
+      LINK_TETRIS_ROM: /roms/tetris.gb
+      LINK_TETRIS_PLAYERS: ${LINK_TETRIS_PLAYERS:-4}
+    volumes:
+      - type: bind
+        source: ${TETRIS_ROM_PATH:?Set TETRIS_ROM_PATH to your supported Tetris ROM}
+        target: /roms/tetris.gb
+        read_only: true

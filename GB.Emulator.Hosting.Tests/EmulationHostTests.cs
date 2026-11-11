@@ -70,6 +70,34 @@ public sealed class EmulationHostTests
     }
 
     [TestMethod]
+    public void SerialWakeConsumesTheUnspentFrameBudgetWithoutAnotherTimerTick()
+    {
+        using var host = Host(0x3E, 0x81, 0xE0, 0x02, 0x18, 0xFE);
+        var peer = new DelayedPeer(); host.AttachSerialPeer(peer); host.Resume();
+        long first = host.Advance(FrameTime);
+        Assert.IsTrue(host.IsWaitingForSerialPeer);
+        Assert.IsLessThan(10_000L, first);
+        peer.Ready = true;
+        long resumed = host.Advance(TimeSpan.Zero);
+        Assert.IsFalse(host.IsWaitingForSerialPeer);
+        Assert.IsGreaterThan(50_000L, resumed, "A received byte must resume this frame using its remaining budget.");
+        Assert.IsLessThanOrEqualTo(EmulationPacer.CyclesPerFrame + 24L, host.Statistics.Cycles);
+    }
+
+    private sealed class DelayedPeer : IDeferredSerialPeer
+    {
+        public bool Ready;
+        private bool pending;
+        public bool IsConnected => true;
+        public bool IsWaiting => pending && !Ready;
+        public void BeginTransfer(byte outgoing, bool internalClock) => pending = true;
+        public bool TryCompleteTransfer(out byte incoming)
+        { incoming = 0x55; if (!pending || !Ready) return false; pending = false; return true; }
+        public void CancelTransfer() => pending = false;
+        public byte ExchangeByte(byte outgoing) => throw new InvalidOperationException();
+    }
+
+    [TestMethod]
     public void CatchUpIsBoundedAndResetPreservesTheUsersPauseChoice()
     {
         using var host = Host(0x18, 0xFE);
