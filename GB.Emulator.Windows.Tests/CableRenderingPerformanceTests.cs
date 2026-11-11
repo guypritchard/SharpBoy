@@ -29,6 +29,19 @@ public class CableRenderingPerformanceTests
             var hubAfterDrag = scene.HubPosition;
             scene.SetView(55, 12);
             Assert.AreEqual(hubAfterDrag, scene.HubPosition, "Rotation must preserve the monitor's position after clamped drags.");
+            scene.SetView(-14, -5);
+            scene.MoveLinkedObject(false, new(-35, 10, 0));
+            scene.MoveLinkedObject(true, new(35, 12, 0));
+            for (int i = 0; i < 240; i++) scene.AdvanceCable(1d / 120);
+            scene.MoveLinkedObject(true, new(10000, 0, 0));
+            for (int i = 0; i < 240; i++) scene.AdvanceCable(1d / 120);
+            foreach (double yaw in new[] { 80d, 170d, 250d, 350d })
+            {
+                scene.SetView(yaw, 10);
+                for (int i = 0; i < 360; i++) scene.AdvanceCable(1d / 120);
+                Assert.IsLessThanOrEqualTo(CableSimulation.Length * 1.08, scene.Cable!.Simulation.ActualLength,
+                    $"A {width}x{height} workspace must retain finite cord length at yaw {yaw}.");
+            }
         }
     });
 

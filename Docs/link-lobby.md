@@ -20,6 +20,8 @@ collision bounds. Cable mesh updates are capped at 30 Hz except while attaching
 a moving endpoint; settled cords sleep until an endpoint moves. This is a presentation simulation: it does not alter serial
 timing or unplug a network match, and does not simulate cable self-collision,
 twist, friction against the desktop, or dragging objects between monitors.
+After contact/curvature solving, bounded length-only projection reduces residual
+stretch without changing the jacket's bending stiffness.
 
 The cable-end **LINK BOY** instrument replaces the old four-port hub face. Its
 160×144 four-shade LCD shows READ and WRITE byte rates in separate graphs, plus

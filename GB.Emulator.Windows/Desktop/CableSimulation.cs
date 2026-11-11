@@ -112,6 +112,23 @@ internal sealed class CableSimulation
                     for (int i = 2; i < points.Length - 2; i++) points[i] = excludeSolids(points[i]);
                 Pin();
             }
+            // Contacts and curvature can reintroduce stretch after the distance sweep.
+            // Give material length priority in a bounded final projection, without
+            // applying more curvature forces or changing the jacket's stiffness.
+            for (int pass = 0; pass < 32 && IsOverLength(); pass++)
+            {
+                for (int i = 0; i < points.Length - 1; i++) Distance(i, i + 1, Spacing);
+                for (int i = points.Length - 2; i >= 0; i--) Distance(i, i + 1, Spacing);
+                if (excludeSolids != null)
+                    for (int i = 2; i < points.Length - 2; i++) points[i] = excludeSolids(points[i]);
+                Pin();
+            }
+        }
+        bool IsOverLength()
+        {
+            double length = 0;
+            for (int i = 1; i < points.Length; i++) length += (points[i] - points[i - 1]).Length;
+            return length > Length * 1.03;
         }
         void Bend(int a, int b, int c)
         {
