@@ -11,10 +11,10 @@ public class CableRenderingPerformanceTests
     [TestMethod]
     public void CroppedViewportSavesAreaOnLargeWorkspacesAndFitsSmallWorkspaces() => Sta(() =>
     {
-        var scene = new DesktopScene(); scene.SetLinkVisible(true);
-        var root = new System.Windows.Controls.Grid(); root.Children.Add(scene.View);
         foreach (var (width, height, scale) in new[] { (1920d, 1080d, 1d), (1024d, 720d, 685d / 780) })
         {
+            var scene = new DesktopScene(); scene.SetLinkVisible(true);
+            var root = new System.Windows.Controls.Grid(); root.Children.Add(scene.View);
             scene.SetWorkspaceViewport(width, height, scale);
             root.Measure(new(width, height)); root.Arrange(new(0, 0, width, height)); root.UpdateLayout();
             var crop = scene.RenderCrop;
@@ -24,6 +24,11 @@ public class CableRenderingPerformanceTests
             Assert.AreEqual(crop.Height, scene.View.ActualHeight, .01);
             if (width >= 1920)
                 Assert.IsLessThan(width * height * .75, crop.Width * crop.Height, "A large workspace must not force full-desktop 3D rendering.");
+            scene.MoveLinkedObject(true, new(30, 0, 0));
+            scene.MoveLinkedObject(true, new(-30, 0, 0));
+            var hubAfterDrag = scene.HubPosition;
+            scene.SetView(55, 12);
+            Assert.AreEqual(hubAfterDrag, scene.HubPosition, "Rotation must preserve the monitor's position after clamped drags.");
         }
     });
 

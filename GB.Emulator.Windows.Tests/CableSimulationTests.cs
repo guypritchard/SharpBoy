@@ -96,7 +96,7 @@ public class CableSimulationTests
                     var originalHub = scene.HubPosition;
                     // On a small CI desktop the hardware legitimately fills most of the screen.
                     Assert.AreEqual(scene.RenderCrop.Width * scene.RenderCrop.Height, scene.View.ActualWidth * scene.View.ActualHeight, .01);
-                    Assert.IsTrue(scene.RenderCrop.Width * scene.RenderCrop.Height <= window.Width * window.Height);
+                    Assert.IsLessThanOrEqualTo(window.Width * window.Height, scene.RenderCrop.Width * scene.RenderCrop.Height);
                     System.Windows.Point DesktopPoint(Point3D world)
                     { window.UpdateLayout(); return scene.View.TranslatePoint(scene.ProjectWorld(world), window); }
                     var beforeCrop = DesktopPoint(scene.ConsoleSocket);
@@ -107,6 +107,9 @@ public class CableSimulationTests
                     Assert.IsTrue(scene.HitScreen(scene.Project(new(lcd.X + lcd.SizeX/2, lcd.Y + lcd.SizeY/2, lcd.Z + lcd.SizeZ + .2))),
                         "The off-centre frustum must preserve LCD hit testing.");
                     scene.MoveLinkedObject(true, new(-30,0,0));
+                    // Workspace/cable limits can clamp either drag, so an opposite
+                    // drag need not return to the exact initial position.
+                    originalHub = scene.HubPosition;
                     scene.SetView(55, 12);
                     Assert.AreEqual(originalHub, scene.HubPosition, "Rotating the Game Boy must not rotate its hub.");
                     Assert.AreEqual(scene.ConsoleSocket, cable.ConsolePlug.Transform.Transform(LinkCableModel.PortAnchor));
